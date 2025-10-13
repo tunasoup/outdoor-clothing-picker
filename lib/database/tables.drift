@@ -1,0 +1,41 @@
+CREATE TABLE clothing (
+    id INT PRIMARY KEY AUTOINCREMENT,
+    name TEXT NOT NULL,
+    min_temp INT NOT NULL,
+    max_temp INT NOT NULL,
+    category TEXT NOT NULL REFERENCES categories(name),
+    activity TEXT NOT NULL
+);
+
+CREATE TABLE categories (
+    name TEXT NOT NULL PRIMARY KEY,
+    norm_x FLOAT NOT NULL,
+    norm_y FLOAT NOT NULL
+) AS category;
+
+CREATE TABLE activities (
+    name TEXT NOT NULL PRIMARY KEY
+) as activity;
+
+validClothing: SELECT cl.*, ca.norm_x, ca.norm_y FROM clothing cl
+INNER JOIN categories ca ON cl.category = ca.name
+WHERE min_temp <= :temp AND max_temp >= :temp
+AND activity == :activity;
+
+allCategories: SELECT * FROM categories;
+
+allActivities: SELECT * FROM activities;
+
+createDefaultActivities: INSERT INTO activities VALUES
+('Default'),
+('Jog');
+
+createDefaultCategories: INSERT INTO categories VALUES
+('Head', 0.5, 0.1),
+('Torso', 0.5, 0.4),
+('Legs', 0.5, 0.9);
+
+createDefaultClothing: INSERT INTO clothing (name, min_temp, max_temp, category, activity) VALUES
+('Hat', 0, 20, 'Head', 'Default'),
+('Jacket', -20, 10, 'Torso', 'Default'),
+('Shorts', 0, 20, 'Legs', 'Jog');
