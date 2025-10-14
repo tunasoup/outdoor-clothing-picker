@@ -4,6 +4,7 @@ import 'package:flutter_svg/flutter_svg.dart';
 
 import 'package:outdoor_clothing_picker/database/database.dart';
 
+/// Open a dialog where a new Activity item can be created for the [db].
 Future<void> showAddActivityDialog({
   required BuildContext context,
   required AppDb db,
@@ -36,6 +37,9 @@ Future<void> showAddActivityDialog({
   );
 }
 
+/// Open a dialog where a new Category item can be created for the [db].
+/// If [normX] and [normY] coordinates are not provided, then the user is prompted
+/// to click a spot on a figure for them.
 Future<void> showAddCategoryDialog({
   required BuildContext context,
   required AppDb db,
@@ -136,6 +140,8 @@ Widget _buildStaticCoordinateView(double normX, double normY) {
   );
 }
 
+/// Build a figure of [size] which can be tapped to obtain the widget's normalized coordinates
+/// for that point.
 Widget _buildInteractiveFigure({
   required Size size,
   required double normX,
@@ -193,6 +199,7 @@ Widget _buildInteractiveFigure({
   );
 }
 
+/// Open a dialog where a new Clothing item can be created for the [db].
 Future<void> showAddClothingDialog({
   required BuildContext context,
   required AppDb db,
@@ -308,6 +315,8 @@ Future<void> showAddRowDialog({
   }
 }
 
+/// Obtain the normalized coordinates (range [0, 1]) of a tap inside a widget.
+/// Meant to be used inside a GestureDetector, linking toa global [key] of a target widget.
 Future<Offset?> getNormalizedTapOffset({
   required GlobalKey key,
   required TapDownDetails details,
@@ -329,6 +338,8 @@ Future<Offset?> getNormalizedTapOffset({
   return normalized;
 }
 
+/// Open a context menu at the provided position with the option to create a Category item.
+/// The size of the local widget needs to be provided.
 Future<void> _showContextMenu({
   required BuildContext context,
   required Offset globalPosition,

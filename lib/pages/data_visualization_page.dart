@@ -5,19 +5,19 @@ import 'package:outdoor_clothing_picker/widgets/app_drawer.dart';
 import 'package:outdoor_clothing_picker/database/database.dart';
 import 'package:outdoor_clothing_picker/widgets/utils.dart';
 
-
-class DatabaseVisualizationPage extends StatefulWidget {
+/// The Data visualization page shows the contents of the local [db], and allows modifying it.
+class DataVisualizationPage extends StatefulWidget {
   final AppDb db;
 
-  const DatabaseVisualizationPage({super.key, required this.db});
+  const DataVisualizationPage({super.key, required this.db});
 
   @override
-  State<DatabaseVisualizationPage> createState() =>
-      _DatabaseVisualizationPageState();
+  State<DataVisualizationPage> createState() =>
+      _DataVisualizationPageState();
 }
 
-class _DatabaseVisualizationPageState
-    extends State<DatabaseVisualizationPage> {
+class _DataVisualizationPageState
+    extends State<DataVisualizationPage> {
   late Future<Map<String, List<Map<String, dynamic>>>> _tableDataFuture;
 
   @override

@@ -12,12 +12,13 @@ void main() async {
   db = AppDb();
 
 
+  // Insert default data when not in release mode if the tables are empty
   if (kDebugMode) await insertDefaultDataIfNeeded(db);
 
   runApp(const MyApp());
 }
 
-// Insert default data if tables are empty
+/// Insert default data to [db] if the tables are empty.
 Future<void> insertDefaultDataIfNeeded(AppDb db) async {
   // Check if tables are empty
   final clothingCount = await db.select(db.clothing).get().then((rows) => rows.length);
@@ -25,7 +26,6 @@ Future<void> insertDefaultDataIfNeeded(AppDb db) async {
   final activityCount = await db.select(db.activities).get().then((rows) => rows.length);
 
   if (clothingCount == 0 && categoryCount == 0 && activityCount == 0) {
-    // Insert default data
     await db.createDefaultCategories();
     await db.createDefaultActivities();
     await db.createDefaultClothing();
@@ -43,7 +43,7 @@ class MyApp extends StatelessWidget {
       home: ClothingPage(title: 'Demo Home Page', db: db),
       routes: {
         '/clothing': (context) => ClothingPage(title: 'Demo Home Page', db: db),
-        '/database': (context) => DatabaseVisualizationPage(db: db),
+        '/database': (context) => DataVisualizationPage(db: db),
       },
     );
   }

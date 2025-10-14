@@ -7,16 +7,19 @@ CREATE TABLE clothing (
     activity TEXT NOT NULL
 );
 
+-- Location of clothing, e.g., head, hand, feet
 CREATE TABLE categories (
     name TEXT NOT NULL PRIMARY KEY,
     norm_x FLOAT NOT NULL,
     norm_y FLOAT NOT NULL
 ) AS category;
 
+-- User defined activities, such as walking or skiing
 CREATE TABLE activities (
     name TEXT NOT NULL PRIMARY KEY
 ) as activity;
 
+-- Check for clothing that fit the provided temperature and activity
 validClothing: SELECT cl.*, ca.norm_x, ca.norm_y FROM clothing cl
 INNER JOIN categories ca ON cl.category = ca.name
 WHERE min_temp <= :temp AND max_temp >= :temp

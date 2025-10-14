@@ -7,7 +7,8 @@ import 'package:outdoor_clothing_picker/database/database.dart';
 import 'package:outdoor_clothing_picker/widgets/app_drawer.dart';
 import 'package:outdoor_clothing_picker/widgets/utils.dart';
 
-
+/// The clothing page visualizes which clothings from a local database would be appropriate
+/// for the current/selected weather, while allowing the user to add new items.
 class ClothingPage extends StatefulWidget {
   const ClothingPage({super.key, required this.title, required this.db});
 
@@ -45,6 +46,7 @@ class _ClothingPageState extends State<ClothingPage> {
     });
   }
 
+  /// For each category, choose clothing that are valid for the weather and activity.
   void _updateClothing() async {
     final tempText = _tempController.text;
     final activity = _selectedActivity ?? '';
@@ -55,15 +57,14 @@ class _ClothingPageState extends State<ClothingPage> {
     if (temp == null) return;
 
     List<category> categories = await widget.db.allCategories().get();
-    List<ValidClothingResult> items = await widget.db
-        .validClothing(temp, activity)
-        .get();
+    List<ValidClothingResult> items = await widget.db.validClothing(temp, activity).get();
     Map<String, ValidClothingResult?> outfit = {};
     for (var category in categories) {
-      final categoryItems = items
-          .where((item) => item.category == category.name)
-          .toList();
+      final categoryItems = items.where((item) => item.category == category.name).toList();
       if (categoryItems.isNotEmpty) {
+        // If there are multiple items, choose the first
+        // TODO: Choose the first chosen based on temperature range
+        // TODO: Store all valid items, make interactable (tap for list or arrows)
         outfit[category.name] = categoryItems.first;
       } else {
         outfit[category.name] = null;
@@ -71,9 +72,7 @@ class _ClothingPageState extends State<ClothingPage> {
     }
 
     setState(() {
-      _selectedClothing = outfit.values
-          .whereType<ValidClothingResult>()
-          .toList();
+      _selectedClothing = outfit.values.whereType<ValidClothingResult>().toList();
     });
   }
 
@@ -108,9 +107,7 @@ class _ClothingPageState extends State<ClothingPage> {
               child: DropdownButtonFormField<String>(
                 initialValue: _selectedActivity,
                 items: _activities
-                    .map(
-                      (act) => DropdownMenuItem(value: act, child: Text(act)),
-                    )
+                    .map((act) => DropdownMenuItem(value: act, child: Text(act)))
                     .toList(),
                 onChanged: (value) {
                   if (value != _selectedActivity) {
@@ -126,10 +123,7 @@ class _ClothingPageState extends State<ClothingPage> {
             Expanded(
               child: GestureDetector(
                 onTapDown: (details) async {
-                  final normalized = await getNormalizedTapOffset(
-                    key: _svgKey,
-                    details: details,
-                  );
+                  final normalized = await getNormalizedTapOffset(key: _svgKey, details: details);
                   if (normalized != null) {
                     if (kDebugMode) {
                       debugPrint('Normalized Tap: $normalized');
@@ -164,6 +158,7 @@ class _ClothingPageState extends State<ClothingPage> {
   }
 }
 
+/// Draw the selected clothing labels on top of the figure.
 class ClothingPainter extends CustomPainter {
   final List<ValidClothingResult> clothing;
 
@@ -201,26 +196,18 @@ class ClothingPainter extends CustomPainter {
   bool shouldRepaint(covariant CustomPainter oldDelegate) => true;
 }
 
+/// A button for adding new items to the [db].
 class AdderButton extends StatelessWidget {
   final VoidCallback? loadActivities;
   final VoidCallback? loadClothing;
   final AppDb db;
 
-  const AdderButton({
-    super.key,
-    this.loadActivities,
-    this.loadClothing,
-    required this.db,
-  });
+  const AdderButton({super.key, this.loadActivities, this.loadClothing, required this.db});
 
   @override
   Widget build(BuildContext context) {
     return PopupMenuButton<String>(
-      icon: Icon(
-        Icons.add,
-        size: 32,
-        color: Theme.of(context).colorScheme.secondary,
-      ),
+      icon: Icon(Icons.add, size: 32, color: Theme.of(context).colorScheme.secondary),
       onSelected: (value) async {
         switch (value) {
           case 'clothing':
@@ -238,12 +225,7 @@ class AdderButton extends StatelessWidget {
               onRowAdded: loadActivities ?? () {},
             );
           case 'categories':
-            await showAddRowDialog(
-              context: context,
-              tableName: value,
-              db: db,
-              onRowAdded: () {},
-            );
+            await showAddRowDialog(context: context, tableName: value, db: db, onRowAdded: () {});
         }
       },
       itemBuilder: (context) => [
@@ -265,10 +247,7 @@ class WeatherInput extends StatelessWidget {
     return Column(
       children: [
         Text('Enter current temperature:'),
-        TextField(
-          controller: tempController,
-          keyboardType: TextInputType.number,
-        ),
+        TextField(controller: tempController, keyboardType: TextInputType.number),
       ],
     );
   }

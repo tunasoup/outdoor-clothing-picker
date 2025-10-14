@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+/// Drawer for navigation.
 class AppDrawer extends StatelessWidget {
   const AppDrawer({super.key});
 
