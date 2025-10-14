@@ -1,7 +1,9 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 
 import 'package:outdoor_clothing_picker/database/database.dart';
+import 'package:outdoor_clothing_picker/misc/theme.dart';
 import 'package:outdoor_clothing_picker/pages/home_page.dart';
 
 late AppDb db;
@@ -13,7 +15,12 @@ void main() async {
   // Insert default data when not in release mode if the tables are empty
   if (kDebugMode) await insertDefaultDataIfNeeded(db);
 
-  runApp(const MyApp());
+  runApp(
+    ChangeNotifierProvider(
+      create: (context) => ThemeProvider(),
+      child: const MyApp(),
+    ),
+  );
 }
 
 /// Insert default data to [db] if the tables are empty.
@@ -37,7 +44,7 @@ class MyApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return MaterialApp(
       title: 'Outdoor Clothing Picker',
-      theme: ThemeData(colorScheme: ColorScheme.fromSeed(seedColor: Colors.green)),
+      theme: Provider.of<ThemeProvider>(context).themeData,
       home: HomePage(db: db),
     );
   }

@@ -137,10 +137,14 @@ class _ClothingPageState extends State<ClothingPage> {
                     key: _svgKey,
                     child: Stack(
                       children: [
-                        SvgPicture.asset('assets/images/silhouette.svg'),
+                        SvgPicture.asset('assets/images/silhouette.svg',
+                        colorFilter: ColorFilter.mode(
+                          Theme.of(context).colorScheme.onSurfaceVariant,
+                          BlendMode.srcIn,
+                        )),
                         RepaintBoundary(
                           child: CustomPaint(
-                            painter: ClothingPainter(_selectedClothing),
+                            painter: ClothingPainter(context, _selectedClothing),
                             size: Size(200, 200),
                             // TODO: dynamic calculation of size
                           ),
@@ -161,14 +165,17 @@ class _ClothingPageState extends State<ClothingPage> {
 
 /// Draw the selected clothing labels on top of the figure.
 class ClothingPainter extends CustomPainter {
+  BuildContext context;
   final List<ValidClothingResult> clothing;
 
-  ClothingPainter(this.clothing);
+  ClothingPainter(this.context, this.clothing);
 
   @override
   void paint(Canvas canvas, Size size) {
+    final color = Theme.of(context).colorScheme.onSurface;
+
     final linePaint = Paint()
-      ..color = Colors.blue
+      ..color = color
       ..strokeWidth = 2;
     if (kDebugMode) print('Painting');
 
@@ -184,7 +191,7 @@ class ClothingPainter extends CustomPainter {
       final textPainter = TextPainter(
         text: TextSpan(
           text: item.name,
-          style: TextStyle(color: Colors.blue, fontSize: 16),
+          style: TextStyle(color: color, fontSize: 16),
         ),
         textDirection: TextDirection.ltr,
       );

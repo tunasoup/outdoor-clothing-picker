@@ -172,6 +172,9 @@ Widget _buildInteractiveFigure({
               children: [
                 SvgPicture.asset(
                   'assets/images/silhouette.svg',
+                  colorFilter: ColorFilter.mode(
+                    Theme.of(context).colorScheme.onSurfaceVariant,
+                    BlendMode.srcIn),
                   width: size.width,
                   height: size.height,
                   fit: BoxFit.cover,
@@ -184,9 +187,11 @@ Widget _buildInteractiveFigure({
                       width: 10,
                       height: 10,
                       decoration: BoxDecoration(
-                        color: Colors.red,
+                        color: Theme.of(context).colorScheme.primary,
                         shape: BoxShape.circle,
-                        border: Border.all(color: Colors.white, width: 2),
+                        border: Border.all(
+                            color: Theme.of(context).colorScheme.surface,
+                            width: 2),
                       ),
                     ),
                   ),

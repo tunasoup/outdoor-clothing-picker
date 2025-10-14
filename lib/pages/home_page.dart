@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 
 import 'package:outdoor_clothing_picker/database/database.dart';
+import 'package:outdoor_clothing_picker/misc/theme.dart';
 import 'package:outdoor_clothing_picker/pages/clothing_page.dart';
 import 'package:outdoor_clothing_picker/pages/data_visualization_page.dart';
 import 'package:outdoor_clothing_picker/pages/settings_page.dart';
@@ -21,7 +23,7 @@ class _HomePageState extends State<HomePage> {
   bool wideScreen = false;
 
   late final List<Widget> pages = [
-    ClothingPage(title: 'Clothing', db: widget.db), // landing page
+    ClothingPage(title: 'Clothing', db: widget.db), // Landing page
     DataVisualizationPage(db: widget.db),
     const SettingsPage(),
   ];
@@ -45,6 +47,14 @@ class _HomePageState extends State<HomePage> {
       appBar: AppBar(
         title: const Text('Outdoor Clothing Picker'),
         backgroundColor: Theme.of(context).colorScheme.surfaceContainerHigh,
+        actions: <Widget>[
+          IconButton(
+            icon: const Icon(Icons.brightness_6),
+            onPressed: () {
+              Provider.of<ThemeProvider>(context, listen: false).toggleTheme();
+            },
+          ),
+        ],
       ),
       body: wideScreen
           ? Row(
