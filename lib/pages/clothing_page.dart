@@ -4,7 +4,6 @@ import 'package:flutter_svg/flutter_svg.dart';
 import 'package:universal_html/html.dart' as html;
 
 import 'package:outdoor_clothing_picker/database/database.dart';
-import 'package:outdoor_clothing_picker/widgets/app_drawer.dart';
 import 'package:outdoor_clothing_picker/widgets/utils.dart';
 
 /// The clothing page visualizes which clothings from a local database would be appropriate
@@ -27,6 +26,8 @@ class _ClothingPageState extends State<ClothingPage> {
   List<String> _activities = [];
   List<ValidClothingResult> _selectedClothing = [];
   final GlobalKey _svgKey = GlobalKey();
+  int selectedIndex = 0;
+  bool useRail = false;
 
   @override
   void initState() {
@@ -79,8 +80,8 @@ class _ClothingPageState extends State<ClothingPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: Text(widget.title)),
-      drawer: const AppDrawer(),
+      // appBar: AppBar(title: Text(widget.title)),
+      // endDrawer: const AppDrawer(),
       floatingActionButton: AdderButton(
         loadActivities: _loadActivities,
         loadClothing: _updateClothing,

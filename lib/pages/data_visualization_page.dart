@@ -1,7 +1,6 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 
-import 'package:outdoor_clothing_picker/widgets/app_drawer.dart';
 import 'package:outdoor_clothing_picker/database/database.dart';
 import 'package:outdoor_clothing_picker/widgets/utils.dart';
 
@@ -67,8 +66,6 @@ class _DataVisualizationPageState
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Database Viewer')),
-      drawer: const AppDrawer(),
       body: FutureBuilder<Map<String, List<Map<String, dynamic>>>>(
         future: _tableDataFuture,
         builder: (context, snapshot) {
