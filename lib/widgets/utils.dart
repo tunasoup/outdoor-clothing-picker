@@ -2,8 +2,10 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_svg/flutter_svg.dart';
+import 'package:provider/provider.dart';
 
 import 'package:outdoor_clothing_picker/database/database.dart';
+import 'package:outdoor_clothing_picker/misc/activity_notifier.dart';
 
 /// Open a dialog where a new Activity item can be created for the [db].
 Future<bool> showAddActivityDialog({
@@ -14,9 +16,7 @@ Future<bool> showAddActivityDialog({
   final formKey = GlobalKey<FormState>();
   String? activity;
 
-  final activities = (await db.allActivities().get())
-      .map((a) => a.name.toLowerCase())
-      .toList();
+  final activities = (await db.allActivities().get()).map((a) => a.name.toLowerCase()).toList();
 
   final success = await showDialog(
     context: context,
@@ -48,9 +48,11 @@ Future<bool> showAddActivityDialog({
                   onPressed: () async {
                     if (formKey.currentState?.validate() ?? false) {
                       formKey.currentState?.save();
-                      await db.into(db.activities).insert(
-                        ActivitiesCompanion.insert(name: activity!),
-                      );
+                      // TODO: check for exceptions, but also transition away from view-only
+                      await db
+                          .into(db.activities)
+                          .insert(ActivitiesCompanion.insert(name: activity!));
+                      Provider.of<ActivityItemsProvider>(context, listen: false).refresh();
                       onRowAdded();
                       Navigator.pop(context, true);
                     }
@@ -58,7 +60,7 @@ Future<bool> showAddActivityDialog({
                   child: Text('Save'),
                 ),
               ],
-            )
+            ),
           ],
         ),
       ),
@@ -66,7 +68,6 @@ Future<bool> showAddActivityDialog({
   );
   return success ?? false;
 }
-
 
 /// Open a dialog where a new Category item can be created for the [db].
 /// If [normX] and [normY] coordinates are not provided, then the user is prompted
@@ -87,9 +88,7 @@ Future<bool> showAddCategoryDialog({
   double localNormX = normX ?? 0.0;
   double localNormY = normY ?? 0.0;
 
-  final categories = (await db.allCategories().get())
-      .map((a) => a.name.toLowerCase())
-      .toList();
+  final categories = (await db.allCategories().get()).map((a) => a.name.toLowerCase()).toList();
 
   final success = await showDialog(
     context: context,
@@ -121,7 +120,10 @@ Future<bool> showAddCategoryDialog({
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  TextButton(onPressed: () => Navigator.pop(context, false), child: Text('Cancel')),
+                  TextButton(
+                    onPressed: () => Navigator.pop(context, false),
+                    child: Text('Cancel'),
+                  ),
                   ElevatedButton(
                     onPressed: () async {
                       final formValid = formKey.currentState?.validate() ?? false;
@@ -136,13 +138,15 @@ Future<bool> showAddCategoryDialog({
 
                       if (formValid && coordsValid) {
                         formKey.currentState?.save();
-                        await db.into(db.categories).insert(
-                          CategoriesCompanion.insert(
-                            name: category!,
-                            normX: normX ?? localNormX,
-                            normY: normY ?? localNormY,
-                          ),
-                        );
+                        await db
+                            .into(db.categories)
+                            .insert(
+                              CategoriesCompanion.insert(
+                                name: category!,
+                                normX: normX ?? localNormX,
+                                normY: normY ?? localNormY,
+                              ),
+                            );
                         onRowAdded();
                         Navigator.pop(context, true);
                       }
@@ -302,7 +306,7 @@ Future<bool> showAddClothingDialog({
   // TODO: disable or add a warning if there are no categories or activities
   final success = await showDialog(
     context: context,
-    builder: (context)  => AlertDialog(
+    builder: (context) => AlertDialog(
       title: Text('Add Clothing Item'),
       content: SingleChildScrollView(
         child: Form(
@@ -358,7 +362,10 @@ Future<bool> showAddClothingDialog({
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  TextButton(onPressed: () => Navigator.pop(context, false), child: Text('Cancel')),
+                  TextButton(
+                    onPressed: () => Navigator.pop(context, false),
+                    child: Text('Cancel'),
+                  ),
                   ElevatedButton(
                     onPressed: () async {
                       final form = formKey.currentState;
@@ -398,7 +405,6 @@ Future<bool> showAddRowDialog({
   required AppDb db,
   required VoidCallback onRowAdded,
 }) async {
-
   switch (tableName) {
     case 'clothing':
       return await showAddClothingDialog(context: context, db: db, onRowAdded: onRowAdded);

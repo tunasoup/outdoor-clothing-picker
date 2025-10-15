@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 import 'package:outdoor_clothing_picker/database/database.dart';
+import 'package:outdoor_clothing_picker/misc/activity_notifier.dart';
 import 'package:outdoor_clothing_picker/misc/theme.dart';
 import 'package:outdoor_clothing_picker/pages/home_page.dart';
 
@@ -16,8 +17,11 @@ void main() async {
   if (kDebugMode) await insertDefaultDataIfNeeded(db);
 
   runApp(
-    ChangeNotifierProvider(
-      create: (context) => ThemeProvider(),
+    MultiProvider(
+      providers: [
+        ChangeNotifierProvider(create: (context) => ThemeProvider()),
+        ChangeNotifierProvider(create: (context) => ActivityItemsProvider(db)),
+      ],
       child: const MyApp(),
     ),
   );

@@ -1,9 +1,11 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
+import 'package:provider/provider.dart';
 import 'package:universal_html/html.dart' as html;
 
 import 'package:outdoor_clothing_picker/database/database.dart';
+import 'package:outdoor_clothing_picker/misc/activity_notifier.dart';
 import 'package:outdoor_clothing_picker/widgets/utils.dart';
 
 /// The clothing page visualizes which clothings from a local database would be appropriate
@@ -23,7 +25,6 @@ class _ClothingPageState extends State<ClothingPage> {
   late final AppDb db;
   final TextEditingController _tempController = TextEditingController();
   String? _selectedActivity;
-  List<String> _activities = [];
   List<ValidClothingResult> _selectedClothing = [];
   final GlobalKey _svgKey = GlobalKey();
   int selectedIndex = 0;
@@ -32,18 +33,12 @@ class _ClothingPageState extends State<ClothingPage> {
   @override
   void initState() {
     super.initState();
+    // Prevent right-click context menu on web
     html.document.onContextMenu.listen((event) => event.preventDefault());
     db = widget.db;
-    _loadActivities();
-  }
-
-  Future<void> _loadActivities() async {
-    final acts = await db.allActivities().get();
-    setState(() {
-      _activities = acts.map((a) => a.name).toList();
-      if (_activities.isNotEmpty && _selectedActivity == null) {
-        _selectedActivity = _activities.first;
-      }
+    Future.microtask(() async {
+      final provider = context.read<ActivityItemsProvider>();
+      _selectedActivity = await provider.getFirstItem();
     });
   }
 
@@ -81,11 +76,7 @@ class _ClothingPageState extends State<ClothingPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      floatingActionButton: AdderButton(
-        loadActivities: _loadActivities,
-        loadClothing: _updateClothing,
-        db: db,
-      ),
+      floatingActionButton: AdderButton(loadClothing: _updateClothing, db: db),
       body: Center(
         child: Column(
           spacing: 20,
@@ -104,11 +95,8 @@ class _ClothingPageState extends State<ClothingPage> {
             Text('Select activity:'),
             SizedBox(
               width: 200,
-              child: DropdownButtonFormField<String>(
+              child: ActivityDropdown(
                 initialValue: _selectedActivity,
-                items: _activities
-                    .map((act) => DropdownMenuItem(value: act, child: Text(act)))
-                    .toList(),
                 onChanged: (value) {
                   if (value != _selectedActivity) {
                     setState(() {
@@ -117,7 +105,6 @@ class _ClothingPageState extends State<ClothingPage> {
                     _updateClothing();
                   }
                 },
-                decoration: InputDecoration(hintText: 'Activity'),
               ),
             ),
             Expanded(
@@ -136,11 +123,13 @@ class _ClothingPageState extends State<ClothingPage> {
                     key: _svgKey,
                     child: Stack(
                       children: [
-                        SvgPicture.asset('assets/images/silhouette.svg',
-                        colorFilter: ColorFilter.mode(
-                          Theme.of(context).colorScheme.onSurfaceVariant,
-                          BlendMode.srcIn,
-                        )),
+                        SvgPicture.asset(
+                          'assets/images/silhouette.svg',
+                          colorFilter: ColorFilter.mode(
+                            Theme.of(context).colorScheme.onSurfaceVariant,
+                            BlendMode.srcIn,
+                          ),
+                        ),
                         RepaintBoundary(
                           child: CustomPaint(
                             painter: ClothingPainter(context, _selectedClothing),
@@ -205,11 +194,10 @@ class ClothingPainter extends CustomPainter {
 
 /// A button for adding new items to the [db].
 class AdderButton extends StatelessWidget {
-  final VoidCallback? loadActivities;
   final VoidCallback? loadClothing;
   final AppDb db;
 
-  const AdderButton({super.key, this.loadActivities, this.loadClothing, required this.db});
+  const AdderButton({super.key, this.loadClothing, required this.db});
 
   @override
   Widget build(BuildContext context) {
@@ -232,22 +220,24 @@ class AdderButton extends StatelessWidget {
               context: context,
               tableName: value,
               db: db,
-              onRowAdded: loadActivities ?? () {},
+              onRowAdded: () {},
             );
             break;
           case 'categories':
-            success = await showAddRowDialog(context: context, tableName: value, db: db, onRowAdded: () {});
+            success = await showAddRowDialog(
+              context: context,
+              tableName: value,
+              db: db,
+              onRowAdded: () {},
+            );
             break;
         }
 
         if (success) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text('Added $value successfully'),
-            ),
-          );
+          ScaffoldMessenger.of(
+            context,
+          ).showSnackBar(SnackBar(content: Text('Added $value successfully')));
         }
-
       },
       itemBuilder: (context) => [
         PopupMenuItem(value: 'clothing', child: Text('Add Clothing Item')),
@@ -270,6 +260,29 @@ class WeatherInput extends StatelessWidget {
         Text('Enter current temperature:'),
         TextField(controller: tempController, keyboardType: TextInputType.number),
       ],
+    );
+  }
+}
+
+class ActivityDropdown extends StatelessWidget {
+  final String? initialValue;
+  final void Function(String?) onChanged;
+
+  const ActivityDropdown({super.key, this.initialValue, required this.onChanged});
+
+  @override
+  Widget build(BuildContext context) {
+    return Consumer<ActivityItemsProvider>(
+      builder: (context, provider, _) {
+        return DropdownButtonFormField<String>(
+          initialValue: initialValue,
+          items: provider.items
+              .map((item) => DropdownMenuItem(value: item, child: Text(item)))
+              .toList(),
+          onChanged: onChanged,
+          decoration: InputDecoration(hintText: 'Activity'),
+        );
+      },
     );
   }
 }
