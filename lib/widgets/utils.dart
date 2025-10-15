@@ -6,129 +6,197 @@ import 'package:flutter_svg/flutter_svg.dart';
 import 'package:outdoor_clothing_picker/database/database.dart';
 
 /// Open a dialog where a new Activity item can be created for the [db].
-Future<void> showAddActivityDialog({
+Future<bool> showAddActivityDialog({
   required BuildContext context,
   required AppDb db,
   required VoidCallback onRowAdded,
 }) async {
-  final controller = TextEditingController();
-  await showDialog(
+  final formKey = GlobalKey<FormState>();
+  String? activity;
+
+  final activities = (await db.allActivities().get())
+      .map((a) => a.name.toLowerCase())
+      .toList();
+
+  final success = await showDialog(
     context: context,
     builder: (context) => AlertDialog(
       title: Text('Add Activity'),
-      content: TextField(
-        controller: controller,
-        decoration: InputDecoration(labelText: 'Activity Name'),
-      ),
-      actions: [
-        TextButton(onPressed: () => Navigator.pop(context), child: Text('Cancel')),
-        ElevatedButton(
-          onPressed: () async {
-            final name = controller.text.trim();
-            if (name.isNotEmpty) {
-              await db.into(db.activities).insert(ActivitiesCompanion.insert(name: name));
-              onRowAdded();
-              Navigator.pop(context);
-            }
-          },
-          child: Text('Save'),
+      content: Form(
+        key: formKey,
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            TextFormField(
+              decoration: InputDecoration(labelText: 'Activity Name'),
+              validator: (value) {
+                if (value == null || value.isEmpty) return 'Enter a value';
+                if (activities.contains(value.trim().toLowerCase())) {
+                  return 'This activity already exists';
+                }
+                return null;
+              },
+              onSaved: (value) => activity = value!.trim(),
+              autofocus: true,
+            ),
+            Padding(padding: EdgeInsets.all(16.0)),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                TextButton(onPressed: () => Navigator.pop(context, false), child: Text('Cancel')),
+                ElevatedButton(
+                  onPressed: () async {
+                    if (formKey.currentState?.validate() ?? false) {
+                      formKey.currentState?.save();
+                      await db.into(db.activities).insert(
+                        ActivitiesCompanion.insert(name: activity!),
+                      );
+                      onRowAdded();
+                      Navigator.pop(context, true);
+                    }
+                  },
+                  child: Text('Save'),
+                ),
+              ],
+            )
+          ],
         ),
-      ],
+      ),
     ),
   );
+  return success ?? false;
 }
+
 
 /// Open a dialog where a new Category item can be created for the [db].
 /// If [normX] and [normY] coordinates are not provided, then the user is prompted
 /// to click a spot on a figure for them.
-Future<void> showAddCategoryDialog({
+Future<bool> showAddCategoryDialog({
   required BuildContext context,
   required AppDb db,
   required VoidCallback onRowAdded,
   double? normX,
   double? normY,
 }) async {
-  final controller = TextEditingController();
+  final formKey = GlobalKey<FormState>();
+  String? category;
+  bool coordinatesValid = true;
   final Size size = Size(100, 200);
   // TODO: accurate 1-to-1 matching with other figure
 
   double localNormX = normX ?? 0.0;
   double localNormY = normY ?? 0.0;
 
-  await showDialog(
+  final categories = (await db.allCategories().get())
+      .map((a) => a.name.toLowerCase())
+      .toList();
+
+  final success = await showDialog(
     context: context,
     builder: (context) => StatefulBuilder(
       builder: (context, setState) => AlertDialog(
         title: Text('Add Category'),
-        content: _buildCategoryDialogContent(
-          context: context,
-          controller: controller,
-          size: size,
-          normX: normX,
-          normY: normY,
-          localNormX: localNormX,
-          localNormY: localNormY,
-          onPositionSelected: (newX, newY) {
-            localNormX = newX;
-            localNormY = newY;
-            setState(() {});
-          },
-        ),
-        actions: [
-          TextButton(onPressed: () => Navigator.pop(context), child: Text('Cancel')),
-          ElevatedButton(
-            onPressed: () async {
-              final name = controller.text.trim();
-              if (name.isNotEmpty &&
-                  (normX != null || localNormX != 0.0) &&
-                  (normY != null || localNormY != 0.0)) {
-                await db
-                    .into(db.categories)
-                    .insert(
-                      CategoriesCompanion.insert(
-                        name: name,
-                        normX: normX ?? localNormX,
-                        normY: normY ?? localNormY,
-                      ),
-                    );
-                onRowAdded();
-                Navigator.pop(context);
-              }
-            },
-            child: Text('Save'),
+        content: Form(
+          key: formKey,
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              _buildCategoryDialogContent(
+                context: context,
+                categories: categories,
+                onSaved: (value) => category = value!.trim(),
+                size: size,
+                normX: normX,
+                normY: normY,
+                localNormX: localNormX,
+                localNormY: localNormY,
+                onPositionSelected: (newX, newY) {
+                  localNormX = newX;
+                  localNormY = newY;
+                  setState(() {});
+                },
+                coordinatesValid: coordinatesValid,
+              ),
+              Padding(padding: EdgeInsets.all(16.0)),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  TextButton(onPressed: () => Navigator.pop(context, false), child: Text('Cancel')),
+                  ElevatedButton(
+                    onPressed: () async {
+                      final formValid = formKey.currentState?.validate() ?? false;
+
+                      final xValid = normX != null || localNormX != 0.0;
+                      final yValid = normY != null || localNormY != 0.0;
+                      final coordsValid = xValid && yValid;
+
+                      setState(() {
+                        coordinatesValid = coordsValid;
+                      });
+
+                      if (formValid && coordsValid) {
+                        formKey.currentState?.save();
+                        await db.into(db.categories).insert(
+                          CategoriesCompanion.insert(
+                            name: category!,
+                            normX: normX ?? localNormX,
+                            normY: normY ?? localNormY,
+                          ),
+                        );
+                        onRowAdded();
+                        Navigator.pop(context, true);
+                      }
+                    },
+                    child: Text('Save'),
+                  ),
+                ],
+              ),
+            ],
           ),
-        ],
+        ),
       ),
     ),
   );
+  return success ?? false;
 }
 
 Widget _buildCategoryDialogContent({
   required BuildContext context,
-  required TextEditingController controller,
+  required List<String> categories,
+  required String? Function(String?)? onSaved,
   required Size size,
   required double? normX,
   required double? normY,
   required double localNormX,
   required double localNormY,
   required void Function(double, double) onPositionSelected,
+  required bool coordinatesValid,
 }) {
   return Column(
     mainAxisSize: MainAxisSize.min,
     children: [
-      TextField(
-        controller: controller,
+      TextFormField(
         decoration: InputDecoration(labelText: 'Category Name'),
+        validator: (value) {
+          if (value == null || value.isEmpty) return 'Enter a value';
+          if (categories.contains(value.trim().toLowerCase())) {
+            return 'This activity already exists';
+          }
+          return null;
+        },
+        onSaved: onSaved,
       ),
       SizedBox(height: 16),
       if (normX != null && normY != null)
         _buildStaticCoordinateView(normX, normY)
       else
         _buildInteractiveFigure(
+          context: context,
           size: size,
           normX: localNormX,
           normY: localNormY,
           onPositionSelected: onPositionSelected,
+          coordinatesValid: coordinatesValid,
         ),
     ],
   );
@@ -144,10 +212,12 @@ Widget _buildStaticCoordinateView(double normX, double normY) {
 /// Build a figure of [size] which can be tapped to obtain the widget's normalized coordinates
 /// for that point.
 Widget _buildInteractiveFigure({
+  required BuildContext context,
   required Size size,
   required double normX,
   required double normY,
   required void Function(double, double) onPositionSelected,
+  required bool coordinatesValid,
 }) {
   return Column(
     children: [
@@ -155,6 +225,11 @@ Widget _buildInteractiveFigure({
         'Click on the figure to select coordinates,\n'
         'x=${normX.toStringAsFixed(2)}, y=${normY.toStringAsFixed(2)}',
         textAlign: TextAlign.center,
+        style: TextStyle(
+          color: coordinatesValid
+              ? Theme.of(context).textTheme.bodyMedium?.color
+              : Theme.of(context).colorScheme.error,
+        ),
       ),
       SizedBox(height: 8),
       Builder(
@@ -205,7 +280,7 @@ Widget _buildInteractiveFigure({
 }
 
 /// Open a dialog where a new Clothing item can be created for the [db].
-Future<void> showAddClothingDialog({
+Future<bool> showAddClothingDialog({
   required BuildContext context,
   required AppDb db,
   required VoidCallback onRowAdded,
@@ -225,118 +300,114 @@ Future<void> showAddClothingDialog({
   final activities = (await db.allActivities().get()).map((a) => a.name).toList();
 
   // TODO: disable or add a warning if there are no categories or activities
-  await showDialog(
+  final success = await showDialog(
     context: context,
-    builder: (context) {
-      return StatefulBuilder(
-        builder: (context, setState) => AlertDialog(
-          title: Text('Add Clothing Item'),
-          content: SingleChildScrollView(
-            child: Form(
-              key: formKey,
-              child: Column(
+    builder: (context)  => AlertDialog(
+      title: Text('Add Clothing Item'),
+      content: SingleChildScrollView(
+        child: Form(
+          key: formKey,
+          child: Column(
+            children: [
+              TextFormField(
+                decoration: InputDecoration(labelText: 'Name'),
+                validator: required,
+                onSaved: (value) => name = value!,
+              ),
+              TextFormField(
+                decoration: InputDecoration(labelText: 'Min Temperature'),
+                validator: required,
+                onChanged: (value) => minTempText = value,
+                onSaved: (value) => minTemp = int.parse(value!),
+                keyboardType: TextInputType.number,
+                inputFormatters: [FilteringTextInputFormatter.allow(RegExp(r'^-?[0-9]*'))],
+              ),
+              TextFormField(
+                decoration: InputDecoration(labelText: 'Max Temperature'),
+                validator: (value) {
+                  if (value == null || value.isEmpty) return 'Enter a value';
+                  final min = int.tryParse(minTempText ?? '');
+                  final max = int.tryParse(value ?? '');
+                  if (max == null) return 'Invalid number';
+                  if (min != null && max < min) return 'Must be ≥ Min Temp ($min)';
+                  return null;
+                },
+                onSaved: (value) => maxTemp = int.parse(value!),
+                keyboardType: TextInputType.number,
+                inputFormatters: [FilteringTextInputFormatter.allow(RegExp(r'^-?[0-9]*'))],
+              ),
+              DropdownButtonFormField<String>(
+                validator: required,
+                items: categories
+                    .map((cat) => DropdownMenuItem(value: cat, child: Text(cat)))
+                    .toList(),
+                onSaved: (value) => category = value!,
+                decoration: InputDecoration(labelText: 'Category'),
+                onChanged: (value) {},
+              ),
+              DropdownButtonFormField<String>(
+                validator: required,
+                items: activities
+                    .map((cat) => DropdownMenuItem(value: cat, child: Text(cat)))
+                    .toList(),
+                onSaved: (value) => activity = value!,
+                decoration: InputDecoration(labelText: 'Activity'),
+                onChanged: (value) {},
+              ),
+              Padding(padding: EdgeInsets.all(16.0)),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  TextFormField(
-                    decoration: InputDecoration(labelText: 'Name'),
-                    validator: required,
-                    onSaved: (value) => name = value!,
-                  ),
-                  TextFormField(
-                    decoration: InputDecoration(labelText: 'Min Temperature'),
-                    validator: required,
-                    onChanged: (value) => minTempText = value,
-                    onSaved: (value) => minTemp = int.parse(value!),
-                    keyboardType: TextInputType.number,
-                    inputFormatters: [FilteringTextInputFormatter.allow(RegExp(r'^-?[0-9]*'))],
-                  ),
-                  TextFormField(
-                    decoration: InputDecoration(labelText: 'Max Temperature'),
-                    validator: (value) {
-                      if (value == null || value.isEmpty) return 'Enter a value';
-                      final min = int.tryParse(minTempText ?? '');
-                      final max = int.tryParse(value ?? '');
-                      if (max == null) return 'Invalid number';
-                      if (min != null && max < min) return 'Must be ≥ Min Temp ($min)';
-                      return null;
+                  TextButton(onPressed: () => Navigator.pop(context, false), child: Text('Cancel')),
+                  ElevatedButton(
+                    onPressed: () async {
+                      final form = formKey.currentState;
+                      if (form!.validate()) {
+                        form.save();
+                        await db
+                            .into(db.clothing)
+                            .insert(
+                              ClothingCompanion.insert(
+                                name: name!,
+                                minTemp: minTemp!,
+                                maxTemp: maxTemp!,
+                                category: category!,
+                                activity: activity!,
+                              ),
+                            );
+                        onRowAdded();
+                        Navigator.pop(context, true);
+                      }
                     },
-                    onSaved: (value) => maxTemp = int.parse(value!),
-                    keyboardType: TextInputType.number,
-                    inputFormatters: [FilteringTextInputFormatter.allow(RegExp(r'^-?[0-9]*'))],
-                  ),
-                  DropdownButtonFormField<String>(
-                    validator: required,
-                    items: categories
-                        .map((cat) => DropdownMenuItem(value: cat, child: Text(cat)))
-                        .toList(),
-                    onSaved: (value) => category = value!,
-                    decoration: InputDecoration(labelText: 'Category'),
-                    onChanged: (value) {},
-                  ),
-                  DropdownButtonFormField<String>(
-                    validator: required,
-                    items: activities
-                        .map((cat) => DropdownMenuItem(value: cat, child: Text(cat)))
-                        .toList(),
-                    onSaved: (value) => activity = value!,
-                    decoration: InputDecoration(labelText: 'Activity'),
-                    onChanged: (value) {},
-                  ),
-                  Padding(padding: EdgeInsets.all(16.0)),
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      TextButton(onPressed: () => Navigator.pop(context), child: Text('Cancel')),
-                      ElevatedButton(
-                        onPressed: () async {
-                          final form = formKey.currentState;
-                          if (form!.validate()) {
-                            form.save();
-                            await db
-                                .into(db.clothing)
-                                .insert(
-                                  ClothingCompanion.insert(
-                                    name: name!,
-                                    minTemp: minTemp!,
-                                    maxTemp: maxTemp!,
-                                    category: category!,
-                                    activity: activity!,
-                                  ),
-                                );
-                            onRowAdded();
-                            ScaffoldMessenger.of(
-                              context,
-                            ).showSnackBar(const SnackBar(content: Text('Clothing added')));
-                            Navigator.pop(context);
-                          }
-                        },
-                        child: const Text('Save'),
-                      ),
-                    ],
+                    child: const Text('Save'),
                   ),
                 ],
               ),
-            ),
+            ],
           ),
         ),
-      );
-    },
+      ),
+    ),
   );
+  return success ?? false;
 }
 
-Future<void> showAddRowDialog({
+Future<bool> showAddRowDialog({
   required BuildContext context,
   required String tableName,
   required AppDb db,
   required VoidCallback onRowAdded,
 }) async {
+
   switch (tableName) {
     case 'clothing':
-      await showAddClothingDialog(context: context, db: db, onRowAdded: onRowAdded);
+      return await showAddClothingDialog(context: context, db: db, onRowAdded: onRowAdded);
     case 'activities':
-      await showAddActivityDialog(context: context, db: db, onRowAdded: onRowAdded);
+      return await showAddActivityDialog(context: context, db: db, onRowAdded: onRowAdded);
     case 'categories':
-      await showAddCategoryDialog(context: context, db: db, onRowAdded: onRowAdded);
+      return await showAddCategoryDialog(context: context, db: db, onRowAdded: onRowAdded);
   }
+  return false;
 }
 
 /// Obtain the normalized coordinates (range [0, 1]) of a tap inside a widget.

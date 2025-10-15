@@ -77,11 +77,10 @@ class _ClothingPageState extends State<ClothingPage> {
     });
   }
 
+  // TODO: check if stateful builder useful here
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      // appBar: AppBar(title: Text(widget.title)),
-      // endDrawer: const AppDrawer(),
       floatingActionButton: AdderButton(
         loadActivities: _loadActivities,
         loadClothing: _updateClothing,
@@ -217,24 +216,38 @@ class AdderButton extends StatelessWidget {
     return PopupMenuButton<String>(
       icon: Icon(Icons.add, size: 32, color: Theme.of(context).colorScheme.secondary),
       onSelected: (value) async {
+        bool success = false;
+
         switch (value) {
           case 'clothing':
-            await showAddRowDialog(
+            success = await showAddRowDialog(
               context: context,
               tableName: value,
               db: db,
               onRowAdded: loadClothing ?? () {},
             );
+            break;
           case 'activities':
-            await showAddRowDialog(
+            success = await showAddRowDialog(
               context: context,
               tableName: value,
               db: db,
               onRowAdded: loadActivities ?? () {},
             );
+            break;
           case 'categories':
-            await showAddRowDialog(context: context, tableName: value, db: db, onRowAdded: () {});
+            success = await showAddRowDialog(context: context, tableName: value, db: db, onRowAdded: () {});
+            break;
         }
+
+        if (success) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('Added $value successfully'),
+            ),
+          );
+        }
+
       },
       itemBuilder: (context) => [
         PopupMenuItem(value: 'clothing', child: Text('Add Clothing Item')),
