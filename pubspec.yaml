@@ -31,27 +31,26 @@ dependencies:
   flutter:
     sdk: flutter
 
-  cupertino_icons: ^1.0.8
-  drift: ^2.28.2
-  drift_flutter: ^0.2.7
-  path_provider: ^2.1.5
-  universal_html: ^2.2.4
-  flutter_svg: ^2.2.1
-  dropdown_button2: ^2.3.9
-  provider: ^6.1.5+1
+  drift:
+  drift_flutter:
+  path_provider:
+  universal_html:
+  flutter_svg:
+  dropdown_button2:
+  provider:
 
 dev_dependencies:
   flutter_test:
     sdk: flutter
-  drift_dev: ^2.28.3
-  build_runner: ^2.7.1
+  drift_dev:
+  build_runner:
 
   # The "flutter_lints" package below contains a set of recommended lints to
   # encourage good coding practices. The lint set provided by the package is
   # activated in the `analysis_options.yaml` file located at the root of your
   # package. See that file for information about deactivating specific lint
   # rules and activating additional ones.
-  flutter_lints: ^5.0.0
+  flutter_lints:
 
 # For information on the generic Dart part of this file, see the
 # following page: https://dart.dev/tools/pub/pubspec
