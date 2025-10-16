@@ -5,6 +5,9 @@ import 'package:provider/provider.dart';
 import 'package:outdoor_clothing_picker/database/database.dart';
 import 'package:outdoor_clothing_picker/misc/activity_notifier.dart';
 import 'package:outdoor_clothing_picker/misc/theme.dart';
+import 'package:outdoor_clothing_picker/misc/clothing_viewmodel.dart';
+import 'package:outdoor_clothing_picker/misc/weather_service.dart';
+import 'package:outdoor_clothing_picker/misc/weather_viewmodel.dart';
 import 'package:outdoor_clothing_picker/pages/home_page.dart';
 
 late AppDb db;
@@ -12,6 +15,8 @@ late AppDb db;
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   db = AppDb();
+  // TODO: decide where to place and read api keys
+  final String _apiKey = 'api key here';
 
   // Insert default data when not in release mode if the tables are empty
   if (kDebugMode) await insertDefaultDataIfNeeded(db);
@@ -21,6 +26,14 @@ void main() async {
       providers: [
         ChangeNotifierProvider(create: (context) => ThemeProvider()),
         ChangeNotifierProvider(create: (context) => ActivityItemsProvider(db)),
+        ChangeNotifierProvider(create: (_) => WeatherViewModel(WeatherService(_apiKey))),
+        ChangeNotifierProxyProvider<WeatherViewModel, ClothingViewModel>(
+          create: (_) => ClothingViewModel(db),
+          update: (_, weatherVM, clothingVM) {
+            clothingVM!.setTemperature(temp: weatherVM.temperature);
+            return clothingVM;
+          },
+        ),
       ],
       child: const MyApp(),
     ),
@@ -50,6 +63,7 @@ class MyApp extends StatelessWidget {
       title: 'Outdoor Clothing Picker',
       theme: Provider.of<ThemeProvider>(context).themeData,
       home: HomePage(db: db),
+      debugShowCheckedModeBanner: false,
     );
   }
 }

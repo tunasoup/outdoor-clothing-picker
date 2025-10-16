@@ -6,7 +6,9 @@ import 'package:universal_html/html.dart' as html;
 
 import 'package:outdoor_clothing_picker/database/database.dart';
 import 'package:outdoor_clothing_picker/misc/activity_notifier.dart';
+import 'package:outdoor_clothing_picker/misc/clothing_viewmodel.dart';
 import 'package:outdoor_clothing_picker/widgets/utils.dart';
+import 'package:outdoor_clothing_picker/widgets/weather_widget.dart';
 
 /// The clothing page visualizes which clothings from a local database would be appropriate
 /// for the current/selected weather, while allowing the user to add new items.
@@ -25,10 +27,10 @@ class _ClothingPageState extends State<ClothingPage> {
   late final AppDb db;
   final TextEditingController _tempController = TextEditingController();
   String? _selectedActivity;
-  List<ValidClothingResult> _selectedClothing = [];
   final GlobalKey _svgKey = GlobalKey();
   int selectedIndex = 0;
   bool useRail = false;
+
 
   @override
   void initState() {
@@ -67,86 +69,38 @@ class _ClothingPageState extends State<ClothingPage> {
       }
     }
 
-    setState(() {
-      _selectedClothing = outfit.values.whereType<ValidClothingResult>().toList();
-    });
+    setState(() {});
   }
 
-  // TODO: check if stateful builder useful here
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      floatingActionButton: AdderButton(loadClothing: _updateClothing, db: db),
-      body: Center(
-        child: Column(
-          spacing: 20,
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: <Widget>[
-            Text('Enter current temperature:'),
-            SizedBox(
-              width: 100,
-              child: TextField(
-                controller: _tempController,
-                keyboardType: TextInputType.number,
-                decoration: InputDecoration(hintText: 'Temperature'),
-                onChanged: (_) => _updateClothing(),
-              ),
-            ),
-            Text('Select activity:'),
-            SizedBox(
-              width: 200,
-              child: ActivityDropdown(
-                initialValue: _selectedActivity,
-                onChanged: (value) {
-                  if (value != _selectedActivity) {
-                    setState(() {
-                      _selectedActivity = value;
-                    });
-                    _updateClothing();
-                  }
-                },
-              ),
-            ),
-            Expanded(
-              child: GestureDetector(
-                onTapDown: (details) async {
-                  final normalized = await getNormalizedTapOffset(key: _svgKey, details: details);
-                  if (normalized != null) {
-                    if (kDebugMode) {
-                      debugPrint('Normalized Tap: $normalized');
-                    }
-                  }
-                },
-                child: FittedBox(
-                  fit: BoxFit.contain,
-                  child: Container(
-                    key: _svgKey,
-                    child: Stack(
-                      children: [
-                        SvgPicture.asset(
-                          'assets/images/silhouette.svg',
-                          colorFilter: ColorFilter.mode(
-                            Theme.of(context).colorScheme.onSurfaceVariant,
-                            BlendMode.srcIn,
-                          ),
-                        ),
-                        RepaintBoundary(
-                          child: CustomPaint(
-                            painter: ClothingPainter(context, _selectedClothing),
-                            size: Size(200, 200),
-                            // TODO: dynamic calculation of size
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
+      return Scaffold(
+        floatingActionButton: AdderButton(loadClothing: _updateClothing, db: db),
+        body: Padding(
+          padding: const EdgeInsets.all(16.0),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              const WeatherWidget(),
+              const SizedBox(height: 32),
+              const TemperatureInfoWidget(),
+              const Text('Select activity:'),
+              SizedBox(
+                width: 200,
+                child: ActivityDropdown(
+                  initialValue: _selectedActivity,
+                  onChanged: (value) => context.read<ClothingViewModel>().setActivity(value),
                 ),
               ),
-            ),
-            SizedBox(height: 0), // Column already has child padding
-          ],
+              Expanded(
+                child: TappableSvgWithOverlay(
+                  svgKey: _svgKey,
+                  getNormalizedTapOffset: getNormalizedTapOffset,
+                ),
+              )
+            ],
+          ),
         ),
-      ),
     );
   }
 }
@@ -248,21 +202,6 @@ class AdderButton extends StatelessWidget {
   }
 }
 
-class WeatherInput extends StatelessWidget {
-  final TextEditingController tempController = TextEditingController();
-
-  WeatherInput({super.key});
-
-  @override
-  Widget build(BuildContext context) {
-    return Column(
-      children: [
-        Text('Enter current temperature:'),
-        TextField(controller: tempController, keyboardType: TextInputType.number),
-      ],
-    );
-  }
-}
 
 class ActivityDropdown extends StatelessWidget {
   final String? initialValue;
@@ -283,6 +222,59 @@ class ActivityDropdown extends StatelessWidget {
           decoration: InputDecoration(hintText: 'Activity'),
         );
       },
+    );
+  }
+}
+
+class TappableSvgWithOverlay extends StatelessWidget {
+  final GlobalKey svgKey;
+  final Future<Offset?> Function({required TapDownDetails details, required GlobalKey key}) getNormalizedTapOffset;
+
+  const TappableSvgWithOverlay({
+    super.key,
+    required this.svgKey,
+    required this.getNormalizedTapOffset,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final viewModel = context.watch<ClothingViewModel>();
+    return GestureDetector(
+        onTapDown: (details) async {
+          final normalized = await getNormalizedTapOffset(
+            key: svgKey,
+            details: details,
+          );
+          if (normalized != null) {
+            if (kDebugMode) {
+              debugPrint('Normalized Tap: $normalized');
+            }
+          }
+        },
+      // TODO: selector?
+        child: FittedBox(
+          fit: BoxFit.contain,
+          child: Container(
+            key: svgKey,
+            child: Stack(
+              children: [
+                SvgPicture.asset(
+                  'assets/images/silhouette.svg',
+                  colorFilter: ColorFilter.mode(
+                    Theme.of(context).colorScheme.onSurfaceVariant,
+                    BlendMode.srcIn,
+                  ),
+                ),
+                RepaintBoundary(
+                  child: CustomPaint(
+                    painter: ClothingPainter(context, viewModel.filteredClothing),
+                    size: const Size(200, 200), // TODO: dynamic sizing
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
     );
   }
 }
