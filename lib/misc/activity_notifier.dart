@@ -46,28 +46,18 @@ class CategoryItemsProvider extends ChangeNotifier {
   Future<void> refresh() => _loadItems();
 }
 
-class ActivityDialogViewModel extends ChangeNotifier {
+class ActivityDialogController {
   final AppDb db;
-  bool _isInitialized = false;
-  late List<String> existingNames;
+  final List<String> availableActivities;
 
-  ActivityDialogViewModel(this.db) {
-    init();
-  }
+  ActivityDialogController(this.db, this.availableActivities);
 
   String? _name;
   final formKey = GlobalKey<FormState>();
 
-  Future<void> init() async {
-    if (_isInitialized) return;
-
-    final items = await db.allActivities().get();
-    existingNames = items.map((el) => el.name.toLowerCase()).toList();
-    _isInitialized = true;
-  }
-
   String? validateName(String? value) {
     if (value == null || value.trim().isEmpty) return 'Enter a value';
+    List<String> existingNames = availableActivities.map((el) => el.toLowerCase()).toList();
     if (existingNames.contains(value.trim().toLowerCase())) {
       return 'This activity already exists';
     }
@@ -88,10 +78,10 @@ class ActivityDialogViewModel extends ChangeNotifier {
   }
 }
 
-class ClothingDialogViewModel extends ChangeNotifier {
+class ClothingDialogController {
   final AppDb db;
 
-  ClothingDialogViewModel(this.db);
+  ClothingDialogController(this.db);
 
   String? _name;
   int? _minTemp;

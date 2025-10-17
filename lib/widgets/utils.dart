@@ -17,8 +17,11 @@ class AddActivityDialog extends StatelessWidget {
     final success = await showDialog<bool>(
       context: context,
       builder: (context) {
-        return ChangeNotifierProvider(
-          create: (_) => ActivityDialogViewModel(db),
+        return Provider(
+          create: (context) {
+            final itemsProvider = context.read<ActivityItemsProvider>();
+            return ActivityDialogController(db, itemsProvider.items);
+          },
           child: AddActivityDialog(db: db),
         );
       },
@@ -28,7 +31,7 @@ class AddActivityDialog extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final vm = context.watch<ActivityDialogViewModel>();
+    final vm = context.read<ActivityDialogController>();
 
     return AlertDialog(
       title: Text('Add Activity'),
@@ -289,8 +292,8 @@ class AddClothingDialog extends StatelessWidget {
     final success = await showDialog<bool>(
       context: context,
       builder: (context) {
-        return ChangeNotifierProvider(
-          create: (_) => ClothingDialogViewModel(db),
+        return Provider(
+          create: (_) => ClothingDialogController(db),
           child: AddClothingDialog(db: db),
         );
       },
@@ -300,7 +303,7 @@ class AddClothingDialog extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final vm = context.watch<ClothingDialogViewModel>();
+    final vm = context.read<ClothingDialogController>();
 
     return AlertDialog(
       title: Text('Add Clothing Item'),
