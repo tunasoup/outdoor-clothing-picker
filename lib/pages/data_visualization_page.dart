@@ -93,12 +93,12 @@ class _DataVisualizationPageState
                       const SizedBox(width: 8),
                       ElevatedButton(
                         onPressed: () async {
-                          await showAddRowDialog(
+                          bool success = await showAddRowDialog(
                             context: context,
                             tableName: tableName,
                             db: widget.db,
-                            onRowAdded: _refresh,
                           );
+                          if (success) _refresh();
                         },
                         child: Text('Add New'),
                       ),

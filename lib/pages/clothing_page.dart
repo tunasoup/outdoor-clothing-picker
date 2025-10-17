@@ -25,12 +25,9 @@ class ClothingPage extends StatefulWidget {
 class _ClothingPageState extends State<ClothingPage> {
   List<ClothingData> items = [];
   late final AppDb db;
-  final TextEditingController _tempController = TextEditingController();
-  String? _selectedActivity;
   final GlobalKey _svgKey = GlobalKey();
   int selectedIndex = 0;
   bool useRail = false;
-
 
   @override
   void initState() {
@@ -38,69 +35,36 @@ class _ClothingPageState extends State<ClothingPage> {
     // Prevent right-click context menu on web
     html.document.onContextMenu.listen((event) => event.preventDefault());
     db = widget.db;
-    Future.microtask(() async {
-      final provider = context.read<ActivityItemsProvider>();
-      _selectedActivity = await provider.getFirstItem();
-    });
-  }
-
-  /// For each category, choose clothing that are valid for the weather and activity.
-  void _updateClothing() async {
-    final tempText = _tempController.text;
-    final activity = _selectedActivity ?? '';
-
-    if (tempText.isEmpty || activity.isEmpty) return;
-
-    final temp = int.tryParse(tempText);
-    if (temp == null) return;
-
-    List<category> categories = await widget.db.allCategories().get();
-    List<ValidClothingResult> items = await widget.db.validClothing(temp, activity).get();
-    Map<String, ValidClothingResult?> outfit = {};
-    for (var category in categories) {
-      final categoryItems = items.where((item) => item.category == category.name).toList();
-      if (categoryItems.isNotEmpty) {
-        // If there are multiple items, choose the first
-        // TODO: Choose the first chosen based on temperature range
-        // TODO: Store all valid items, make interactable (tap for list or arrows)
-        outfit[category.name] = categoryItems.first;
-      } else {
-        outfit[category.name] = null;
-      }
-    }
-
-    setState(() {});
   }
 
   @override
   Widget build(BuildContext context) {
-      return Scaffold(
-        floatingActionButton: AdderButton(loadClothing: _updateClothing, db: db),
-        body: Padding(
-          padding: const EdgeInsets.all(16.0),
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              const WeatherWidget(),
-              const SizedBox(height: 32),
-              const TemperatureInfoWidget(),
-              const Text('Select activity:'),
-              SizedBox(
-                width: 200,
-                child: ActivityDropdown(
-                  initialValue: _selectedActivity,
-                  onChanged: (value) => context.read<ClothingViewModel>().setActivity(value),
-                ),
+    return Scaffold(
+      floatingActionButton: AdderButton(db: db),
+      body: Padding(
+        padding: const EdgeInsets.all(16.0),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            const WeatherWidget(),
+            const SizedBox(height: 32),
+            const Text('Select activity:'),
+            SizedBox(
+              width: 200,
+              child: ActivityDropdown(
+                initialValue: context.read<ClothingViewModel>().activity,
+                onChanged: (value) => context.read<ClothingViewModel>().setActivity(value),
               ),
-              Expanded(
-                child: TappableSvgWithOverlay(
-                  svgKey: _svgKey,
-                  getNormalizedTapOffset: getNormalizedTapOffset,
-                ),
-              )
-            ],
-          ),
+            ),
+            Expanded(
+              child: ClothingFigure(
+                svgKey: _svgKey,
+                getNormalizedTapOffset: getNormalizedTapOffset,
+              ),
+            ),
+          ],
         ),
+      ),
     );
   }
 }
@@ -148,45 +112,16 @@ class ClothingPainter extends CustomPainter {
 
 /// A button for adding new items to the [db].
 class AdderButton extends StatelessWidget {
-  final VoidCallback? loadClothing;
   final AppDb db;
 
-  const AdderButton({super.key, this.loadClothing, required this.db});
+  const AdderButton({super.key, required this.db});
 
   @override
   Widget build(BuildContext context) {
     return PopupMenuButton<String>(
       icon: Icon(Icons.add, size: 32, color: Theme.of(context).colorScheme.secondary),
       onSelected: (value) async {
-        bool success = false;
-
-        switch (value) {
-          case 'clothing':
-            success = await showAddRowDialog(
-              context: context,
-              tableName: value,
-              db: db,
-              onRowAdded: loadClothing ?? () {},
-            );
-            break;
-          case 'activities':
-            success = await showAddRowDialog(
-              context: context,
-              tableName: value,
-              db: db,
-              onRowAdded: () {},
-            );
-            break;
-          case 'categories':
-            success = await showAddRowDialog(
-              context: context,
-              tableName: value,
-              db: db,
-              onRowAdded: () {},
-            );
-            break;
-        }
-
+        bool success = await showAddRowDialog(context: context, tableName: value, db: db);
         if (success) {
           ScaffoldMessenger.of(
             context,
@@ -201,7 +136,6 @@ class AdderButton extends StatelessWidget {
     );
   }
 }
-
 
 class ActivityDropdown extends StatelessWidget {
   final String? initialValue;
@@ -226,55 +160,49 @@ class ActivityDropdown extends StatelessWidget {
   }
 }
 
-class TappableSvgWithOverlay extends StatelessWidget {
+class ClothingFigure extends StatelessWidget {
   final GlobalKey svgKey;
-  final Future<Offset?> Function({required TapDownDetails details, required GlobalKey key}) getNormalizedTapOffset;
+  final Future<Offset?> Function({required TapDownDetails details, required GlobalKey key})
+  getNormalizedTapOffset;
 
-  const TappableSvgWithOverlay({
-    super.key,
-    required this.svgKey,
-    required this.getNormalizedTapOffset,
-  });
+  const ClothingFigure({super.key, required this.svgKey, required this.getNormalizedTapOffset});
 
   @override
   Widget build(BuildContext context) {
     final viewModel = context.watch<ClothingViewModel>();
     return GestureDetector(
-        onTapDown: (details) async {
-          final normalized = await getNormalizedTapOffset(
-            key: svgKey,
-            details: details,
-          );
-          if (normalized != null) {
-            if (kDebugMode) {
-              debugPrint('Normalized Tap: $normalized');
-            }
+      onTapDown: (details) async {
+        final normalized = await getNormalizedTapOffset(key: svgKey, details: details);
+        if (normalized != null) {
+          if (kDebugMode) {
+            debugPrint('Normalized Tap: $normalized');
           }
-        },
+        }
+      },
       // TODO: selector?
-        child: FittedBox(
-          fit: BoxFit.contain,
-          child: Container(
-            key: svgKey,
-            child: Stack(
-              children: [
-                SvgPicture.asset(
-                  'assets/images/silhouette.svg',
-                  colorFilter: ColorFilter.mode(
-                    Theme.of(context).colorScheme.onSurfaceVariant,
-                    BlendMode.srcIn,
-                  ),
+      child: FittedBox(
+        fit: BoxFit.contain,
+        child: Container(
+          key: svgKey,
+          child: Stack(
+            children: [
+              SvgPicture.asset(
+                'assets/images/silhouette.svg',
+                colorFilter: ColorFilter.mode(
+                  Theme.of(context).colorScheme.onSurfaceVariant,
+                  BlendMode.srcIn,
                 ),
-                RepaintBoundary(
-                  child: CustomPaint(
-                    painter: ClothingPainter(context, viewModel.filteredClothing),
-                    size: const Size(200, 200), // TODO: dynamic sizing
-                  ),
+              ),
+              RepaintBoundary(
+                child: CustomPaint(
+                  painter: ClothingPainter(context, viewModel.filteredClothing),
+                  size: const Size(200, 200), // TODO: dynamic sizing
                 ),
-              ],
-            ),
+              ),
+            ],
           ),
         ),
+      ),
     );
   }
 }

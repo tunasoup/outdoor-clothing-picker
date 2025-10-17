@@ -5,13 +5,15 @@ import 'package:outdoor_clothing_picker/database/database.dart';
 class ClothingViewModel extends ChangeNotifier {
   final AppDb _db;
 
+  ClothingViewModel(this._db);
+
   int? _temperature;
   String? _activity;
 
   List<ValidClothingResult> _valid = [];
   List<ValidClothingResult> _filtered = [];
 
-  ClothingViewModel(this._db);
+  String? get activity => _activity;
 
   List<ValidClothingResult> get filteredClothing => _filtered;
 
@@ -28,6 +30,7 @@ class ClothingViewModel extends ChangeNotifier {
     if (changed && load) _loadClothing();
   }
 
+  /// For each category, choose clothing that are valid for the weather and activity.
   Future<void> _loadClothing() async {
     if (_temperature == null || _activity == null) {
       _filtered = [];

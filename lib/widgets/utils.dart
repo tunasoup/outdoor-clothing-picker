@@ -7,36 +7,40 @@ import 'package:provider/provider.dart';
 import 'package:outdoor_clothing_picker/database/database.dart';
 import 'package:outdoor_clothing_picker/misc/activity_notifier.dart';
 
-/// Open a dialog where a new Activity item can be created for the [db].
-Future<bool> showAddActivityDialog({
-  required BuildContext context,
-  required AppDb db,
-  required VoidCallback onRowAdded,
-}) async {
-  final formKey = GlobalKey<FormState>();
-  String? activity;
+/// Dialog where a new Activity item can be created.
+class AddActivityDialog extends StatelessWidget {
+  final AppDb db;
 
-  final activities = (await db.allActivities().get()).map((a) => a.name.toLowerCase()).toList();
+  const AddActivityDialog({super.key, required this.db});
 
-  final success = await showDialog(
-    context: context,
-    builder: (context) => AlertDialog(
+  Future<bool> show(BuildContext context) async {
+    final success = await showDialog<bool>(
+      context: context,
+      builder: (context) {
+        return ChangeNotifierProvider(
+          create: (_) => ActivityDialogViewModel(db),
+          child: AddActivityDialog(db: db),
+        );
+      },
+    );
+    return success ?? false;
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final vm = context.watch<ActivityDialogViewModel>();
+
+    return AlertDialog(
       title: Text('Add Activity'),
       content: Form(
-        key: formKey,
+        key: vm.formKey,
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
             TextFormField(
               decoration: InputDecoration(labelText: 'Activity Name'),
-              validator: (value) {
-                if (value == null || value.isEmpty) return 'Enter a value';
-                if (activities.contains(value.trim().toLowerCase())) {
-                  return 'This activity already exists';
-                }
-                return null;
-              },
-              onSaved: (value) => activity = value!.trim(),
+              validator: (value) => vm.validateName(value),
+              onSaved: (value) => vm.saveName(value),
               autofocus: true,
             ),
             Padding(padding: EdgeInsets.all(16.0)),
@@ -46,14 +50,8 @@ Future<bool> showAddActivityDialog({
                 TextButton(onPressed: () => Navigator.pop(context, false), child: Text('Cancel')),
                 ElevatedButton(
                   onPressed: () async {
-                    if (formKey.currentState?.validate() ?? false) {
-                      formKey.currentState?.save();
-                      // TODO: check for exceptions, but also transition away from view-only
-                      await db
-                          .into(db.activities)
-                          .insert(ActivitiesCompanion.insert(name: activity!));
+                    if (await vm.saveActivity()) {
                       Provider.of<ActivityItemsProvider>(context, listen: false).refresh();
-                      onRowAdded();
                       Navigator.pop(context, true);
                     }
                   },
@@ -64,9 +62,8 @@ Future<bool> showAddActivityDialog({
           ],
         ),
       ),
-    ),
-  );
-  return success ?? false;
+    );
+  }
 }
 
 /// Open a dialog where a new Category item can be created for the [db].
@@ -75,7 +72,6 @@ Future<bool> showAddActivityDialog({
 Future<bool> showAddCategoryDialog({
   required BuildContext context,
   required AppDb db,
-  required VoidCallback onRowAdded,
   double? normX,
   double? normY,
 }) async {
@@ -147,7 +143,6 @@ Future<bool> showAddCategoryDialog({
                                 normY: normY ?? localNormY,
                               ),
                             );
-                        onRowAdded();
                         Navigator.pop(context, true);
                       }
                     },
@@ -284,11 +279,7 @@ Widget _buildInteractiveFigure({
 }
 
 /// Open a dialog where a new Clothing item can be created for the [db].
-Future<bool> showAddClothingDialog({
-  required BuildContext context,
-  required AppDb db,
-  required VoidCallback onRowAdded,
-}) async {
+Future<bool> showAddClothingDialog({required BuildContext context, required AppDb db}) async {
   final formKey = GlobalKey<FormState>();
   String? name;
   int? minTemp;
@@ -382,7 +373,6 @@ Future<bool> showAddClothingDialog({
                                 activity: activity!,
                               ),
                             );
-                        onRowAdded();
                         Navigator.pop(context, true);
                       }
                     },
@@ -403,15 +393,14 @@ Future<bool> showAddRowDialog({
   required BuildContext context,
   required String tableName,
   required AppDb db,
-  required VoidCallback onRowAdded,
 }) async {
   switch (tableName) {
     case 'clothing':
-      return await showAddClothingDialog(context: context, db: db, onRowAdded: onRowAdded);
+      return await showAddClothingDialog(context: context, db: db);
     case 'activities':
-      return await showAddActivityDialog(context: context, db: db, onRowAdded: onRowAdded);
+      return await AddActivityDialog(db: db).show(context);
     case 'categories':
-      return await showAddCategoryDialog(context: context, db: db, onRowAdded: onRowAdded);
+      return await showAddCategoryDialog(context: context, db: db);
   }
   return false;
 }
@@ -447,7 +436,6 @@ Future<void> _showContextMenu({
   required Offset localPosition,
   required Size localSize,
   required AppDb db,
-  required VoidCallback onRowAdded,
 }) async {
   final selected = await showMenu(
     context: context,
@@ -466,12 +454,6 @@ Future<void> _showContextMenu({
     if (kDebugMode) {
       debugPrint('Create category at: $normX $normY');
     }
-    showAddCategoryDialog(
-      context: context,
-      db: db,
-      onRowAdded: onRowAdded,
-      normX: normX,
-      normY: normY,
-    );
+    showAddCategoryDialog(context: context, db: db, normX: normX, normY: normY);
   }
 }

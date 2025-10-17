@@ -60,28 +60,3 @@ class WeatherWidget extends StatelessWidget {
     );
   }
 }
-
-// Temporary widget for testing
-class TemperatureInfoWidget extends StatelessWidget {
-  const TemperatureInfoWidget({super.key});
-
-  String _mapTemperatureToLabel(double temperature) {
-    return temperature >= 20 ? "Warm" : "Cold";
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    final viewModel = context.watch<WeatherViewModel>();
-
-    if (viewModel.temperature == null) {
-      return const Text('No temperature available yet.');
-    }
-
-    final label = _mapTemperatureToLabel(viewModel.temperature!);
-
-    return Text(
-      'It feels: $label',
-      style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-    );
-  }
-}
