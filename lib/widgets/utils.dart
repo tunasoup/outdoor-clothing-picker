@@ -7,7 +7,7 @@ import 'package:provider/provider.dart';
 import 'package:outdoor_clothing_picker/database/database.dart';
 import 'package:outdoor_clothing_picker/misc/activity_notifier.dart';
 
-/// Dialog where a new Activity item can be created.
+/// Dialog where a new Activity item can be created for the [db].
 class AddActivityDialog extends StatelessWidget {
   final AppDb db;
 
@@ -278,76 +278,81 @@ Widget _buildInteractiveFigure({
   );
 }
 
-/// Open a dialog where a new Clothing item can be created for the [db].
-Future<bool> showAddClothingDialog({required BuildContext context, required AppDb db}) async {
-  final formKey = GlobalKey<FormState>();
-  String? name;
-  int? minTemp;
-  String? minTempText; // Save text for comparing with maxTemp
-  int? maxTemp;
-  String? category;
-  String? activity;
+/// Dialog where a new Clothing item can be created for the [db].
+class AddClothingDialog extends StatelessWidget {
+  final AppDb db;
 
-  String? required(String? value) => value == null || value.isEmpty ? 'Enter a value' : null;
+  const AddClothingDialog({super.key, required this.db});
 
-  // Fetch categories and activities from DB
-  final categories = (await db.allCategories().get()).map((c) => c.name).toList();
-  final activities = (await db.allActivities().get()).map((a) => a.name).toList();
+  Future<bool> show(BuildContext context) async {
+    // TODO: disable or add a warning if there are no categories or activities
+    final success = await showDialog<bool>(
+      context: context,
+      builder: (context) {
+        return ChangeNotifierProvider(
+          create: (_) => ClothingDialogViewModel(db),
+          child: AddClothingDialog(db: db),
+        );
+      },
+    );
+    return success ?? false;
+  }
 
-  // TODO: disable or add a warning if there are no categories or activities
-  final success = await showDialog(
-    context: context,
-    builder: (context) => AlertDialog(
+  @override
+  Widget build(BuildContext context) {
+    final vm = context.watch<ClothingDialogViewModel>();
+
+    return AlertDialog(
       title: Text('Add Clothing Item'),
       content: SingleChildScrollView(
         child: Form(
-          key: formKey,
+          key: vm.formKey,
           child: Column(
             children: [
               TextFormField(
                 decoration: InputDecoration(labelText: 'Name'),
-                validator: required,
-                onSaved: (value) => name = value!,
+                validator: vm.validateName,
+                onSaved: vm.saveName,
               ),
               TextFormField(
                 decoration: InputDecoration(labelText: 'Min Temperature'),
-                validator: required,
-                onChanged: (value) => minTempText = value,
-                onSaved: (value) => minTemp = int.parse(value!),
-                keyboardType: TextInputType.number,
+                validator: vm.validateMinTemp,
+                onSaved: vm.saveMinTemp,
+                keyboardType: TextInputType.numberWithOptions(signed: true),
                 inputFormatters: [FilteringTextInputFormatter.allow(RegExp(r'^-?[0-9]*'))],
               ),
               TextFormField(
                 decoration: InputDecoration(labelText: 'Max Temperature'),
-                validator: (value) {
-                  if (value == null || value.isEmpty) return 'Enter a value';
-                  final min = int.tryParse(minTempText ?? '');
-                  final max = int.tryParse(value ?? '');
-                  if (max == null) return 'Invalid number';
-                  if (min != null && max < min) return 'Must be ≥ Min Temp ($min)';
-                  return null;
-                },
-                onSaved: (value) => maxTemp = int.parse(value!),
-                keyboardType: TextInputType.number,
+                validator: vm.validateMaxTemp,
+                onSaved: vm.saveMaxTemp,
+                keyboardType: TextInputType.numberWithOptions(signed: true),
                 inputFormatters: [FilteringTextInputFormatter.allow(RegExp(r'^-?[0-9]*'))],
               ),
-              DropdownButtonFormField<String>(
-                validator: required,
-                items: categories
-                    .map((cat) => DropdownMenuItem(value: cat, child: Text(cat)))
-                    .toList(),
-                onSaved: (value) => category = value!,
-                decoration: InputDecoration(labelText: 'Category'),
-                onChanged: (value) {},
+              Consumer<CategoryItemsProvider>(
+                builder: (context, provider, _) {
+                  return DropdownButtonFormField<String>(
+                    decoration: InputDecoration(labelText: 'Category'),
+                    validator: vm.validateDropdown,
+                    items: provider.names
+                        .map((cat) => DropdownMenuItem(value: cat, child: Text(cat)))
+                        .toList(),
+                    onSaved: vm.saveCategory,
+                    onChanged: (_) {},
+                  );
+                },
               ),
-              DropdownButtonFormField<String>(
-                validator: required,
-                items: activities
-                    .map((cat) => DropdownMenuItem(value: cat, child: Text(cat)))
-                    .toList(),
-                onSaved: (value) => activity = value!,
-                decoration: InputDecoration(labelText: 'Activity'),
-                onChanged: (value) {},
+              Consumer<ActivityItemsProvider>(
+                builder: (context, provider, _) {
+                  return DropdownButtonFormField<String>(
+                    decoration: InputDecoration(hintText: 'Activity'),
+                    validator: vm.validateDropdown,
+                    items: provider.items
+                        .map((item) => DropdownMenuItem(value: item, child: Text(item)))
+                        .toList(),
+                    onSaved: vm.saveActivity,
+                    onChanged: (_) {},
+                  );
+                },
               ),
               Padding(padding: EdgeInsets.all(16.0)),
               Row(
@@ -359,24 +364,11 @@ Future<bool> showAddClothingDialog({required BuildContext context, required AppD
                   ),
                   ElevatedButton(
                     onPressed: () async {
-                      final form = formKey.currentState;
-                      if (form!.validate()) {
-                        form.save();
-                        await db
-                            .into(db.clothing)
-                            .insert(
-                              ClothingCompanion.insert(
-                                name: name!,
-                                minTemp: minTemp!,
-                                maxTemp: maxTemp!,
-                                category: category!,
-                                activity: activity!,
-                              ),
-                            );
+                      if (await vm.saveClothing()) {
                         Navigator.pop(context, true);
                       }
                     },
-                    child: const Text('Save'),
+                    child: Text('Save'),
                   ),
                 ],
               ),
@@ -384,9 +376,8 @@ Future<bool> showAddClothingDialog({required BuildContext context, required AppD
           ),
         ),
       ),
-    ),
-  );
-  return success ?? false;
+    );
+  }
 }
 
 Future<bool> showAddRowDialog({
@@ -396,7 +387,7 @@ Future<bool> showAddRowDialog({
 }) async {
   switch (tableName) {
     case 'clothing':
-      return await showAddClothingDialog(context: context, db: db);
+      return await AddClothingDialog(db: db).show(context);
     case 'activities':
       return await AddActivityDialog(db: db).show(context);
     case 'categories':

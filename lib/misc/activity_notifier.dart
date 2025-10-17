@@ -13,7 +13,7 @@ class ActivityItemsProvider extends ChangeNotifier {
 
   Future<void> _loadItems() async {
     final result = await db.allActivities().get();
-    items = result.map((c) => c.name).toList();
+    items = result.map((el) => el.name).toList();
     notifyListeners();
   }
 
@@ -23,6 +23,24 @@ class ActivityItemsProvider extends ChangeNotifier {
       await _loadItems();
     }
     return items.isNotEmpty ? items.first : null;
+  }
+
+  Future<void> refresh() => _loadItems();
+}
+
+class CategoryItemsProvider extends ChangeNotifier {
+  final AppDb db;
+
+  List<String> names = [];
+
+  CategoryItemsProvider(this.db) {
+    _loadItems();
+  }
+
+  Future<void> _loadItems() async {
+    final result = await db.allCategories().get();
+    names = result.map((el) => el.name).toList();
+    notifyListeners();
   }
 
   Future<void> refresh() => _loadItems();
@@ -64,6 +82,91 @@ class ActivityDialogViewModel extends ChangeNotifier {
     if (formKey.currentState?.validate() ?? false) {
       formKey.currentState?.save();
       await db.into(db.activities).insert(ActivitiesCompanion.insert(name: _name!));
+      return true;
+    }
+    return false;
+  }
+}
+
+class ClothingDialogViewModel extends ChangeNotifier {
+  final AppDb db;
+
+  ClothingDialogViewModel(this.db);
+
+  String? _name;
+  int? _minTemp;
+  int? _minTempVal;
+  int? _maxTemp;
+  String? _activity;
+  String? _category;
+  final formKey = GlobalKey<FormState>();
+
+  String? validateName(String? value) {
+    return value == null || value.trim().isEmpty ? 'Enter a value' : null;
+  }
+
+  String? validateMinTemp(String? value) {
+    if (value == null || value.isEmpty) {
+      return 'Enter a value';
+    }
+    _minTempVal = int.tryParse(value);
+    if (_minTempVal == null) {
+      return 'Enter a valid whole number';
+    }
+    return null;
+  }
+
+  String? validateMaxTemp(String? value) {
+    if (value == null || value.isEmpty) {
+      return 'Enter a value';
+    }
+    int? number = int.tryParse(value);
+    if (number == null) {
+      return 'Enter a valid whole number';
+    } else if (_minTempVal != null && number < _minTempVal!) {
+      return 'Must be ≥ Min Temp';
+    }
+    return null;
+  }
+
+  String? validateDropdown(String? value) {
+    return value == null ? 'Select a value' : null;
+  }
+
+  void saveName(String? value) {
+    _name = value?.trim();
+  }
+
+  void saveMinTemp(String? value) {
+    _minTemp = int.parse(value!);
+  }
+
+  void saveMaxTemp(String? value) {
+    _maxTemp = int.parse(value!);
+  }
+
+  void saveActivity(String? value) {
+    _activity = value;
+  }
+
+  void saveCategory(String? value) {
+    _category = value;
+  }
+
+  Future<bool> saveClothing() async {
+    if (formKey.currentState?.validate() ?? false) {
+      formKey.currentState?.save();
+      await db
+          .into(db.clothing)
+          .insert(
+            ClothingCompanion.insert(
+              name: _name!,
+              minTemp: _minTemp!,
+              maxTemp: _maxTemp!,
+              category: _category!,
+              activity: _activity!,
+            ),
+          );
       return true;
     }
     return false;

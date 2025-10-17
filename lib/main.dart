@@ -26,6 +26,7 @@ void main() async {
       providers: [
         ChangeNotifierProvider(create: (context) => ThemeProvider()),
         ChangeNotifierProvider(create: (context) => ActivityItemsProvider(db)),
+        ChangeNotifierProvider(create: (context) => CategoryItemsProvider(db)),
         ChangeNotifierProvider(create: (_) => WeatherViewModel(WeatherService(_apiKey))),
         ChangeNotifierProxyProvider<WeatherViewModel, ClothingViewModel>(
           create: (_) => ClothingViewModel(db),
