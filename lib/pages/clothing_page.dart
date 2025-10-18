@@ -26,6 +26,7 @@ class _ClothingPageState extends State<ClothingPage> {
   List<ClothingData> items = [];
   late final AppDb db;
   final GlobalKey _svgKey = GlobalKey();
+  final GlobalKey _fabKey = GlobalKey();
   int selectedIndex = 0;
   bool useRail = false;
 
@@ -40,7 +41,11 @@ class _ClothingPageState extends State<ClothingPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      floatingActionButton: AdderButton(db: db),
+      floatingActionButton: FloatingActionButton(
+          key: _fabKey,
+          onPressed: () => showAddMenu(context: context, db: db, anchorKey: _fabKey),
+          child: Icon(Icons.add),
+      ),
       body: Padding(
         padding: const EdgeInsets.all(16.0),
         child: Column(
@@ -110,30 +115,41 @@ class ClothingPainter extends CustomPainter {
   bool shouldRepaint(covariant CustomPainter oldDelegate) => true;
 }
 
-/// A button for adding new items to the [db].
-class AdderButton extends StatelessWidget {
-  final AppDb db;
+/// Menu for starting the creation of items to the [db].
+Future<void> showAddMenu({
+  required BuildContext context,
+  required AppDb db,
+  required GlobalKey anchorKey,
+}) async {
+  // Get the position of the button to anchor the menu
+  final RenderBox renderBox = anchorKey.currentContext!.findRenderObject() as RenderBox;
+  final Offset offset = renderBox.localToGlobal(Offset.zero);
+  final Size size = renderBox.size;
 
-  const AdderButton({super.key, required this.db});
+  // Show the popup menu manually
+  final selected = await showMenu<String>(
+    context: context,
+    position: RelativeRect.fromLTRB(
+      offset.dx,
+      offset.dy,
+      offset.dx + size.width,
+      offset.dy + size.height,
+    ),
+    items: const [
+      PopupMenuItem(value: 'clothing', child: Text('Add Clothing Item')),
+      PopupMenuItem(value: 'activities', child: Text('Add Activity')),
+      PopupMenuItem(value: 'categories', child: Text('Add Category')),
+    ],
+  );
 
-  @override
-  Widget build(BuildContext context) {
-    return PopupMenuButton<String>(
-      icon: Icon(Icons.add, size: 32, color: Theme.of(context).colorScheme.secondary),
-      onSelected: (value) async {
-        bool success = await showAddRowDialog(context: context, tableName: value, db: db);
-        if (success) {
-          ScaffoldMessenger.of(
-            context,
-          ).showSnackBar(SnackBar(content: Text('Added $value successfully')));
-        }
-      },
-      itemBuilder: (context) => [
-        PopupMenuItem(value: 'clothing', child: Text('Add Clothing Item')),
-        PopupMenuItem(value: 'activities', child: Text('Add Activity')),
-        PopupMenuItem(value: 'categories', child: Text('Add Category')),
-      ],
-    );
+  // If user selected an item
+  if (selected != null) {
+    bool success = await showAddRowDialog(context: context, tableName: selected, db: db);
+    if (success) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Added $selected successfully')),
+      );
+    }
   }
 }
 
