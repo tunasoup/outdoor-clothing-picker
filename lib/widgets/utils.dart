@@ -8,13 +8,12 @@ import 'package:outdoor_clothing_picker/database/database.dart';
 import 'package:outdoor_clothing_picker/misc/item_controllers.dart';
 import 'package:outdoor_clothing_picker/misc/item_notifiers.dart';
 
-/// Dialog where a new Activity item can be created for the [db].
+/// Dialog where a new Activity item can be created.
 class AddActivityDialog extends StatelessWidget {
-  final AppDb db;
-
-  const AddActivityDialog({super.key, required this.db});
+  const AddActivityDialog({super.key});
 
   Future<bool> show(BuildContext context) async {
+    final AppDb db = context.read<AppDb>();
     final success = await showDialog<bool>(
       context: context,
       builder: (context) {
@@ -23,7 +22,7 @@ class AddActivityDialog extends StatelessWidget {
             final itemsProvider = context.read<ActivityItemsProvider>();
             return ActivityDialogController(db, itemsProvider.items);
           },
-          child: AddActivityDialog(db: db),
+          child: AddActivityDialog(),
         );
       },
     );
@@ -70,19 +69,19 @@ class AddActivityDialog extends StatelessWidget {
   }
 }
 
-/// Dialog where a new Category item can be created for the [db].
+/// Dialog where a new Category item can be created.
 /// If [normX] and [normY] coordinates are not provided, then the user is prompted
 /// to click a spot on a figure for them.
 class AddCategoryDialog extends StatelessWidget {
-  final AppDb db;
   final double? normX;
   final double? normY;
 
-  AddCategoryDialog({super.key, required this.db, this.normX, this.normY});
+  AddCategoryDialog({super.key, this.normX, this.normY});
 
   final Size size = Size(100, 200);
 
   Future<bool> show(BuildContext context) async {
+    final AppDb db = context.read<AppDb>();
     final success = await showDialog<bool>(
       context: context,
       builder: (context) {
@@ -91,7 +90,7 @@ class AddCategoryDialog extends StatelessWidget {
             final itemsProvider = context.read<CategoryItemsProvider>();
             return CategoryDialogController(db, itemsProvider.names);
           },
-          child: AddCategoryDialog(db: db, normX: normX, normY: normY),
+          child: AddCategoryDialog(normX: normX, normY: normY),
         );
       },
     );
@@ -248,20 +247,19 @@ Widget _buildStaticCoordinateView(double normX, double normY) {
   );
 }
 
-/// Dialog where a new Clothing item can be created for the [db].
+/// Dialog where a new Clothing item can be created.
 class AddClothingDialog extends StatelessWidget {
-  final AppDb db;
-
-  const AddClothingDialog({super.key, required this.db});
+  const AddClothingDialog({super.key});
 
   Future<bool> show(BuildContext context) async {
+    final AppDb db = context.read<AppDb>();
     // TODO: disable or add a warning if there are no categories or activities
     final success = await showDialog<bool>(
       context: context,
       builder: (context) {
         return Provider(
           create: (_) => ClothingDialogController(db),
-          child: AddClothingDialog(db: db),
+          child: AddClothingDialog(),
         );
       },
     );
@@ -353,15 +351,14 @@ class AddClothingDialog extends StatelessWidget {
 Future<bool> showAddRowDialog({
   required BuildContext context,
   required String tableName,
-  required AppDb db,
 }) async {
   switch (tableName) {
     case 'clothing':
-      return await AddClothingDialog(db: db).show(context);
+      return await AddClothingDialog().show(context);
     case 'activities':
-      return await AddActivityDialog(db: db).show(context);
+      return await AddActivityDialog().show(context);
     case 'categories':
-      return await AddCategoryDialog(db: db).show(context);
+      return await AddCategoryDialog().show(context);
   }
   return false;
 }
@@ -396,7 +393,6 @@ Future<void> _showContextMenu({
   required Offset globalPosition,
   required Offset localPosition,
   required Size localSize,
-  required AppDb db,
 }) async {
   final selected = await showMenu(
     context: context,
@@ -415,6 +411,6 @@ Future<void> _showContextMenu({
     if (kDebugMode) {
       debugPrint('Create category at: $normX $normY');
     }
-    await AddCategoryDialog(db: db, normX: normX, normY: normY).show(context);
+    await AddCategoryDialog(normX: normX, normY: normY).show(context);
   }
 }

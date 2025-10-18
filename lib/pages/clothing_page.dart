@@ -13,10 +13,9 @@ import 'package:outdoor_clothing_picker/widgets/weather_widget.dart';
 /// The clothing page visualizes which clothings from a local database would be appropriate
 /// for the current/selected weather, while allowing the user to add new items.
 class ClothingPage extends StatefulWidget {
-  const ClothingPage({super.key, required this.title, required this.db});
+  const ClothingPage({super.key, required this.title});
 
   final String title;
-  final AppDb db;
 
   @override
   State<ClothingPage> createState() => _ClothingPageState();
@@ -24,7 +23,6 @@ class ClothingPage extends StatefulWidget {
 
 class _ClothingPageState extends State<ClothingPage> {
   List<ClothingData> items = [];
-  late final AppDb db;
   final GlobalKey _svgKey = GlobalKey();
   final GlobalKey _fabKey = GlobalKey();
   int selectedIndex = 0;
@@ -35,7 +33,6 @@ class _ClothingPageState extends State<ClothingPage> {
     super.initState();
     // Prevent right-click context menu on web
     html.document.onContextMenu.listen((event) => event.preventDefault());
-    db = widget.db;
   }
 
   @override
@@ -43,7 +40,7 @@ class _ClothingPageState extends State<ClothingPage> {
     return Scaffold(
       floatingActionButton: FloatingActionButton(
           key: _fabKey,
-          onPressed: () => showAddMenu(context: context, db: db, anchorKey: _fabKey),
+          onPressed: () => showAddMenu(context: context, anchorKey: _fabKey),
           child: Icon(Icons.add),
       ),
       body: Padding(
@@ -118,7 +115,6 @@ class ClothingPainter extends CustomPainter {
 /// Menu for starting the creation of items to the [db].
 Future<void> showAddMenu({
   required BuildContext context,
-  required AppDb db,
   required GlobalKey anchorKey,
 }) async {
   // Get the position of the button to anchor the menu
@@ -144,7 +140,7 @@ Future<void> showAddMenu({
 
   // If user selected an item
   if (selected != null) {
-    bool success = await showAddRowDialog(context: context, tableName: selected, db: db);
+    bool success = await showAddRowDialog(context: context, tableName: selected);
     if (success) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('Added $selected successfully')),

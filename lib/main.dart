@@ -24,6 +24,7 @@ void main() async {
   runApp(
     MultiProvider(
       providers: [
+        Provider<AppDb>.value(value: db),
         ChangeNotifierProvider(create: (context) => ThemeProvider()),
         ChangeNotifierProvider(create: (context) => ActivityItemsProvider(db)),
         ChangeNotifierProvider(create: (context) => CategoryItemsProvider(db)),

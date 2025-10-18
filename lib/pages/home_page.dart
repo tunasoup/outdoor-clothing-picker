@@ -23,7 +23,7 @@ class _HomePageState extends State<HomePage> {
   bool wideScreen = false;
 
   late final List<Widget> pages = [
-    ClothingPage(title: 'Clothing', db: widget.db), // Landing page
+    ClothingPage(title: 'Clothing'), // Landing page
     DataVisualizationPage(db: widget.db),
     const SettingsPage(),
   ];

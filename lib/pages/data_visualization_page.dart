@@ -96,7 +96,6 @@ class _DataVisualizationPageState
                           bool success = await showAddRowDialog(
                             context: context,
                             tableName: tableName,
-                            db: widget.db,
                           );
                           if (success) _refresh();
                         },
