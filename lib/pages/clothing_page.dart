@@ -5,8 +5,8 @@ import 'package:provider/provider.dart';
 import 'package:universal_html/html.dart' as html;
 
 import 'package:outdoor_clothing_picker/database/database.dart';
-import 'package:outdoor_clothing_picker/misc/activity_notifier.dart';
 import 'package:outdoor_clothing_picker/misc/clothing_viewmodel.dart';
+import 'package:outdoor_clothing_picker/misc/item_notifiers.dart';
 import 'package:outdoor_clothing_picker/widgets/utils.dart';
 import 'package:outdoor_clothing_picker/widgets/weather_widget.dart';
 

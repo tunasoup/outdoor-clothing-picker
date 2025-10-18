@@ -28,7 +28,11 @@ List<NavigationRailDestination> navigationRailDestinations = destinations
     )
     .toList();
 
-Widget buildNavigationRail(context, onDestinationSelected, int selectedIndex) {
+Widget buildNavigationRail(
+  BuildContext context,
+  void Function(int) onDestinationSelected,
+  int selectedIndex,
+) {
   return NavigationRail(
     selectedIndex: selectedIndex,
     onDestinationSelected: onDestinationSelected,
@@ -39,7 +43,11 @@ Widget buildNavigationRail(context, onDestinationSelected, int selectedIndex) {
   );
 }
 
-Widget buildNavigationBar(context, onDestinationSelected, int selectedIndex) {
+Widget buildNavigationBar(
+  BuildContext context,
+  void Function(int) onDestinationSelected,
+  int selectedIndex,
+) {
   return NavigationBar(
     selectedIndex: selectedIndex,
     onDestinationSelected: onDestinationSelected,

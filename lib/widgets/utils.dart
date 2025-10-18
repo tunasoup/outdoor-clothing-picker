@@ -5,7 +5,8 @@ import 'package:flutter_svg/flutter_svg.dart';
 import 'package:provider/provider.dart';
 
 import 'package:outdoor_clothing_picker/database/database.dart';
-import 'package:outdoor_clothing_picker/misc/activity_notifier.dart';
+import 'package:outdoor_clothing_picker/misc/item_controllers.dart';
+import 'package:outdoor_clothing_picker/misc/item_notifiers.dart';
 
 /// Dialog where a new Activity item can be created for the [db].
 class AddActivityDialog extends StatelessWidget {

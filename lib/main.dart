@@ -3,9 +3,9 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 import 'package:outdoor_clothing_picker/database/database.dart';
-import 'package:outdoor_clothing_picker/misc/activity_notifier.dart';
-import 'package:outdoor_clothing_picker/misc/theme.dart';
 import 'package:outdoor_clothing_picker/misc/clothing_viewmodel.dart';
+import 'package:outdoor_clothing_picker/misc/item_notifiers.dart';
+import 'package:outdoor_clothing_picker/misc/theme.dart';
 import 'package:outdoor_clothing_picker/misc/weather_service.dart';
 import 'package:outdoor_clothing_picker/misc/weather_viewmodel.dart';
 import 'package:outdoor_clothing_picker/pages/home_page.dart';
@@ -16,7 +16,7 @@ void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   db = AppDb();
   // TODO: decide where to place and read api keys
-  final String _apiKey = 'api key here';
+  final String apiKey = 'api key here';
 
   // Insert default data when not in release mode if the tables are empty
   if (kDebugMode) await insertDefaultDataIfNeeded(db);
@@ -27,7 +27,7 @@ void main() async {
         ChangeNotifierProvider(create: (context) => ThemeProvider()),
         ChangeNotifierProvider(create: (context) => ActivityItemsProvider(db)),
         ChangeNotifierProvider(create: (context) => CategoryItemsProvider(db)),
-        ChangeNotifierProvider(create: (_) => WeatherViewModel(WeatherService(_apiKey))),
+        ChangeNotifierProvider(create: (_) => WeatherViewModel(WeatherService(apiKey))),
         ChangeNotifierProxyProvider<WeatherViewModel, ClothingViewModel>(
           create: (_) => ClothingViewModel(db),
           update: (_, weatherVM, clothingVM) {
