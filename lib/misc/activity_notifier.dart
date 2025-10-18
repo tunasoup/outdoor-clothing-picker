@@ -162,3 +162,48 @@ class ClothingDialogController {
     return false;
   }
 }
+
+class CategoryDialogController {
+  final AppDb db;
+  final List<String> availableCategories;
+
+  CategoryDialogController(this.db, this.availableCategories);
+
+  String? _name;
+  double? _normX;
+  double? _normY;
+  final formKey = GlobalKey<FormState>();
+
+  String? validateName(String? value) {
+    if (value == null || value.trim().isEmpty) return 'Enter a value';
+    if (availableCategories.contains(value.trim().toLowerCase())) {
+      return 'This category already exists';
+    }
+    return null;
+  }
+
+  String? validateCoords(double? x, double? y) {
+    if (x == null || y == null) return 'Select coordinates';
+    return null;
+  }
+
+  void saveName(String? value) {
+    _name = value?.trim();
+  }
+
+  void saveCoords(double? x, double? y) {
+    _normX = x;
+    _normY = y;
+  }
+
+  Future<bool> saveCategory() async {
+    if (formKey.currentState?.validate() ?? false) {
+      formKey.currentState?.save();
+      await db
+          .into(db.categories)
+          .insert(CategoriesCompanion.insert(name: _name!, normX: _normX!, normY: _normY!));
+      return true;
+    }
+    return false;
+  }
+}
