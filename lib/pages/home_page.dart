@@ -50,8 +50,8 @@ class _HomePageState extends State<HomePage> {
         actions: <Widget>[
           IconButton(
             icon: const Icon(Icons.brightness_6),
-            onPressed: () {
-              Provider.of<ThemeProvider>(context, listen: false).toggleTheme();
+            onPressed: () async {
+              await Provider.of<ThemeProvider>(context, listen: false).toggleTheme();
             },
           ),
         ],

@@ -21,11 +21,14 @@ void main() async {
   // Insert default data when not in release mode if the tables are empty
   if (kDebugMode) await insertDefaultDataIfNeeded(db);
 
+  final themeProvider = ThemeProvider();
+  await themeProvider.loadTheme();
+
   runApp(
     MultiProvider(
       providers: [
         Provider<AppDb>.value(value: db),
-        ChangeNotifierProvider(create: (context) => ThemeProvider()),
+        ChangeNotifierProvider<ThemeProvider>.value(value: themeProvider),
         ChangeNotifierProvider(create: (context) => ActivityItemsProvider(db)),
         ChangeNotifierProvider(create: (context) => CategoryItemsProvider(db)),
         ChangeNotifierProvider(create: (_) => WeatherViewModel(WeatherService(apiKey))),

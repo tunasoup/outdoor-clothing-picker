@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
+const String themePrefKey = 'isDarkMode';
 const seedColor = Colors.green;
 ThemeData lightMode = ThemeData(colorScheme: ColorScheme.fromSeed(seedColor: seedColor));
 ThemeData darkMode = ThemeData(
@@ -17,7 +19,19 @@ class ThemeProvider with ChangeNotifier {
     notifyListeners();
   }
 
-  void toggleTheme() {
-    themeData = themeData == lightMode ? darkMode : lightMode;
+  Future<void> loadTheme() async {
+    final prefs = await SharedPreferences.getInstance();
+    final isDark = prefs.getBool(themePrefKey) ?? false;
+    _themeData = isDark ? darkMode : lightMode;
+    notifyListeners();
+  }
+
+  Future<void> toggleTheme() async {
+    final isCurrentlyDark = _themeData == darkMode;
+    _themeData = isCurrentlyDark ? lightMode : darkMode;
+    notifyListeners();
+
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setBool(themePrefKey, !isCurrentlyDark);
   }
 }
