@@ -38,6 +38,7 @@ class _ClothingPageState extends State<ClothingPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      resizeToAvoidBottomInset: false, // TODO: alone does not prevent resize
       floatingActionButton: FloatingActionButton(
           key: _fabKey,
           onPressed: () => showAddMenu(context: context, anchorKey: _fabKey),

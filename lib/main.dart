@@ -15,8 +15,6 @@ late AppDb db;
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   db = AppDb();
-  // TODO: decide where to place and read api keys
-  final String apiKey = 'api key here';
 
   // Insert default data when not in release mode if the tables are empty
   if (kDebugMode) await insertDefaultDataIfNeeded(db);
@@ -31,7 +29,7 @@ void main() async {
         ChangeNotifierProvider<ThemeProvider>.value(value: themeProvider),
         ChangeNotifierProvider(create: (context) => ActivityItemsProvider(db)),
         ChangeNotifierProvider(create: (context) => CategoryItemsProvider(db)),
-        ChangeNotifierProvider(create: (_) => WeatherViewModel(WeatherService(apiKey))),
+        ChangeNotifierProvider(create: (_) => WeatherViewModel(WeatherService())),
         ChangeNotifierProxyProvider<WeatherViewModel, ClothingViewModel>(
           create: (_) => ClothingViewModel(db),
           update: (_, weatherVM, clothingVM) {

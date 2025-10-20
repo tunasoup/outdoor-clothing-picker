@@ -3,15 +3,15 @@ import 'package:flutter/foundation.dart';
 import 'package:geocoding/geocoding.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:http/http.dart' as http;
+import 'package:shared_preferences/shared_preferences.dart';
 
 import 'package:outdoor_clothing_picker/misc/weather_model.dart';
 
 class WeatherService {
-  static const baseUrl = 'https://api.openweathermap.org/data/2.5/weather';
-  final String apiKey;
-  final String units = 'metric';
+  WeatherService();
 
-  WeatherService(this.apiKey);
+  static const baseUrl = 'https://api.openweathermap.org/data/2.5/weather';
+  final String units = 'metric';
 
   Future<Weather> getWeatherByCity(String cityName) async {
     Location location = await getLocationFromCityName(cityName);
@@ -24,6 +24,8 @@ class WeatherService {
   }
 
   Future<Weather> getWeatherByLocation(Location location) async {
+    final prefs = await SharedPreferences.getInstance();
+    final apiKey = prefs.getString('api_key_owm');
     double lat = location.latitude;
     double lon = location.longitude;
     debugPrint('lat:$lat, lon:$lon');
