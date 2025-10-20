@@ -76,13 +76,12 @@ class _ClothingPageState extends State<ClothingPage> {
 class ClothingPainter extends CustomPainter {
   BuildContext context;
   final List<ValidClothingResult> clothing;
+  final Color color;
 
-  ClothingPainter(this.context, this.clothing);
+  ClothingPainter(this.context, this.clothing, this.color);
 
   @override
   void paint(Canvas canvas, Size size) {
-    final color = Theme.of(context).colorScheme.onSurface;
-
     final linePaint = Paint()
       ..color = color
       ..strokeWidth = 2;
@@ -110,7 +109,11 @@ class ClothingPainter extends CustomPainter {
   }
 
   @override
-  bool shouldRepaint(covariant CustomPainter oldDelegate) => true;
+  bool shouldRepaint(covariant ClothingPainter oldDelegate) {
+    // Note that theme change causes an animation with more than just the initial and final color
+    return !listEquals(oldDelegate.clothing, clothing)
+     || oldDelegate.color != color;
+  }
 }
 
 /// Menu for starting the creation of items to the [db].
@@ -183,6 +186,7 @@ class ClothingFigure extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final viewModel = context.watch<ClothingViewModel>();
+    final paintColor = Theme.of(context).colorScheme.onPrimaryContainer;
     return GestureDetector(
       onTapDown: (details) async {
         final normalized = await getNormalizedTapOffset(key: svgKey, details: details);
@@ -192,7 +196,6 @@ class ClothingFigure extends StatelessWidget {
           }
         }
       },
-      // TODO: selector?
       child: FittedBox(
         fit: BoxFit.contain,
         child: Container(
@@ -208,7 +211,7 @@ class ClothingFigure extends StatelessWidget {
               ),
               RepaintBoundary(
                 child: CustomPaint(
-                  painter: ClothingPainter(context, viewModel.filteredClothing),
+                  painter: ClothingPainter(context, viewModel.filteredClothing, paintColor),
                   size: const Size(200, 200), // TODO: dynamic sizing
                 ),
               ),
