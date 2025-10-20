@@ -1,27 +1,37 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 
 import 'package:outdoor_clothing_picker/misc/weather_viewmodel.dart';
 
-class WeatherWidget extends StatelessWidget {
+/// Widget for interacting with a weather API or manual user input.
+class WeatherWidget extends StatefulWidget {
   const WeatherWidget({super.key});
 
-  // TODO: Controller should not be used with Stateless due to memory leaks, need to dispose
+  @override
+  State<WeatherWidget> createState() => _WeatherWidgetState();
+}
+
+class _WeatherWidgetState extends State<WeatherWidget> {
+  final cityController = TextEditingController();
+  late final TextEditingController manualTempController;
+  bool _isInitialized = false;
+
   @override
   Widget build(BuildContext context) {
     final viewModel = context.watch<WeatherViewModel>();
-    final cityController = TextEditingController();
-    final manualTempController = TextEditingController(
-      text: '${viewModel.manualTemperature ?? ''}',
-    );
+
+    if (!_isInitialized) {
+      manualTempController = TextEditingController(text: '${viewModel.manualTemperature ?? ''}');
+      _isInitialized = true;
+    }
 
     return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        TextField(
-          controller: cityController,
-          decoration: const InputDecoration(labelText: 'Enter City', border: OutlineInputBorder()),
-        ),
+        // TextField(
+        //   controller: cityController,
+        //   decoration: const InputDecoration(labelText: 'Enter City', border: OutlineInputBorder()),
+        // ),
         const SizedBox(height: 12),
         TextField(
           controller: manualTempController,
@@ -32,19 +42,28 @@ class WeatherWidget extends StatelessWidget {
           ),
           // onChanged: (value) => viewModel.setManualTemperature(value),
           onSubmitted: (value) => viewModel.setManualTemperature(value),
+          keyboardType: TextInputType.numberWithOptions(signed: true),
+          inputFormatters: [FilteringTextInputFormatter.allow(RegExp(r'^-?[0-9]*'))],
         ),
         const SizedBox(height: 12),
-        ElevatedButton(
-          onPressed: viewModel.isLoading
-              ? null
-              : () => viewModel.fetchWeather(cityController.text),
-          child: viewModel.isLoading
-              ? const SizedBox(
-                  width: 16,
-                  height: 16,
-                  child: CircularProgressIndicator(strokeWidth: 2),
-                )
-              : const Text('Get Weather'),
+        Align(
+          alignment: Alignment.centerRight,
+          child: ElevatedButton(
+            style: ElevatedButton.styleFrom(
+            backgroundColor: Theme.of(context).colorScheme.primaryContainer,
+            foregroundColor: Theme.of(context).colorScheme.onPrimaryContainer,
+            ),
+            onPressed: viewModel.isLoading
+                ? null
+                : () => viewModel.fetchWeather(cityController.text),
+            child: viewModel.isLoading
+                ? const SizedBox(
+                    width: 16,
+                    height: 16,
+                    child: CircularProgressIndicator(strokeWidth: 2),
+                  )
+                : const Text('Get Weather'),
+          ),
         ),
         const SizedBox(height: 24),
         Column(
@@ -59,4 +78,14 @@ class WeatherWidget extends StatelessWidget {
       ],
     );
   }
+
+  @override
+  void dispose() {
+    cityController.dispose();
+    if (_isInitialized) {
+      manualTempController.dispose();
+    }
+    super.dispose();
+  }
+
 }
