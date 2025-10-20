@@ -50,6 +50,7 @@ class WeatherViewModel extends ChangeNotifier {
       _cityName = null;
       _apiTemperature = null;
       _mainCondition = null;
+      rethrow;
     } finally {
       _isLoading = false;
       notifyListeners();

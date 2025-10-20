@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 
+import 'package:outdoor_clothing_picker/widgets/utils.dart';
 import 'package:outdoor_clothing_picker/misc/weather_viewmodel.dart';
 
 /// Widget for interacting with a weather API or manual user input.
@@ -50,12 +51,12 @@ class _WeatherWidgetState extends State<WeatherWidget> {
           alignment: Alignment.centerRight,
           child: ElevatedButton(
             style: ElevatedButton.styleFrom(
-            backgroundColor: Theme.of(context).colorScheme.primaryContainer,
-            foregroundColor: Theme.of(context).colorScheme.onPrimaryContainer,
+              backgroundColor: Theme.of(context).colorScheme.primaryContainer,
+              foregroundColor: Theme.of(context).colorScheme.onPrimaryContainer,
             ),
             onPressed: viewModel.isLoading
                 ? null
-                : () => viewModel.fetchWeather(cityController.text),
+                : () => errorWrapper(context, () => viewModel.fetchWeather(cityController.text)),
             child: viewModel.isLoading
                 ? const SizedBox(
                     width: 16,
@@ -87,5 +88,4 @@ class _WeatherWidgetState extends State<WeatherWidget> {
     }
     super.dispose();
   }
-
 }
