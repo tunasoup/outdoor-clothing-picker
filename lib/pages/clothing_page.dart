@@ -1,12 +1,11 @@
-import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter_svg/flutter_svg.dart';
 import 'package:provider/provider.dart';
 import 'package:universal_html/html.dart' as html;
 
 import 'package:outdoor_clothing_picker/database/database.dart';
 import 'package:outdoor_clothing_picker/misc/clothing_viewmodel.dart';
 import 'package:outdoor_clothing_picker/misc/item_notifiers.dart';
+import 'package:outdoor_clothing_picker/widgets/mannequin.dart';
 import 'package:outdoor_clothing_picker/widgets/utils.dart';
 import 'package:outdoor_clothing_picker/widgets/weather_widget.dart';
 
@@ -23,7 +22,6 @@ class ClothingPage extends StatefulWidget {
 
 class _ClothingPageState extends State<ClothingPage> {
   List<ClothingData> items = [];
-  final GlobalKey _svgKey = GlobalKey();
   final GlobalKey _fabKey = GlobalKey();
   int selectedIndex = 0;
   bool useRail = false;
@@ -40,9 +38,9 @@ class _ClothingPageState extends State<ClothingPage> {
     return Scaffold(
       resizeToAvoidBottomInset: false, // TODO: alone does not prevent resize
       floatingActionButton: FloatingActionButton(
-          key: _fabKey,
-          onPressed: () => showAddMenu(context: context, anchorKey: _fabKey),
-          child: Icon(Icons.add),
+        key: _fabKey,
+        onPressed: () => showAddMenu(context: context, anchorKey: _fabKey),
+        child: Icon(Icons.add),
       ),
       body: Padding(
         padding: const EdgeInsets.all(16.0),
@@ -59,12 +57,7 @@ class _ClothingPageState extends State<ClothingPage> {
                 onChanged: (value) => context.read<ClothingViewModel>().setActivity(value),
               ),
             ),
-            Expanded(
-              child: ClothingFigure(
-                svgKey: _svgKey,
-                getNormalizedTapOffset: getNormalizedTapOffset,
-              ),
-            ),
+            Expanded(child: const Mannequin()),
           ],
         ),
       ),
@@ -72,55 +65,8 @@ class _ClothingPageState extends State<ClothingPage> {
   }
 }
 
-/// Draw the selected clothing labels on top of the figure.
-class ClothingPainter extends CustomPainter {
-  BuildContext context;
-  final List<ValidClothingResult> clothing;
-  final Color color;
-
-  ClothingPainter(this.context, this.clothing, this.color);
-
-  @override
-  void paint(Canvas canvas, Size size) {
-    final linePaint = Paint()
-      ..color = color
-      ..strokeWidth = 2;
-    if (kDebugMode) print('Painting');
-
-    for (var item in clothing) {
-      final startX = item.normX * size.width;
-      final y = item.normY * size.height;
-      final labelX = size.width * 0.7; // Place label at 70% width
-
-      // Draw horizontal line from figure to label
-      canvas.drawLine(Offset(startX, y), Offset(labelX - 10, y), linePaint);
-
-      // Draw label text
-      final textPainter = TextPainter(
-        text: TextSpan(
-          text: item.name,
-          style: TextStyle(color: color, fontSize: 16),
-        ),
-        textDirection: TextDirection.ltr,
-      );
-      textPainter.layout();
-      textPainter.paint(canvas, Offset(labelX, y - textPainter.height / 2));
-    }
-  }
-
-  @override
-  bool shouldRepaint(covariant ClothingPainter oldDelegate) {
-    // Note that theme change causes an animation with more than just the initial and final color
-    return !listEquals(oldDelegate.clothing, clothing)
-     || oldDelegate.color != color;
-  }
-}
-
 /// Menu for starting the creation of items to the [db].
-Future<void> showAddMenu({
-  required BuildContext context,
-  required GlobalKey anchorKey,
-}) async {
+Future<void> showAddMenu({required BuildContext context, required GlobalKey anchorKey}) async {
   // Get the position of the button to anchor the menu
   final RenderBox renderBox = anchorKey.currentContext!.findRenderObject() as RenderBox;
   final Offset offset = renderBox.localToGlobal(Offset.zero);
@@ -146,9 +92,9 @@ Future<void> showAddMenu({
   if (selected != null) {
     bool success = await showAddRowDialog(context: context, tableName: selected);
     if (success) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Added $selected successfully')),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text('Added $selected successfully')));
     }
   }
 }
@@ -172,53 +118,6 @@ class ActivityDropdown extends StatelessWidget {
           decoration: InputDecoration(hintText: 'Activity'),
         );
       },
-    );
-  }
-}
-
-class ClothingFigure extends StatelessWidget {
-  final GlobalKey svgKey;
-  final Future<Offset?> Function({required TapDownDetails details, required GlobalKey key})
-  getNormalizedTapOffset;
-
-  const ClothingFigure({super.key, required this.svgKey, required this.getNormalizedTapOffset});
-
-  @override
-  Widget build(BuildContext context) {
-    final viewModel = context.watch<ClothingViewModel>();
-    final paintColor = Theme.of(context).colorScheme.onPrimaryContainer;
-    return GestureDetector(
-      onTapDown: (details) async {
-        final normalized = await getNormalizedTapOffset(key: svgKey, details: details);
-        if (normalized != null) {
-          if (kDebugMode) {
-            debugPrint('Normalized Tap: $normalized');
-          }
-        }
-      },
-      child: FittedBox(
-        fit: BoxFit.contain,
-        child: Container(
-          key: svgKey,
-          child: Stack(
-            children: [
-              SvgPicture.asset(
-                'assets/images/silhouette.svg',
-                colorFilter: ColorFilter.mode(
-                  Theme.of(context).colorScheme.onSurfaceVariant,
-                  BlendMode.srcIn,
-                ),
-              ),
-              RepaintBoundary(
-                child: CustomPaint(
-                  painter: ClothingPainter(context, viewModel.filteredClothing, paintColor),
-                  size: const Size(200, 200), // TODO: dynamic sizing
-                ),
-              ),
-            ],
-          ),
-        ),
-      ),
     );
   }
 }

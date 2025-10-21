@@ -5,6 +5,7 @@ import 'package:flutter_svg/flutter_svg.dart';
 import 'package:provider/provider.dart';
 
 import 'package:outdoor_clothing_picker/database/database.dart';
+import 'package:outdoor_clothing_picker/widgets/mannequin.dart';
 import 'package:outdoor_clothing_picker/misc/item_controllers.dart';
 import 'package:outdoor_clothing_picker/misc/item_notifiers.dart';
 
@@ -154,7 +155,6 @@ class InteractiveFigureFormField extends FormField<Offset> {
          validator: (value) => controller.validateCoords(value?.dx, value?.dy),
          onSaved: (value) => controller.saveCoords(value?.dx, value?.dy),
          builder: (FormFieldState<Offset> field) {
-           final Offset? value = field.value;
            final double? normX = field.value?.dx;
            final double? normY = field.value?.dy;
            final coordinatesValid = field.errorText == null;
@@ -162,7 +162,7 @@ class InteractiveFigureFormField extends FormField<Offset> {
            return Column(
              children: [
                Text(
-                 'Click on the figure to select coordinates,\n'
+                 'Tap on the figure to select coordinates,\n'
                  'x=${normX?.toStringAsFixed(2) ?? '--'}, y=${normY?.toStringAsFixed(2) ?? '--'}',
                  textAlign: TextAlign.center,
                  style: TextStyle(
@@ -172,53 +172,12 @@ class InteractiveFigureFormField extends FormField<Offset> {
                  ),
                ),
                const SizedBox(height: 8),
-               Builder(
-                 builder: (ctx) => SizedBox(
-                   width: size.width,
-                   height: size.height,
-                   child: GestureDetector(
-                     onTapDown: (details) {
-                       final RenderBox box = ctx.findRenderObject() as RenderBox;
-                       final localPos = box.globalToLocal(details.globalPosition);
-                       final newX = localPos.dx / size.width;
-                       final newY = localPos.dy / size.height;
-
-                       field.didChange(Offset(newX, newY));
-                     },
-                     child: Stack(
-                       children: [
-                         // TODO: unified drawing of the asset with correct bounding box
-                         SvgPicture.asset(
-                           'assets/images/silhouette.svg',
-                           colorFilter: ColorFilter.mode(
-                             Theme.of(context).colorScheme.onSurfaceVariant,
-                             BlendMode.srcIn,
-                           ),
-                           width: size.width,
-                           height: size.height,
-                           fit: BoxFit.cover,
-                         ),
-                         // Add a visual marker for the selected position
-                         if (value != null)
-                           Positioned(
-                             left: normX! * size.width - 5,
-                             top: normY! * size.height - 5,
-                             child: Container(
-                               width: 10,
-                               height: 10,
-                               decoration: BoxDecoration(
-                                 color: Theme.of(context).colorScheme.primary,
-                                 shape: BoxShape.circle,
-                                 border: Border.all(
-                                   color: Theme.of(context).colorScheme.surface,
-                                   width: 2,
-                                 ),
-                               ),
-                             ),
-                           ),
-                       ],
-                     ),
-                   ),
+               SizedBox(
+                 width: 300,
+                 height: 300,
+                 child: Mannequin(
+                   onTap: (normalizedOffset) => field.didChange(normalizedOffset),
+                   isInteractiveMode: true,
                  ),
                ),
                // Set error message on failed validation
@@ -257,10 +216,7 @@ class AddClothingDialog extends StatelessWidget {
     final success = await showDialog<bool>(
       context: context,
       builder: (context) {
-        return Provider(
-          create: (_) => ClothingDialogController(db),
-          child: AddClothingDialog(),
-        );
+        return Provider(create: (_) => ClothingDialogController(db), child: AddClothingDialog());
       },
     );
     return success ?? false;
@@ -348,10 +304,7 @@ class AddClothingDialog extends StatelessWidget {
   }
 }
 
-Future<bool> showAddRowDialog({
-  required BuildContext context,
-  required String tableName,
-}) async {
+Future<bool> showAddRowDialog({required BuildContext context, required String tableName}) async {
   switch (tableName) {
     case 'clothing':
       return await AddClothingDialog().show(context);
@@ -416,19 +369,13 @@ Future<void> _showContextMenu({
 }
 
 /// Wrapper for showing a snackbar of a possible error when running [action].
-void errorWrapper(
-    BuildContext context,
-    Future<void> Function() action,
-    ) async {
+void errorWrapper(BuildContext context, Future<void> Function() action) async {
   try {
     await action();
   } catch (e) {
     debugPrint('$e');
     ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text('$e'),
-        backgroundColor: Theme.of(context).colorScheme.error,
-      )
+      SnackBar(content: Text('$e'), backgroundColor: Theme.of(context).colorScheme.error),
     );
   }
 }
