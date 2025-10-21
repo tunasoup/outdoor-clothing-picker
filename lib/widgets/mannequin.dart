@@ -3,8 +3,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:provider/provider.dart';
 
+import 'package:outdoor_clothing_picker/backend/clothing_viewmodel.dart';
 import 'package:outdoor_clothing_picker/database/database.dart';
-import 'package:outdoor_clothing_picker/misc/clothing_viewmodel.dart';
 
 /// Widget with a figure with has a toggleable [isInteractiveMode], which causes either
 /// (false, default) current filtered clothing labels to be drawn on it,

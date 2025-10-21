@@ -2,11 +2,11 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:universal_html/html.dart' as html;
 
+import 'package:outdoor_clothing_picker/backend/clothing_viewmodel.dart';
+import 'package:outdoor_clothing_picker/backend/item_notifiers.dart';
 import 'package:outdoor_clothing_picker/database/database.dart';
-import 'package:outdoor_clothing_picker/misc/clothing_viewmodel.dart';
-import 'package:outdoor_clothing_picker/misc/item_notifiers.dart';
+import 'package:outdoor_clothing_picker/widgets/addDialogs.dart';
 import 'package:outdoor_clothing_picker/widgets/mannequin.dart';
-import 'package:outdoor_clothing_picker/widgets/utils.dart';
 import 'package:outdoor_clothing_picker/widgets/weather_widget.dart';
 
 /// The clothing page visualizes which clothings from a local database would be appropriate

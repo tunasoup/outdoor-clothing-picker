@@ -5,7 +5,7 @@ import 'package:geolocator/geolocator.dart';
 import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
 
-import 'package:outdoor_clothing_picker/misc/weather_model.dart';
+import 'package:outdoor_clothing_picker/backend/weather_model.dart';
 
 class WeatherService {
   WeatherService();

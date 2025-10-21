@@ -2,8 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 
+import 'package:outdoor_clothing_picker/backend/weather_viewmodel.dart';
 import 'package:outdoor_clothing_picker/widgets/utils.dart';
-import 'package:outdoor_clothing_picker/misc/weather_viewmodel.dart';
 
 /// Widget for interacting with a weather API or manual user input.
 class WeatherWidget extends StatefulWidget {

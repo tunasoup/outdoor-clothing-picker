@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
+import 'package:outdoor_clothing_picker/backend/theme.dart';
 import 'package:outdoor_clothing_picker/database/database.dart';
-import 'package:outdoor_clothing_picker/misc/theme.dart';
 import 'package:outdoor_clothing_picker/pages/clothing_page.dart';
 import 'package:outdoor_clothing_picker/pages/data_visualization_page.dart';
 import 'package:outdoor_clothing_picker/pages/settings_page.dart';

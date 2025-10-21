@@ -2,7 +2,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 
 import 'package:outdoor_clothing_picker/database/database.dart';
-import 'package:outdoor_clothing_picker/widgets/utils.dart';
+import 'package:outdoor_clothing_picker/widgets/addDialogs.dart';
 
 /// The Data visualization page shows the contents of the local [db], and allows modifying it.
 class DataVisualizationPage extends StatefulWidget {
@@ -11,12 +11,10 @@ class DataVisualizationPage extends StatefulWidget {
   const DataVisualizationPage({super.key, required this.db});
 
   @override
-  State<DataVisualizationPage> createState() =>
-      _DataVisualizationPageState();
+  State<DataVisualizationPage> createState() => _DataVisualizationPageState();
 }
 
-class _DataVisualizationPageState
-    extends State<DataVisualizationPage> {
+class _DataVisualizationPageState extends State<DataVisualizationPage> {
   late Future<Map<String, List<Map<String, dynamic>>>> _tableDataFuture;
 
   @override
@@ -86,10 +84,7 @@ class _DataVisualizationPageState
                 children: [
                   Row(
                     children: [
-                      Text(
-                        tableName.toUpperCase(),
-                        style: Theme.of(context).textTheme.titleLarge,
-                      ),
+                      Text(tableName.toUpperCase(), style: Theme.of(context).textTheme.titleLarge),
                       const SizedBox(width: 8),
                       ElevatedButton(
                         onPressed: () async {
@@ -105,14 +100,10 @@ class _DataVisualizationPageState
                   ),
                   const SizedBox(height: 8),
                   ...rows.map(
-                        (row) => Card(
+                    (row) => Card(
                       margin: const EdgeInsets.symmetric(vertical: 4),
                       child: ListTile(
-                        title: Text(
-                          row.entries
-                              .map((e) => '${e.key}: ${e.value}')
-                              .join(', '),
-                        ),
+                        title: Text(row.entries.map((e) => '${e.key}: ${e.value}').join(', ')),
                         trailing: Row(
                           mainAxisSize: MainAxisSize.min,
                           children: [
@@ -132,11 +123,7 @@ class _DataVisualizationPageState
                                   _deleteRow(tableName, id);
                                 } else {
                                   ScaffoldMessenger.of(context).showSnackBar(
-                                    SnackBar(
-                                      content: Text(
-                                        'Cannot delete row: No ID field.',
-                                      ),
-                                    ),
+                                    SnackBar(content: Text('Cannot delete row: No ID field.')),
                                   );
                                 }
                               },

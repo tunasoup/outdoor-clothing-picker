@@ -1,7 +1,7 @@
 import 'package:flutter/foundation.dart';
 
-import 'package:outdoor_clothing_picker/misc/weather_model.dart';
-import 'package:outdoor_clothing_picker/misc/weather_service.dart';
+import 'package:outdoor_clothing_picker/backend/weather_model.dart';
+import 'package:outdoor_clothing_picker/backend/weather_service.dart';
 
 class WeatherViewModel extends ChangeNotifier {
   final WeatherService _weatherService;

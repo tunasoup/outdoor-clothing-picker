@@ -41,16 +41,16 @@ class _SettingsPageState extends State<SettingsPage> {
       body: _isLoading
           ? const Center(child: CircularProgressIndicator())
           : Padding(
-        padding: const EdgeInsets.all(16.0),
-        child: TextField(
-          controller: _controller,
-          decoration: const InputDecoration(
-            labelText: 'OpenWeatherMap API Key',
-            border: OutlineInputBorder(),
-          ),
-          onChanged: _saveApiKey,
-        ),
-      ),
+              padding: const EdgeInsets.all(16.0),
+              child: TextField(
+                controller: _controller,
+                decoration: const InputDecoration(
+                  labelText: 'OpenWeatherMap API Key',
+                  border: OutlineInputBorder(),
+                ),
+                onChanged: _saveApiKey,
+              ),
+            ),
     );
   }
 

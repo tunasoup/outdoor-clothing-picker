@@ -2,12 +2,12 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
+import 'package:outdoor_clothing_picker/backend/clothing_viewmodel.dart';
+import 'package:outdoor_clothing_picker/backend/item_notifiers.dart';
+import 'package:outdoor_clothing_picker/backend/theme.dart';
+import 'package:outdoor_clothing_picker/backend/weather_service.dart';
+import 'package:outdoor_clothing_picker/backend/weather_viewmodel.dart';
 import 'package:outdoor_clothing_picker/database/database.dart';
-import 'package:outdoor_clothing_picker/misc/clothing_viewmodel.dart';
-import 'package:outdoor_clothing_picker/misc/item_notifiers.dart';
-import 'package:outdoor_clothing_picker/misc/theme.dart';
-import 'package:outdoor_clothing_picker/misc/weather_service.dart';
-import 'package:outdoor_clothing_picker/misc/weather_viewmodel.dart';
 import 'package:outdoor_clothing_picker/pages/home_page.dart';
 
 late AppDb db;
