@@ -1,12 +1,11 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:provider/provider.dart';
-
 import 'package:outdoor_clothing_picker/backend/item_controllers.dart';
 import 'package:outdoor_clothing_picker/backend/item_notifiers.dart';
 import 'package:outdoor_clothing_picker/database/database.dart';
 import 'package:outdoor_clothing_picker/widgets/mannequin.dart';
+import 'package:provider/provider.dart';
 
 /// Dialog where a new Activity item can be created.
 class AddActivityDialog extends StatelessWidget {
@@ -20,7 +19,7 @@ class AddActivityDialog extends StatelessWidget {
         return Provider(
           create: (context) {
             final itemsProvider = context.read<ActivityItemsProvider>();
-            return ActivityDialogController(db, itemsProvider.items);
+            return ActivityDialogController(db, itemsProvider.names);
           },
           child: AddActivityDialog(),
         );
@@ -269,7 +268,7 @@ class AddClothingDialog extends StatelessWidget {
                   return DropdownButtonFormField<String>(
                     decoration: InputDecoration(hintText: 'Activity'),
                     validator: vm.validateDropdown,
-                    items: provider.items
+                    items: provider.names
                         .map((item) => DropdownMenuItem(value: item, child: Text(item)))
                         .toList(),
                     onSaved: vm.saveActivity,
@@ -288,6 +287,7 @@ class AddClothingDialog extends StatelessWidget {
                   ElevatedButton(
                     onPressed: () async {
                       if (await vm.saveClothing()) {
+                        Provider.of<ClothingItemsProvider>(context, listen: false).refresh();
                         Navigator.pop(context, true);
                       }
                     },
@@ -312,7 +312,7 @@ Future<bool> showAddRowDialog({required BuildContext context, required String ta
     case 'categories':
       return await AddCategoryDialog().show(context);
   }
-  return false;
+  throw Exception("Unknown table name $tableName");
 }
 
 /// Open a context menu at the provided position with the option to create a Category item.

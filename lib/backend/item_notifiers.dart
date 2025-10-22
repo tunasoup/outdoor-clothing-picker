@@ -4,40 +4,55 @@ import 'package:outdoor_clothing_picker/database/database.dart';
 abstract class ItemsProvider extends ChangeNotifier {
   final AppDb db;
 
-  ItemsProvider(this.db);
+  ItemsProvider(this.db) {
+    refresh();
+  }
+
+  bool isLoading = true;
+
+  List<Map<String, dynamic>> itemList = [];
+  List<String> names = [];
+
+  String get tableName;
+
+  Future<void> refresh() async {
+    isLoading = true;
+    notifyListeners();
+    await _loadItems();
+    isLoading = false;
+    notifyListeners();
+  }
+
+  Future<void> _loadItems();
 
   Future<List<ClothingData>> referencedBy(Map<String, dynamic> data);
 
-  Future<int> referencedByCount(Map<String, dynamic> data) async {
-    List<ClothingData> a = await referencedBy(data);
-    return a.length;
-  }
+  Future<int> referencedByCount(Map<String, dynamic> data) async =>
+      (await referencedBy(data)).length;
 
   Future<void> deleteItem(Map<String, dynamic> data);
 }
 
 class ActivityItemsProvider extends ItemsProvider {
-  ActivityItemsProvider(super.db) {
-    _loadItems();
-  }
+  ActivityItemsProvider(super.db);
 
-  List<String> items = [];
+  @override
+  String get tableName => "Activities";
 
+  @override
   Future<void> _loadItems() async {
     final result = await db.allActivities().get();
-    items = result.map((el) => el.name).toList();
-    notifyListeners();
+    names = result.map((el) => el.name).toList();
+    itemList = result.map((el) => el.toJson()).toList();
   }
 
   // TODO: unused but needs a working replacement
-  Future<String?> getFirstItem() async {
-    if (items.isEmpty) {
-      await _loadItems();
-    }
-    return items.isNotEmpty ? items.first : null;
-  }
-
-  Future<void> refresh() => _loadItems();
+  // Future<String?> getFirstItem() async {
+  //   if (items.isEmpty) {
+  //     await _loadItems();
+  //   }
+  //   return items.isNotEmpty ? items.first : null;
+  // }
 
   @override
   Future<List<ClothingData>> referencedBy(Map<String, dynamic> data) async {
@@ -49,24 +64,22 @@ class ActivityItemsProvider extends ItemsProvider {
   Future<void> deleteItem(Map<String, dynamic> data) async {
     String name = data['name'];
     await db.deleteActivity(name);
-    // _loadItems();
+    await refresh();
   }
 }
 
 class CategoryItemsProvider extends ItemsProvider {
-  CategoryItemsProvider(super.db) {
-    _loadItems();
-  }
+  CategoryItemsProvider(super.db);
 
-  List<String> names = [];
+  @override
+  String get tableName => "Categories";
 
+  @override
   Future<void> _loadItems() async {
     final result = await db.allCategories().get();
     names = result.map((el) => el.name).toList();
-    notifyListeners();
+    itemList = result.map((el) => el.toJson()).toList();
   }
-
-  Future<void> refresh() => _loadItems();
 
   @override
   Future<List<ClothingData>> referencedBy(Map<String, dynamic> data) async {
@@ -83,6 +96,15 @@ class CategoryItemsProvider extends ItemsProvider {
 
 class ClothingItemsProvider extends ItemsProvider {
   ClothingItemsProvider(super.db);
+
+  @override
+  String get tableName => "Clothing";
+
+  @override
+  Future<void> _loadItems() async {
+    final result = await db.allClothing().get();
+    itemList = result.map((el) => el.toJson()).toList();
+  }
 
   @override
   Future<List<ClothingData>> referencedBy(Map<String, dynamic> data) async {

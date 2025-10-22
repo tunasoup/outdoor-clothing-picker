@@ -108,10 +108,10 @@ class ActivityDropdown extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Consumer<ActivityItemsProvider>(
-      builder: (context, provider, _) {
+      builder: (context, ActivityItemsProvider provider, _) {
         return DropdownButtonFormField<String>(
           initialValue: initialValue,
-          items: provider.items
+          items: provider.names
               .map((item) => DropdownMenuItem(value: item, child: Text(item)))
               .toList(),
           onChanged: onChanged,

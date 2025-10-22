@@ -1,12 +1,11 @@
 import 'package:flutter/material.dart';
-import 'package:provider/provider.dart';
-
 import 'package:outdoor_clothing_picker/backend/theme.dart';
 import 'package:outdoor_clothing_picker/database/database.dart';
 import 'package:outdoor_clothing_picker/pages/clothing_page.dart';
 import 'package:outdoor_clothing_picker/pages/data_visualization_page.dart';
 import 'package:outdoor_clothing_picker/pages/settings_page.dart';
 import 'package:outdoor_clothing_picker/widgets/navigation.dart';
+import 'package:provider/provider.dart';
 
 /// Parent widget for the real pages, managing navigation.
 class HomePage extends StatefulWidget {
@@ -24,7 +23,7 @@ class _HomePageState extends State<HomePage> {
 
   late final List<Widget> pages = [
     ClothingPage(title: 'Clothing'), // Landing page
-    DataVisualizationPage(db: widget.db),
+    DataVisualizationPage(),
     const SettingsPage(),
   ];
 
