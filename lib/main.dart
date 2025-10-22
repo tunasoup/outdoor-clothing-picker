@@ -29,6 +29,7 @@ void main() async {
         ChangeNotifierProvider<ThemeProvider>.value(value: themeProvider),
         ChangeNotifierProvider(create: (context) => ActivityItemsProvider(db)),
         ChangeNotifierProvider(create: (context) => CategoryItemsProvider(db)),
+        ChangeNotifierProvider(create: (context) => ClothingItemsProvider(db)),
         ChangeNotifierProvider(create: (_) => WeatherViewModel(WeatherService())),
         ChangeNotifierProxyProvider<WeatherViewModel, ClothingViewModel>(
           create: (_) => ClothingViewModel(db),

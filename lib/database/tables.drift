@@ -3,8 +3,8 @@ CREATE TABLE clothing (
     name TEXT NOT NULL,
     min_temp INT NOT NULL,
     max_temp INT NOT NULL,
-    category TEXT NOT NULL REFERENCES categories(name),
-    activity TEXT NOT NULL
+    category TEXT REFERENCES categories(name) ON DELETE SET NULL,
+    activity TEXT REFERENCES activities(name) ON DELETE SET NULL
 );
 
 -- Location of clothing, e.g., head, hand, feet
@@ -25,9 +25,24 @@ INNER JOIN categories ca ON cl.category = ca.name
 WHERE min_temp <= :temp AND max_temp >= :temp
 AND activity == :activity;
 
+allActivities: SELECT * FROM activities;
+
 allCategories: SELECT * FROM categories;
 
-allActivities: SELECT * FROM activities;
+clothingWithActivity: SELECT * FROM clothing
+WHERE activity == :activity;
+
+clothingWithCategory: SELECT * FROM clothing
+WHERE category == :category;
+
+deleteActivity: DELETE FROM activities
+WHERE name == :name;
+
+deleteCategory: DELETE FROM categories
+WHERE name == :name;
+
+deleteClothing: DELETE FROM clothing
+WHERE id == :id;
 
 createDefaultActivities: INSERT INTO activities VALUES
 ('Default'),

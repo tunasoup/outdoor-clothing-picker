@@ -1,3 +1,4 @@
+import 'package:drift/drift.dart';
 import 'package:flutter/material.dart';
 
 import 'package:outdoor_clothing_picker/database/database.dart';
@@ -109,8 +110,8 @@ class ClothingDialogController {
               name: _name!,
               minTemp: _minTemp!,
               maxTemp: _maxTemp!,
-              category: _category!,
-              activity: _activity!,
+              category: Value(_category!),
+              activity: Value(_activity!),
             ),
           );
       return true;

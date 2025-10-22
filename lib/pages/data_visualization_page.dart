@@ -1,8 +1,11 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 
+import 'package:outdoor_clothing_picker/backend/item_notifiers.dart';
 import 'package:outdoor_clothing_picker/database/database.dart';
 import 'package:outdoor_clothing_picker/widgets/addDialogs.dart';
+import 'package:outdoor_clothing_picker/widgets/utils.dart';
 
 /// The Data visualization page shows the contents of the local [db], and allows modifying it.
 class DataVisualizationPage extends StatefulWidget {
@@ -17,6 +20,8 @@ class DataVisualizationPage extends StatefulWidget {
 class _DataVisualizationPageState extends State<DataVisualizationPage> {
   late Future<Map<String, List<Map<String, dynamic>>>> _tableDataFuture;
 
+  // TODO do not fetch all the tables as associations are not relevant to visualize twice,
+  //  likely could rely on providers.
   @override
   void initState() {
     super.initState();
@@ -42,13 +47,64 @@ class _DataVisualizationPageState extends State<DataVisualizationPage> {
     return data;
   }
 
-  // TODO: implement data modifications
-  void _deleteRow(String tableName, int id) async {
-    if (kDebugMode) {
-      debugPrint('Delete $tableName id: $id');
+
+  Future<void> _deleteRow(BuildContext context, ItemsProvider provider, Map<String, dynamic> data)
+  async {
+    if (kDebugMode) debugPrint('Delete $provider data: $data');
+    int referenceCount = await provider.referencedByCount(data);
+    String message = _createDeleteMessage(data, referenceCount);
+    final bool confirmed = await _showDeleteAlert(context, message);
+    if (confirmed) {
+      await provider.deleteItem(data);
+      await _refresh();
     }
   }
 
+  String _createDeleteMessage(Map<String, dynamic> data, int referenceCount) {
+    String msg = 'You are about to delete the following data item:';
+    msg += '\n$data';
+    if (referenceCount > 0) {
+      msg += '\nThe item affects $referenceCount clothing item(s).';
+    }
+    msg += '\nAre you sure?';
+    return msg;
+  }
+
+  Future<bool> _showDeleteAlert(BuildContext context, String message) async {
+    return await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Text(
+            'Confirm Deletion',
+            textAlign: TextAlign.center,
+          style: Theme.of(context).textTheme.headlineMedium,
+
+        ),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text(message, textAlign: TextAlign.center),
+            Padding(padding: EdgeInsets.all(16.0)),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                TextButton(onPressed: () => Navigator.pop(context, false), child: Text('Cancel')),
+                ElevatedButton(
+                    onPressed: () => Navigator.pop(context, true),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Theme.of(context).colorScheme.errorContainer,
+                      foregroundColor: Theme.of(context).colorScheme.onErrorContainer,
+                    ),
+                    child: Text('Delete')),
+              ],
+            ),
+          ],
+        ),
+      ),
+    ) ?? false;
+  }
+
+  // TODO: implement remaining data modifications
   void _copyRow(String tableNAme, Map<String, dynamic> row) async {
     if (kDebugMode) {
       debugPrint('Copy $tableNAme row: $row');
@@ -59,6 +115,19 @@ class _DataVisualizationPageState extends State<DataVisualizationPage> {
     if (kDebugMode) {
       debugPrint('Edit $tableName row: $row');
     }
+  }
+
+ItemsProvider _getProvider(String tableName, BuildContext context) {
+    switch (tableName) {
+      case 'clothing':
+        return Provider.of<ClothingItemsProvider>(context, listen: false);
+      case 'activities':
+        return Provider.of<ActivityItemsProvider>(context, listen: false);
+      case 'categories':
+        return Provider.of<CategoryItemsProvider>(context, listen: false);
+    }
+    throw Exception('No provider implemented for $tableName.');
+
   }
 
   @override
@@ -118,15 +187,11 @@ class _DataVisualizationPageState extends State<DataVisualizationPage> {
                             IconButton(
                               icon: const Icon(Icons.delete),
                               onPressed: () {
-                                final id = row['id'];
-                                if (id is int) {
-                                  _deleteRow(tableName, id);
-                                } else {
-                                  ScaffoldMessenger.of(context).showSnackBar(
-                                    SnackBar(content: Text('Cannot delete row: No ID field.')),
-                                  );
-                                }
-                              },
+                                errorWrapper(context, () async {
+                                  final provider = _getProvider(tableName, context);
+                                  await _deleteRow(context, provider, row);
+                                });
+                              }
                             ),
                           ],
                         ),
