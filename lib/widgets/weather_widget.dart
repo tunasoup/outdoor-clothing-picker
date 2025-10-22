@@ -42,7 +42,7 @@ class _WeatherWidgetState extends State<WeatherWidget> {
             hintText: 'e.g. 25',
           ),
           // onChanged: (value) => viewModel.setManualTemperature(value),
-          onSubmitted: (value) => viewModel.setManualTemperature(value),
+          onSubmitted: viewModel.setManualTemperature,
           keyboardType: TextInputType.numberWithOptions(signed: true),
           inputFormatters: [FilteringTextInputFormatter.allow(RegExp(r'^-?[0-9]*'))],
         ),

@@ -1,7 +1,7 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
-import 'package:outdoor_clothing_picker/backend/item_notifiers.dart';
-import 'package:outdoor_clothing_picker/widgets/addDialogs.dart';
+import 'package:outdoor_clothing_picker/backend/items_provider.dart';
+import 'package:outdoor_clothing_picker/widgets/add_dialogs.dart';
 import 'package:outdoor_clothing_picker/widgets/utils.dart';
 import 'package:provider/provider.dart';
 

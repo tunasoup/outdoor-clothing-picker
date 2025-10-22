@@ -2,7 +2,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:outdoor_clothing_picker/backend/item_controllers.dart';
-import 'package:outdoor_clothing_picker/backend/item_notifiers.dart';
+import 'package:outdoor_clothing_picker/backend/items_provider.dart';
 import 'package:outdoor_clothing_picker/database/database.dart';
 import 'package:outdoor_clothing_picker/widgets/mannequin.dart';
 import 'package:provider/provider.dart';
@@ -41,8 +41,8 @@ class AddActivityDialog extends StatelessWidget {
           children: [
             TextFormField(
               decoration: InputDecoration(labelText: 'Activity Name'),
-              validator: (value) => controller.validateName(value),
-              onSaved: (value) => controller.saveName(value),
+              validator: controller.validateName,
+              onSaved: controller.saveName,
               autofocus: true,
             ),
             Padding(padding: EdgeInsets.all(16.0)),
@@ -53,8 +53,8 @@ class AddActivityDialog extends StatelessWidget {
                 ElevatedButton(
                   onPressed: () async {
                     if (await controller.saveActivity()) {
-                      Provider.of<ActivityItemsProvider>(context, listen: false).refresh();
                       Navigator.pop(context, true);
+                      await Provider.of<ActivityItemsProvider>(context, listen: false).refresh();
                     }
                   },
                   child: Text('Save'),
@@ -109,8 +109,8 @@ class AddCategoryDialog extends StatelessWidget {
           children: [
             TextFormField(
               decoration: InputDecoration(labelText: 'Category Name'),
-              validator: (value) => controller.validateName(value),
-              onSaved: (value) => controller.saveName(value),
+              validator: controller.validateName,
+              onSaved: controller.saveName,
               autofocus: true,
             ),
             if (normX != null || normY != null)
@@ -125,8 +125,8 @@ class AddCategoryDialog extends StatelessWidget {
                 ElevatedButton(
                   onPressed: () async {
                     if (await controller.saveCategory()) {
-                      Provider.of<CategoryItemsProvider>(context, listen: false).refresh();
                       Navigator.pop(context, true);
+                      await Provider.of<CategoryItemsProvider>(context, listen: false).refresh();
                     }
                   },
                   child: Text('Save'),
@@ -287,8 +287,8 @@ class AddClothingDialog extends StatelessWidget {
                   ElevatedButton(
                     onPressed: () async {
                       if (await vm.saveClothing()) {
-                        Provider.of<ClothingItemsProvider>(context, listen: false).refresh();
                         Navigator.pop(context, true);
+                        await Provider.of<ClothingItemsProvider>(context, listen: false).refresh();
                       }
                     },
                     child: Text('Save'),

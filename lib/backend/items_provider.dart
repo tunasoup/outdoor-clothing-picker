@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:outdoor_clothing_picker/database/database.dart';
 
+/// Define classes responsible for providing and maintaining each main
+/// database table.
 abstract class ItemsProvider extends ChangeNotifier {
   final AppDb db;
 

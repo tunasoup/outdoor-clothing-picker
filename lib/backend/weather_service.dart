@@ -1,11 +1,11 @@
 import 'dart:convert';
+
 import 'package:flutter/foundation.dart';
 import 'package:geocoding/geocoding.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:http/http.dart' as http;
-import 'package:shared_preferences/shared_preferences.dart';
-
 import 'package:outdoor_clothing_picker/backend/weather_model.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 class WeatherService {
   WeatherService();
@@ -28,7 +28,7 @@ class WeatherService {
     final apiKey = prefs.getString('api_key_owm');
     double lat = location.latitude;
     double lon = location.longitude;
-    debugPrint('lat:$lat, lon:$lon');
+    if (kDebugMode) debugPrint('lat:$lat, lon:$lon');
     final response = await http.get(
       Uri.parse('$baseUrl?lat=$lat&lon=$lon&appid=$apiKey&units=$units'),
     );
@@ -38,7 +38,7 @@ class WeatherService {
     } else {
       String msg =
           'Failed to load weather data, code ${response.statusCode}: ${response.reasonPhrase}';
-      debugPrint(msg);
+      if (kDebugMode) debugPrint(msg);
       throw Exception(msg);
     }
   }
@@ -70,7 +70,7 @@ Future<Location> getLocationFromCityName(String cityName) async {
     // Mobile only
     locations = await locationFromAddress(cityName);
   } catch (e) {
-    debugPrint('$e');
+    if (kDebugMode) debugPrint('$e');
     rethrow;
   }
 

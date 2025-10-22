@@ -1,10 +1,9 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
-import 'package:provider/provider.dart';
-
 import 'package:outdoor_clothing_picker/backend/clothing_viewmodel.dart';
 import 'package:outdoor_clothing_picker/database/database.dart';
+import 'package:provider/provider.dart';
 
 /// Widget with a figure with has a toggleable [isInteractiveMode], which causes either
 /// (false, default) current filtered clothing labels to be drawn on it,
@@ -97,7 +96,9 @@ class _MannequinState extends State<Mannequin> with WidgetsBindingObserver {
                 final normalizedY = (localPos.dy - figureRect!.top) / figureRect!.height;
                 final normalizedOffset = Offset(normalizedX, normalizedY);
 
-                debugPrint('Tapped at normalized coordinate: ($normalizedOffset)');
+                if (kDebugMode) {
+                  debugPrint('Tapped at normalized coordinate: ($normalizedOffset)');
+                }
 
                 if (widget.isInteractiveMode) _handleInteractiveTap(normalizedOffset);
 

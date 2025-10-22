@@ -3,7 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 import 'package:outdoor_clothing_picker/backend/clothing_viewmodel.dart';
-import 'package:outdoor_clothing_picker/backend/item_notifiers.dart';
+import 'package:outdoor_clothing_picker/backend/items_provider.dart';
 import 'package:outdoor_clothing_picker/backend/theme.dart';
 import 'package:outdoor_clothing_picker/backend/weather_service.dart';
 import 'package:outdoor_clothing_picker/backend/weather_viewmodel.dart';
