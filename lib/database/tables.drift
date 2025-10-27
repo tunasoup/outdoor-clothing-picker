@@ -9,14 +9,16 @@ CREATE TABLE clothing (
 
 -- Location of clothing, e.g., head, hand, feet
 CREATE TABLE categories (
-    name TEXT NOT NULL PRIMARY KEY,
+    id INT PRIMARY KEY AUTOINCREMENT,
+    name TEXT NOT NULL UNIQUE,
     norm_x FLOAT NOT NULL,
     norm_y FLOAT NOT NULL
 ) AS category;
 
 -- User defined activities, such as walking or skiing
 CREATE TABLE activities (
-    name TEXT NOT NULL PRIMARY KEY
+    id INT PRIMARY KEY AUTOINCREMENT,
+    name TEXT NOT NULL UNIQUE
 ) as activity;
 
 -- Check for clothing that fit the provided temperature and activity
@@ -46,11 +48,11 @@ WHERE name == :name;
 deleteClothing: DELETE FROM clothing
 WHERE id == :id;
 
-createDefaultActivities: INSERT INTO activities VALUES
+createDefaultActivities: INSERT INTO activities (name) VALUES
 ('Default'),
 ('Jog');
 
-createDefaultCategories: INSERT INTO categories VALUES
+createDefaultCategories: INSERT INTO categories (name, norm_x, norm_y) VALUES
 ('Head', 0.5, 0.1),
 ('Torso', 0.5, 0.4),
 ('Legs', 0.5, 0.9);

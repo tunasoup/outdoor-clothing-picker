@@ -1,0 +1,8 @@
+targets:
+  $default:
+    builders:
+      drift_dev:
+        options:
+          databases:
+            db: lib/database/database.dart
+          schema_dir: lib/database/drift_schemas/
