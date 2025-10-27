@@ -64,8 +64,8 @@ class ActivityItemsProvider extends ItemsProvider {
 
   @override
   Future<void> deleteItem(Map<String, dynamic> data) async {
-    String name = data['name'];
-    await db.deleteActivity(name);
+    int id = data['id'];
+    await db.deleteActivity(id);
     await refresh();
   }
 }
@@ -91,8 +91,8 @@ class CategoryItemsProvider extends ItemsProvider {
 
   @override
   Future<void> deleteItem(Map<String, dynamic> data) async {
-    String name = data['name'];
-    await db.deleteCategory(name);
+    int id = data['id'];
+    await db.deleteCategory(id);
     await refresh();
   }
 }
