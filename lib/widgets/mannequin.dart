@@ -9,12 +9,19 @@ import 'package:provider/provider.dart';
 /// (false, default) current filtered clothing labels to be drawn on it,
 /// (true) allow the user to tap it to select a point, returnable via [onTap] callback.
 /// Interactive mode is meant to be used for selecting points that can be visualized later
-/// at the some points by a different uninteractive figure.
+/// at the some points by a different uninteractive figure. [initialCirclePosition] can be
+/// provided as normalized coordinates for the first selected point, in interactive mode.
 class Mannequin extends StatefulWidget {
   final ValueChanged<Offset>? onTap;
   final bool isInteractiveMode;
+  final Offset? initialCirclePosition;
 
-  const Mannequin({super.key, this.onTap, this.isInteractiveMode = false});
+  const Mannequin({
+    super.key,
+    this.onTap,
+    this.isInteractiveMode = false,
+    this.initialCirclePosition,
+  });
 
   @override
   State<Mannequin> createState() => _MannequinState();
@@ -32,6 +39,7 @@ class _MannequinState extends State<Mannequin> with WidgetsBindingObserver {
     // The overlay on the figure redraws whenever the size of the figure changes
     WidgetsBinding.instance.addObserver(this);
     WidgetsBinding.instance.addPostFrameCallback((_) => _calculateFigureRect());
+    _circlePosition = widget.initialCirclePosition;
   }
 
   @override

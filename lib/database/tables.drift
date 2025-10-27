@@ -43,6 +43,10 @@ updateActivity: UPDATE activities
 SET name = :name
 WHERE id = :id;
 
+updateCategory: UPDATE categories
+SET name = :name, norm_x = :norm_x, norm_y = :norm_y
+WHERE id = :id;
+
 deleteActivity: DELETE FROM activities
 WHERE id == :id;
 

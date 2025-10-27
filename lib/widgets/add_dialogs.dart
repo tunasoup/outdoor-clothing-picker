@@ -1,4 +1,3 @@
-import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:outdoor_clothing_picker/backend/item_controllers.dart';
@@ -7,7 +6,7 @@ import 'package:outdoor_clothing_picker/database/database.dart';
 import 'package:outdoor_clothing_picker/widgets/mannequin.dart';
 import 'package:provider/provider.dart';
 
-/// Dialog where a new Activity item can be created.
+/// Dialog where a new Activity item can be created or provided [editableData] modified.
 class AddActivityDialog extends StatelessWidget {
   final Map<String, dynamic>? editableData;
 
@@ -75,14 +74,12 @@ class AddActivityDialog extends StatelessWidget {
   }
 }
 
-/// Dialog where a new Category item can be created.
-/// If [normX] and [normY] coordinates are not provided, then the user is prompted
-/// to click a spot on a figure for them.
+/// Dialog where a new Category item can be created or provided [editableData] modified.
+/// The user is prompted to click a spot on a figure for filling the data.
 class AddCategoryDialog extends StatelessWidget {
-  final double? normX;
-  final double? normY;
+  final Map<String, dynamic>? editableData;
 
-  AddCategoryDialog({super.key, this.normX, this.normY});
+  AddCategoryDialog({super.key, this.editableData});
 
   final Size size = Size(100, 200);
 
@@ -94,9 +91,9 @@ class AddCategoryDialog extends StatelessWidget {
         return Provider(
           create: (context) {
             final itemsProvider = context.read<CategoryItemsProvider>();
-            return CategoryDialogController(db, itemsProvider.names);
+            return CategoryDialogController(db, itemsProvider.names, editableData);
           },
-          child: AddCategoryDialog(normX: normX, normY: normY),
+          child: AddCategoryDialog(editableData: editableData),
         );
       },
     );
@@ -108,22 +105,20 @@ class AddCategoryDialog extends StatelessWidget {
     final controller = context.read<CategoryDialogController>();
 
     return AlertDialog(
-      title: Text('Add Category'),
+      title: Text(controller.getTitle()),
       content: Form(
         key: controller.formKey,
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
             TextFormField(
+              initialValue: controller.getInitialName(),
               decoration: InputDecoration(labelText: 'Category Name'),
               validator: controller.validateName,
               onSaved: controller.saveName,
               autofocus: true,
             ),
-            if (normX != null || normY != null)
-              _buildStaticCoordinateView(normX!, normY!)
-            else
-              InteractiveFigureFormField(context: context, size: size, controller: controller),
+            InteractiveFigureFormField(context: context, size: size, controller: controller),
             Padding(padding: EdgeInsets.all(16.0)),
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -134,6 +129,10 @@ class AddCategoryDialog extends StatelessWidget {
                     if (await controller.saveCategory()) {
                       Navigator.pop(context, true);
                       await Provider.of<CategoryItemsProvider>(context, listen: false).refresh();
+                      if (controller.editMode) {
+                        // Refresh clothing in case references changed
+                        await Provider.of<ClothingItemsProvider>(context, listen: false).refresh();
+                      }
                     }
                   },
                   child: Text('Save'),
@@ -156,7 +155,7 @@ class InteractiveFigureFormField extends FormField<Offset> {
     required this.controller,
     AutovalidateMode super.autovalidateMode = AutovalidateMode.disabled,
   }) : super(
-         initialValue: null,
+         initialValue: controller.getInitialCoords(),
          validator: (value) => controller.validateCoords(value?.dx, value?.dy),
          onSaved: (value) => controller.saveCoords(value?.dx, value?.dy),
          builder: (FormFieldState<Offset> field) {
@@ -183,6 +182,7 @@ class InteractiveFigureFormField extends FormField<Offset> {
                  child: Mannequin(
                    onTap: (normalizedOffset) => field.didChange(normalizedOffset),
                    isInteractiveMode: true,
+                   initialCirclePosition: controller.getInitialCoords(),
                  ),
                ),
                // Set error message on failed validation
@@ -202,13 +202,6 @@ class InteractiveFigureFormField extends FormField<Offset> {
   final BuildContext context;
   final Size size;
   final CategoryDialogController controller;
-}
-
-Widget _buildStaticCoordinateView(double normX, double normY) {
-  return Text(
-    'Coordinates selected:\nx=${normX.toStringAsFixed(2)}, y=${normY.toStringAsFixed(2)}',
-    textAlign: TextAlign.center,
-  );
 }
 
 /// Dialog where a new Clothing item can be created.
@@ -319,38 +312,9 @@ Future<bool> showAddRowDialog({
     case 'activities':
       return await AddActivityDialog(editableData: editableData).show(context);
     case 'categories':
-      return await AddCategoryDialog().show(context);
+      return await AddCategoryDialog(editableData: editableData).show(context);
     case 'clothing':
       return await AddClothingDialog().show(context);
   }
   throw Exception("Unknown table name $tableName");
-}
-
-/// Open a context menu at the provided position with the option to create a Category item.
-/// The size of the local widget needs to be provided.
-Future<void> _showContextMenu({
-  required BuildContext context,
-  required Offset globalPosition,
-  required Offset localPosition,
-  required Size localSize,
-}) async {
-  final selected = await showMenu(
-    context: context,
-    position: RelativeRect.fromLTRB(
-      globalPosition.dx,
-      globalPosition.dy,
-      globalPosition.dx,
-      globalPosition.dy,
-    ),
-    items: [PopupMenuItem<String>(value: 'create_category', child: Text('Create Category'))],
-  );
-
-  if (selected == 'create_category') {
-    double normX = localPosition.dx / localSize.width;
-    double normY = localPosition.dy / localSize.height;
-    if (kDebugMode) {
-      debugPrint('Create category at: $normX $normY');
-    }
-    await AddCategoryDialog(normX: normX, normY: normY).show(context);
-  }
 }

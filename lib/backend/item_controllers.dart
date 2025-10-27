@@ -7,13 +7,13 @@ class ActivityDialogController {
   final List<String> availableActivities;
   final Map<String, dynamic>? editableData;
   late final bool editMode;
-  late final String? _oldName;
   late final int? _id;
+  late final String? _oldName;
 
   ActivityDialogController(this.db, this.availableActivities, this.editableData)
     : editMode = editableData != null,
-      _oldName = editableData?['name'],
-      _id = editableData?['id'];
+      _id = editableData?['id'],
+      _oldName = editableData?['name'];
 
   String? _name;
   final formKey = GlobalKey<FormState>();
@@ -56,17 +56,37 @@ class ActivityDialogController {
 class CategoryDialogController {
   final AppDb db;
   final List<String> availableCategories;
+  final Map<String, dynamic>? editableData;
+  late final bool editMode;
+  late final int? _id;
+  late final String? _oldName;
+  late final double? _oldNormX;
+  late final double? _oldNormY;
 
-  CategoryDialogController(this.db, this.availableCategories);
+  CategoryDialogController(this.db, this.availableCategories, this.editableData)
+    : editMode = editableData != null,
+      _id = editableData?['id'],
+      _oldName = editableData?['name'],
+      _oldNormX = editableData?['norm_x'],
+      _oldNormY = editableData?['norm_y'];
 
   String? _name;
   double? _normX;
   double? _normY;
   final formKey = GlobalKey<FormState>();
 
+  String getTitle() => editMode ? 'Edit Category \'${editableData!['name']}\'' : 'Add Category';
+
+  String? getInitialName() => _oldName;
+
+  Offset? getInitialCoords() =>
+      _oldNormX != null && _oldNormY != null ? Offset(_oldNormX, _oldNormY) : null;
+
   String? validateName(String? value) {
-    if (value == null || value.trim().isEmpty) return 'Enter a value';
-    if (availableCategories.contains(value.trim().toLowerCase())) {
+    value = value?.trim();
+    if (value == null || value.isEmpty) return 'Enter a value';
+    // The only allowed duplicate value is a possible old one
+    if (value != _oldName && availableCategories.contains(value.toLowerCase())) {
       return 'This category already exists';
     }
     return null;
@@ -89,9 +109,13 @@ class CategoryDialogController {
   Future<bool> saveCategory() async {
     if (formKey.currentState?.validate() ?? false) {
       formKey.currentState?.save();
-      await db
-          .into(db.categories)
-          .insert(CategoriesCompanion.insert(name: _name!, normX: _normX!, normY: _normY!));
+      if (editMode) {
+        await db.updateCategory(_name!, _normX!, _normY!, _id);
+      } else {
+        await db
+            .into(db.categories)
+            .insert(CategoriesCompanion.insert(name: _name!, normX: _normX!, normY: _normY!));
+      }
       return true;
     }
     return false;
