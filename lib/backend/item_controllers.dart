@@ -1,21 +1,34 @@
 import 'package:drift/drift.dart';
 import 'package:flutter/material.dart';
-
 import 'package:outdoor_clothing_picker/database/database.dart';
 
 class ActivityDialogController {
   final AppDb db;
   final List<String> availableActivities;
+  final Map<String, dynamic>? editableData;
+  late final bool editMode;
+  late final String? _oldName;
+  late final int? _id;
 
-  ActivityDialogController(this.db, this.availableActivities);
+  ActivityDialogController(this.db, this.availableActivities, this.editableData)
+    : editMode = editableData != null,
+      _oldName = editableData?['name'],
+      _id = editableData?['id'];
 
   String? _name;
   final formKey = GlobalKey<FormState>();
 
+  String getTitle() => editMode ? 'Edit Activity \'${editableData!['name']}\'' : 'Add Activity';
+
+  String? getInitialName() => _oldName;
+
   String? validateName(String? value) {
-    if (value == null || value.trim().isEmpty) return 'Enter a value';
+    value = value?.trim();
+    if (value == null || value.isEmpty) return 'Enter a value';
+    if (value == _oldName) return 'Enter a new value';
+    // TODO: option to merge if a duplicate name given (i.e. delete and change clothing reference)
     List<String> existingNames = availableActivities.map((el) => el.toLowerCase()).toList();
-    if (existingNames.contains(value.trim().toLowerCase())) {
+    if (existingNames.contains(value.toLowerCase())) {
       return 'This activity already exists';
     }
     return null;
@@ -28,7 +41,57 @@ class ActivityDialogController {
   Future<bool> saveActivity() async {
     if (formKey.currentState?.validate() ?? false) {
       formKey.currentState?.save();
-      await db.into(db.activities).insert(ActivitiesCompanion.insert(name: _name!));
+      // TODO: use items provider?
+      if (editMode) {
+        await db.updateActivity(_name!, _id!);
+      } else {
+        await db.into(db.activities).insert(ActivitiesCompanion.insert(name: _name!));
+      }
+      return true;
+    }
+    return false;
+  }
+}
+
+class CategoryDialogController {
+  final AppDb db;
+  final List<String> availableCategories;
+
+  CategoryDialogController(this.db, this.availableCategories);
+
+  String? _name;
+  double? _normX;
+  double? _normY;
+  final formKey = GlobalKey<FormState>();
+
+  String? validateName(String? value) {
+    if (value == null || value.trim().isEmpty) return 'Enter a value';
+    if (availableCategories.contains(value.trim().toLowerCase())) {
+      return 'This category already exists';
+    }
+    return null;
+  }
+
+  String? validateCoords(double? x, double? y) {
+    if (x == null || y == null) return 'Select coordinates';
+    return null;
+  }
+
+  void saveName(String? value) {
+    _name = value?.trim();
+  }
+
+  void saveCoords(double? x, double? y) {
+    _normX = x;
+    _normY = y;
+  }
+
+  Future<bool> saveCategory() async {
+    if (formKey.currentState?.validate() ?? false) {
+      formKey.currentState?.save();
+      await db
+          .into(db.categories)
+          .insert(CategoriesCompanion.insert(name: _name!, normX: _normX!, normY: _normY!));
       return true;
     }
     return false;
@@ -114,51 +177,6 @@ class ClothingDialogController {
               activity: Value(_activity!),
             ),
           );
-      return true;
-    }
-    return false;
-  }
-}
-
-class CategoryDialogController {
-  final AppDb db;
-  final List<String> availableCategories;
-
-  CategoryDialogController(this.db, this.availableCategories);
-
-  String? _name;
-  double? _normX;
-  double? _normY;
-  final formKey = GlobalKey<FormState>();
-
-  String? validateName(String? value) {
-    if (value == null || value.trim().isEmpty) return 'Enter a value';
-    if (availableCategories.contains(value.trim().toLowerCase())) {
-      return 'This category already exists';
-    }
-    return null;
-  }
-
-  String? validateCoords(double? x, double? y) {
-    if (x == null || y == null) return 'Select coordinates';
-    return null;
-  }
-
-  void saveName(String? value) {
-    _name = value?.trim();
-  }
-
-  void saveCoords(double? x, double? y) {
-    _normX = x;
-    _normY = y;
-  }
-
-  Future<bool> saveCategory() async {
-    if (formKey.currentState?.validate() ?? false) {
-      formKey.currentState?.save();
-      await db
-          .into(db.categories)
-          .insert(CategoriesCompanion.insert(name: _name!, normX: _normX!, normY: _normY!));
       return true;
     }
     return false;

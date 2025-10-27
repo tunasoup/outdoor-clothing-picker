@@ -9,7 +9,9 @@ import 'package:provider/provider.dart';
 
 /// Dialog where a new Activity item can be created.
 class AddActivityDialog extends StatelessWidget {
-  const AddActivityDialog({super.key});
+  final Map<String, dynamic>? editableData;
+
+  const AddActivityDialog({super.key, this.editableData});
 
   Future<bool> show(BuildContext context) async {
     final AppDb db = context.read<AppDb>();
@@ -19,9 +21,9 @@ class AddActivityDialog extends StatelessWidget {
         return Provider(
           create: (context) {
             final itemsProvider = context.read<ActivityItemsProvider>();
-            return ActivityDialogController(db, itemsProvider.names);
+            return ActivityDialogController(db, itemsProvider.names, editableData);
           },
-          child: AddActivityDialog(),
+          child: AddActivityDialog(editableData: editableData),
         );
       },
     );
@@ -33,13 +35,14 @@ class AddActivityDialog extends StatelessWidget {
     final controller = context.read<ActivityDialogController>();
 
     return AlertDialog(
-      title: Text('Add Activity'),
+      title: Text(controller.getTitle()),
       content: Form(
         key: controller.formKey,
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
             TextFormField(
+              initialValue: controller.getInitialName(),
               decoration: InputDecoration(labelText: 'Activity Name'),
               validator: controller.validateName,
               onSaved: controller.saveName,
@@ -55,6 +58,10 @@ class AddActivityDialog extends StatelessWidget {
                     if (await controller.saveActivity()) {
                       Navigator.pop(context, true);
                       await Provider.of<ActivityItemsProvider>(context, listen: false).refresh();
+                      if (controller.editMode) {
+                        // Refresh clothing in case references changed
+                        await Provider.of<ClothingItemsProvider>(context, listen: false).refresh();
+                      }
                     }
                   },
                   child: Text('Save'),
@@ -303,14 +310,18 @@ class AddClothingDialog extends StatelessWidget {
   }
 }
 
-Future<bool> showAddRowDialog({required BuildContext context, required String tableName}) async {
+Future<bool> showAddRowDialog({
+  required BuildContext context,
+  required String tableName,
+  Map<String, dynamic>? editableData,
+}) async {
   switch (tableName) {
-    case 'clothing':
-      return await AddClothingDialog().show(context);
     case 'activities':
-      return await AddActivityDialog().show(context);
+      return await AddActivityDialog(editableData: editableData).show(context);
     case 'categories':
       return await AddCategoryDialog().show(context);
+    case 'clothing':
+      return await AddClothingDialog().show(context);
   }
   throw Exception("Unknown table name $tableName");
 }

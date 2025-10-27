@@ -85,10 +85,20 @@ class _DataVisualizationPageState extends State<DataVisualizationPage> {
     }
   }
 
-  void _editRow(String tableName, Map<String, dynamic> row) {
-    if (kDebugMode) {
-      debugPrint('Edit $tableName row: $row');
-    }
+  Future<void> _editRow(
+    BuildContext context,
+    ItemsProvider provider,
+    Map<String, dynamic> data,
+    String tableName,
+  ) async {
+    // TODO: should open each add menu but with current values as initial values
+    // Validation should bypass duplicate primary/unique key if it is the same
+    if (kDebugMode) debugPrint('Edit $provider data: $data');
+    await showAddRowDialog(
+      context: context,
+      tableName: tableName.toLowerCase(),
+      editableData: data,
+    );
   }
 
   Widget _buildProviderSection(BuildContext context, ItemsProvider provider) {
@@ -132,7 +142,11 @@ class _DataVisualizationPageState extends State<DataVisualizationPage> {
                 children: [
                   IconButton(
                     icon: const Icon(Icons.edit),
-                    onPressed: () => _editRow(tableName, row),
+                    onPressed: () {
+                      errorWrapper(context, () async {
+                        await _editRow(context, provider, row, tableName.toLowerCase());
+                      });
+                    },
                   ),
                   IconButton(
                     icon: const Icon(Icons.copy),

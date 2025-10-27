@@ -93,6 +93,7 @@ class CategoryItemsProvider extends ItemsProvider {
   Future<void> deleteItem(Map<String, dynamic> data) async {
     String name = data['name'];
     await db.deleteCategory(name);
+    await refresh();
   }
 }
 
@@ -117,5 +118,6 @@ class ClothingItemsProvider extends ItemsProvider {
   Future<void> deleteItem(Map<String, dynamic> data) async {
     int id = data['id'];
     await db.deleteClothing(id);
+    await refresh();
   }
 }
