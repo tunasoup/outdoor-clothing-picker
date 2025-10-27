@@ -27,6 +27,10 @@ class _DataVisualizationPageState extends State<DataVisualizationPage> {
     final bool confirmed = await _showDeleteAlert(context, message);
     if (confirmed) {
       await provider.deleteItem(data);
+      // Also refresh clothing table due to references
+      if (referenceCount > 0 && provider.runtimeType != ClothingItemsProvider) {
+        await Provider.of<ClothingItemsProvider>(context, listen: false).refresh();
+      }
     }
   }
 
