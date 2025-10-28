@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:outdoor_clothing_picker/backend/clothing_viewmodel.dart';
+import 'package:outdoor_clothing_picker/backend/dialog_controller.dart';
 import 'package:outdoor_clothing_picker/backend/items_provider.dart';
 import 'package:outdoor_clothing_picker/widgets/add_dialogs.dart';
 import 'package:outdoor_clothing_picker/widgets/mannequin.dart';
@@ -85,7 +86,11 @@ Future<void> showAddMenu({required BuildContext context, required GlobalKey anch
 
   // If user selected an item
   if (selected != null) {
-    bool success = await showAddRowDialog(context: context, tableName: selected);
+    bool success = await showRowDialog(
+      context: context,
+      tableName: selected,
+      mode: DialogMode.add,
+    );
     if (success) {
       ScaffoldMessenger.of(
         context,

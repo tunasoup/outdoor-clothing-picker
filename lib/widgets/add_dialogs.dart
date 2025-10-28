@@ -1,16 +1,17 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:outdoor_clothing_picker/backend/item_controllers.dart';
+import 'package:outdoor_clothing_picker/backend/dialog_controller.dart';
 import 'package:outdoor_clothing_picker/backend/items_provider.dart';
 import 'package:outdoor_clothing_picker/database/database.dart';
 import 'package:outdoor_clothing_picker/widgets/mannequin.dart';
 import 'package:provider/provider.dart';
 
-/// Dialog where a new Activity item can be created or provided [editableData] modified.
-class AddActivityDialog extends StatelessWidget {
-  final Map<String, dynamic>? editableData;
+/// Dialog where a new Activity item can be created or provided [initialData] modified.
+class ActivityDialog extends StatelessWidget {
+  final DialogMode mode;
+  final Map<String, dynamic>? initialData;
 
-  const AddActivityDialog({super.key, this.editableData});
+  const ActivityDialog({super.key, required this.mode, this.initialData});
 
   Future<bool> show(BuildContext context) async {
     final AppDb db = context.read<AppDb>();
@@ -20,9 +21,14 @@ class AddActivityDialog extends StatelessWidget {
         return Provider(
           create: (context) {
             final itemsProvider = context.read<ActivityItemsProvider>();
-            return ActivityDialogController(db, itemsProvider.names, editableData);
+            return ActivityDialogController(
+              db: db,
+              mode: mode,
+              initialData: initialData,
+              availableActivities: itemsProvider.names,
+            );
           },
-          child: AddActivityDialog(editableData: editableData),
+          child: ActivityDialog(mode: mode, initialData: initialData),
         );
       },
     );
@@ -54,10 +60,10 @@ class AddActivityDialog extends StatelessWidget {
                 TextButton(onPressed: () => Navigator.pop(context, false), child: Text('Cancel')),
                 ElevatedButton(
                   onPressed: () async {
-                    if (await controller.saveActivity()) {
+                    if (await controller.submitForm()) {
                       Navigator.pop(context, true);
                       await Provider.of<ActivityItemsProvider>(context, listen: false).refresh();
-                      if (controller.editMode) {
+                      if (controller.mode != DialogMode.add) {
                         // Refresh clothing in case references changed
                         await Provider.of<ClothingItemsProvider>(context, listen: false).refresh();
                       }
@@ -74,12 +80,13 @@ class AddActivityDialog extends StatelessWidget {
   }
 }
 
-/// Dialog where a new Category item can be created or provided [editableData] modified.
-/// The user is prompted to click a spot on a figure for filling the data.
-class AddCategoryDialog extends StatelessWidget {
-  final Map<String, dynamic>? editableData;
+/// Dialog where a new Category item can be created or provided [initialData] modified.
+/// The user is prompted to click a spot on a figure for filling some of the data.
+class CategoryDialog extends StatelessWidget {
+  final DialogMode mode;
+  final Map<String, dynamic>? initialData;
 
-  AddCategoryDialog({super.key, this.editableData});
+  CategoryDialog({super.key, required this.mode, this.initialData});
 
   final Size size = Size(100, 200);
 
@@ -91,9 +98,14 @@ class AddCategoryDialog extends StatelessWidget {
         return Provider(
           create: (context) {
             final itemsProvider = context.read<CategoryItemsProvider>();
-            return CategoryDialogController(db, itemsProvider.names, editableData);
+            return CategoryDialogController(
+              db: db,
+              mode: mode,
+              initialData: initialData,
+              availableCategories: itemsProvider.names,
+            );
           },
-          child: AddCategoryDialog(editableData: editableData),
+          child: CategoryDialog(mode: mode, initialData: initialData),
         );
       },
     );
@@ -126,10 +138,10 @@ class AddCategoryDialog extends StatelessWidget {
                 TextButton(onPressed: () => Navigator.pop(context, false), child: Text('Cancel')),
                 ElevatedButton(
                   onPressed: () async {
-                    if (await controller.saveCategory()) {
+                    if (await controller.submitForm()) {
                       Navigator.pop(context, true);
                       await Provider.of<CategoryItemsProvider>(context, listen: false).refresh();
-                      if (controller.editMode) {
+                      if (controller.mode != DialogMode.add) {
                         // Refresh clothing in case references changed
                         await Provider.of<ClothingItemsProvider>(context, listen: false).refresh();
                       }
@@ -204,11 +216,12 @@ class InteractiveFigureFormField extends FormField<Offset> {
   final CategoryDialogController controller;
 }
 
-/// Dialog where a new Clothing item can be created.
-class AddClothingDialog extends StatelessWidget {
-  final Map<String, dynamic>? editableData;
+/// Dialog where a new Clothing item can be created or provided [initialData] modified.
+class ClothingDialog extends StatelessWidget {
+  final DialogMode mode;
+  final Map<String, dynamic>? initialData;
 
-  const AddClothingDialog({super.key, this.editableData});
+  const ClothingDialog({super.key, required this.mode, this.initialData});
 
   Future<bool> show(BuildContext context) async {
     final AppDb db = context.read<AppDb>();
@@ -217,8 +230,8 @@ class AddClothingDialog extends StatelessWidget {
       context: context,
       builder: (context) {
         return Provider(
-          create: (_) => ClothingDialogController(db, editableData),
-          child: AddClothingDialog(),
+          create: (_) => ClothingDialogController(db: db, mode: mode, initialData: initialData),
+          child: ClothingDialog(mode: mode),
         );
       },
     );
@@ -296,7 +309,7 @@ class AddClothingDialog extends StatelessWidget {
                   ),
                   ElevatedButton(
                     onPressed: () async {
-                      if (await controller.saveClothing()) {
+                      if (await controller.submitForm()) {
                         Navigator.pop(context, true);
                         await Provider.of<ClothingItemsProvider>(context, listen: false).refresh();
                       }
@@ -313,18 +326,21 @@ class AddClothingDialog extends StatelessWidget {
   }
 }
 
-Future<bool> showAddRowDialog({
+/// Show a dialog for adding/modifying (dictated by [mode]) a row's data for database's
+/// [tableName]. Certain actions expect specific keys in [initialData].
+Future<bool> showRowDialog({
   required BuildContext context,
   required String tableName,
-  Map<String, dynamic>? editableData,
+  required DialogMode mode,
+  Map<String, dynamic>? initialData,
 }) async {
   switch (tableName) {
     case 'activities':
-      return await AddActivityDialog(editableData: editableData).show(context);
+      return await ActivityDialog(mode: mode, initialData: initialData).show(context);
     case 'categories':
-      return await AddCategoryDialog(editableData: editableData).show(context);
+      return await CategoryDialog(mode: mode, initialData: initialData).show(context);
     case 'clothing':
-      return await AddClothingDialog(editableData: editableData).show(context);
+      return await ClothingDialog(mode: mode, initialData: initialData).show(context);
   }
   throw Exception("Unknown table name $tableName");
 }

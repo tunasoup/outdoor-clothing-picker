@@ -61,6 +61,13 @@ WHERE id == :id;
 deleteClothing: DELETE FROM clothing
 WHERE id == :id;
 
+insertActivity: INSERT INTO activities (name) VALUES (:name);
+
+insertCategory: INSERT INTO categories (name, norm_x, norm_y) VALUES (:name, :norm_x, :norm_y);
+
+insertClothing: INSERT INTO clothing (name, min_temp, max_temp, category, activity)
+VALUES (:name, :min_temp, :max_temp, :category, :activity);
+
 createDefaultActivities: INSERT INTO activities (name) VALUES
 ('Default'),
 ('Jog');

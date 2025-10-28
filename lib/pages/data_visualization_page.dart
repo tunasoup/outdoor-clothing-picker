@@ -1,5 +1,6 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:outdoor_clothing_picker/backend/dialog_controller.dart';
 import 'package:outdoor_clothing_picker/backend/items_provider.dart';
 import 'package:outdoor_clothing_picker/widgets/add_dialogs.dart';
 import 'package:outdoor_clothing_picker/widgets/utils.dart';
@@ -83,10 +84,23 @@ class _DataVisualizationPageState extends State<DataVisualizationPage> {
   }
 
   // TODO: implement remaining data modifications
-  void _copyRow(String tableNAme, Map<String, dynamic> row) async {
-    if (kDebugMode) {
-      debugPrint('Copy $tableNAme row: $row');
-    }
+  Future<void> _copyRow(
+    BuildContext context,
+    ItemsProvider provider,
+    Map<String, dynamic> data,
+    String tableName,
+  ) async {
+    if (kDebugMode) debugPrint('Copy $provider data: $data');
+    // activity copy: open edit dialogue but need unique name, and whether to copy referenced
+    // clothing
+    // category copy: same as activity
+    // clothing copy: exact data copy, automatic new id, for consistency also dialog
+    await showRowDialog(
+      context: context,
+      tableName: tableName.toLowerCase(),
+      mode: DialogMode.copy,
+      initialData: data,
+    );
   }
 
   Future<void> _editRow(
@@ -95,13 +109,12 @@ class _DataVisualizationPageState extends State<DataVisualizationPage> {
     Map<String, dynamic> data,
     String tableName,
   ) async {
-    // TODO: should open each add menu but with current values as initial values
-    // Validation should bypass duplicate primary/unique key if it is the same
     if (kDebugMode) debugPrint('Edit $provider data: $data');
-    await showAddRowDialog(
+    await showRowDialog(
       context: context,
       tableName: tableName.toLowerCase(),
-      editableData: data,
+      mode: DialogMode.edit,
+      initialData: data,
     );
   }
 
@@ -129,7 +142,11 @@ class _DataVisualizationPageState extends State<DataVisualizationPage> {
             const SizedBox(width: 8),
             ElevatedButton(
               onPressed: () async {
-                await showAddRowDialog(context: context, tableName: tableName.toLowerCase());
+                await showRowDialog(
+                  context: context,
+                  tableName: tableName.toLowerCase(),
+                  mode: DialogMode.add,
+                );
               },
               child: const Text('Add New'),
             ),
@@ -154,7 +171,11 @@ class _DataVisualizationPageState extends State<DataVisualizationPage> {
                   ),
                   IconButton(
                     icon: const Icon(Icons.copy),
-                    onPressed: () => _copyRow(tableName, row),
+                    onPressed: () {
+                      errorWrapper(context, () async {
+                        await _copyRow(context, provider, row, tableName.toLowerCase());
+                      });
+                    },
                   ),
                   IconButton(
                     icon: const Icon(Icons.delete),
