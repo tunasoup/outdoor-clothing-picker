@@ -25,9 +25,21 @@ abstract class DialogController {
     _initialName = initialData?['name'];
   }
 
+  bool isBoxChecked = false;
+
   String getTitle();
 
   Future<bool> submitForm();
+
+  String getCheckboxLabel() => '';
+
+  void checkboxChanged(bool? newState) {
+    isBoxChecked = newState!;
+  }
+
+  String? validateCheckbox(bool? value) => null;
+
+  void saveCheckbox(bool? value) => {};
 }
 
 class ActivityDialogController extends DialogController {
@@ -80,6 +92,13 @@ class ActivityDialogController extends DialogController {
     }
     return false;
   }
+
+  @override
+  String getCheckboxLabel() => switch (mode) {
+    DialogMode.add => '',
+    DialogMode.edit => 'Merge with an existing activity?',
+    DialogMode.copy => 'Also duplicate referenced clothing?',
+  };
 }
 
 class CategoryDialogController extends DialogController {
@@ -243,7 +262,8 @@ class ClothingDialogController extends DialogController {
     if (formKey.currentState?.validate() ?? false) {
       formKey.currentState?.save();
       await switch (mode) {
-        DialogMode.add => db.insertClothing(_name!, _minTemp!, _maxTemp!, _category, _activity),
+        DialogMode.add ||
+        DialogMode.copy => db.insertClothing(_name!, _minTemp!, _maxTemp!, _category, _activity),
         DialogMode.edit => db.updateClothing(
           _name!,
           _minTemp!,
@@ -252,7 +272,6 @@ class ClothingDialogController extends DialogController {
           _activity,
           _id,
         ),
-        DialogMode.copy => Future.value(),
       };
       return true;
     }

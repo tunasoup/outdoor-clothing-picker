@@ -53,6 +53,8 @@ class ActivityDialog extends StatelessWidget {
               onSaved: controller.saveName,
               autofocus: true,
             ),
+            if (controller.mode case DialogMode.copy || DialogMode.edit)
+              CheckboxFormField(context: context, controller: controller),
             Padding(padding: EdgeInsets.all(16.0)),
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -197,15 +199,7 @@ class InteractiveFigureFormField extends FormField<Offset> {
                    initialCirclePosition: controller.getInitialCoords(),
                  ),
                ),
-               // Set error message on failed validation
-               if (field.errorText != null)
-                 Padding(
-                   padding: const EdgeInsets.only(top: 8.0),
-                   child: Text(
-                     field.errorText!,
-                     style: TextStyle(color: Theme.of(context).colorScheme.error, fontSize: 12),
-                   ),
-                 ),
+               buildErrorText(context, field.errorText),
              ],
            );
          },
@@ -324,6 +318,61 @@ class ClothingDialog extends StatelessWidget {
       ),
     );
   }
+}
+
+/// Custom Form Field with a checkbox, controlled by a [controller], limited to one.
+class CheckboxFormField extends FormField<bool> {
+  CheckboxFormField({
+    super.key,
+    required this.context,
+    required this.controller,
+    AutovalidateMode super.autovalidateMode = AutovalidateMode.disabled,
+  }) : super(
+         initialValue: controller.isBoxChecked,
+         validator: controller.validateCheckbox,
+         onSaved: controller.saveCheckbox,
+         builder: (FormFieldState<bool> state) {
+           return Column(
+             crossAxisAlignment: CrossAxisAlignment.start,
+             children: [
+               CheckboxListTile(
+                 title: Text(
+                   controller.getCheckboxLabel(),
+                   style: TextStyle(
+                     color: state.hasError
+                         ? Theme.of(context).colorScheme.error
+                         : Theme.of(context).textTheme.bodyMedium?.color,
+                   ),
+                 ),
+
+                 contentPadding: EdgeInsets.symmetric(horizontal: 0),
+                 value: controller.isBoxChecked,
+                 onChanged: (v) {
+                   state.didChange(v);
+                   controller.checkboxChanged(v);
+                 },
+               ),
+               buildErrorText(context, state.errorText),
+             ],
+           );
+         },
+       );
+
+  final BuildContext context;
+  final DialogController controller;
+}
+
+/// Show [errorText]] if it exists, meant for failed validation on custom Form Fields.
+Widget buildErrorText(BuildContext context, String? errorText) {
+  if (errorText == null) return const SizedBox.shrink();
+
+  return Padding(
+    padding: const EdgeInsets.only(top: 2.0, left: 2.0),
+    child: Text(
+      errorText,
+      style: TextStyle(color: Theme.of(context).colorScheme.error, fontSize: 12),
+    ),
+  );
 }
 
 /// Show a dialog for adding/modifying (dictated by [mode]) a row's data for database's

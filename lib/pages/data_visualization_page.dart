@@ -94,7 +94,6 @@ class _DataVisualizationPageState extends State<DataVisualizationPage> {
     // activity copy: open edit dialogue but need unique name, and whether to copy referenced
     // clothing
     // category copy: same as activity
-    // clothing copy: exact data copy, automatic new id, for consistency also dialog
     await showRowDialog(
       context: context,
       tableName: tableName.toLowerCase(),
