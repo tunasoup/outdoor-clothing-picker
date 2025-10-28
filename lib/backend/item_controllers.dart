@@ -10,7 +10,7 @@ class ActivityDialogController {
   late final int? _id;
   late final String? _oldName;
 
-  ActivityDialogController(this.db, this.availableActivities, this.editableData)
+  ActivityDialogController(this.db, this.availableActivities, [this.editableData])
     : editMode = editableData != null,
       _id = editableData?['id'],
       _oldName = editableData?['name'];
@@ -18,7 +18,7 @@ class ActivityDialogController {
   String? _name;
   final formKey = GlobalKey<FormState>();
 
-  String getTitle() => editMode ? 'Edit Activity \'${editableData!['name']}\'' : 'Add Activity';
+  String getTitle() => editMode ? 'Edit Activity \'$_oldName\'' : 'Add Activity';
 
   String? getInitialName() => _oldName;
 
@@ -63,7 +63,7 @@ class CategoryDialogController {
   late final double? _oldNormX;
   late final double? _oldNormY;
 
-  CategoryDialogController(this.db, this.availableCategories, this.editableData)
+  CategoryDialogController(this.db, this.availableCategories, [this.editableData])
     : editMode = editableData != null,
       _id = editableData?['id'],
       _oldName = editableData?['name'],
@@ -75,7 +75,7 @@ class CategoryDialogController {
   double? _normY;
   final formKey = GlobalKey<FormState>();
 
-  String getTitle() => editMode ? 'Edit Category \'${editableData!['name']}\'' : 'Add Category';
+  String getTitle() => editMode ? 'Edit Category \'$_oldName\'' : 'Add Category';
 
   String? getInitialName() => _oldName;
 
@@ -124,8 +124,23 @@ class CategoryDialogController {
 
 class ClothingDialogController {
   final AppDb db;
+  final Map<String, dynamic>? editableData;
+  late final bool editMode;
+  late final int? _id;
+  late final String? _oldName;
+  late final int? _oldMinTemp;
+  late final int? _oldMaxTemp;
+  late final String? _oldActivity;
+  late final String? _oldCategory;
 
-  ClothingDialogController(this.db);
+  ClothingDialogController(this.db, [this.editableData])
+    : editMode = editableData != null,
+      _id = editableData?['id'],
+      _oldName = editableData?['name'],
+      _oldMinTemp = editableData?['min_temp'],
+      _oldMaxTemp = editableData?['max_temp'],
+      _oldActivity = editableData?['activity'],
+      _oldCategory = editableData?['category'];
 
   String? _name;
   int? _minTemp;
@@ -134,6 +149,18 @@ class ClothingDialogController {
   String? _activity;
   String? _category;
   final formKey = GlobalKey<FormState>();
+
+  String getTitle() => editMode ? 'Edit Clothing \'$_oldName\'' : 'Add Clothing Item';
+
+  String? getInitialName() => _oldName;
+
+  int? getInitialMinTemp() => _oldMinTemp;
+
+  int? getInitialMaxTemp() => _oldMaxTemp;
+
+  String? getInitialActivity() => _oldActivity;
+
+  String? getInitialCategory() => _oldCategory;
 
   String? validateName(String? value) {
     return value == null || value.trim().isEmpty ? 'Enter a value' : null;
@@ -190,17 +217,21 @@ class ClothingDialogController {
   Future<bool> saveClothing() async {
     if (formKey.currentState?.validate() ?? false) {
       formKey.currentState?.save();
-      await db
-          .into(db.clothing)
-          .insert(
-            ClothingCompanion.insert(
-              name: _name!,
-              minTemp: _minTemp!,
-              maxTemp: _maxTemp!,
-              category: Value(_category!),
-              activity: Value(_activity!),
-            ),
-          );
+      if (editMode) {
+        await db.updateClothing(_name!, _minTemp!, _maxTemp!, _category, _activity, _id);
+      } else {
+        await db
+            .into(db.clothing)
+            .insert(
+              ClothingCompanion.insert(
+                name: _name!,
+                minTemp: _minTemp!,
+                maxTemp: _maxTemp!,
+                category: Value(_category!),
+                activity: Value(_activity!),
+              ),
+            );
+      }
       return true;
     }
     return false;

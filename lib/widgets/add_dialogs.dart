@@ -206,7 +206,9 @@ class InteractiveFigureFormField extends FormField<Offset> {
 
 /// Dialog where a new Clothing item can be created.
 class AddClothingDialog extends StatelessWidget {
-  const AddClothingDialog({super.key});
+  final Map<String, dynamic>? editableData;
+
+  const AddClothingDialog({super.key, this.editableData});
 
   Future<bool> show(BuildContext context) async {
     final AppDb db = context.read<AppDb>();
@@ -214,7 +216,10 @@ class AddClothingDialog extends StatelessWidget {
     final success = await showDialog<bool>(
       context: context,
       builder: (context) {
-        return Provider(create: (_) => ClothingDialogController(db), child: AddClothingDialog());
+        return Provider(
+          create: (_) => ClothingDialogController(db, editableData),
+          child: AddClothingDialog(),
+        );
       },
     );
     return success ?? false;
@@ -222,43 +227,47 @@ class AddClothingDialog extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final vm = context.read<ClothingDialogController>();
+    final controller = context.read<ClothingDialogController>();
 
     return AlertDialog(
-      title: Text('Add Clothing Item'),
+      title: Text(controller.getTitle()),
       content: SingleChildScrollView(
         child: Form(
-          key: vm.formKey,
+          key: controller.formKey,
           child: Column(
             children: [
               TextFormField(
+                initialValue: controller.getInitialName(),
                 decoration: InputDecoration(labelText: 'Name'),
-                validator: vm.validateName,
-                onSaved: vm.saveName,
+                validator: controller.validateName,
+                onSaved: controller.saveName,
               ),
               TextFormField(
+                initialValue: controller.getInitialMinTemp()?.toString(),
                 decoration: InputDecoration(labelText: 'Min Temperature'),
-                validator: vm.validateMinTemp,
-                onSaved: vm.saveMinTemp,
+                validator: controller.validateMinTemp,
+                onSaved: controller.saveMinTemp,
                 keyboardType: TextInputType.numberWithOptions(signed: true),
                 inputFormatters: [FilteringTextInputFormatter.allow(RegExp(r'^-?[0-9]*'))],
               ),
               TextFormField(
+                initialValue: controller.getInitialMaxTemp()?.toString(),
                 decoration: InputDecoration(labelText: 'Max Temperature'),
-                validator: vm.validateMaxTemp,
-                onSaved: vm.saveMaxTemp,
+                validator: controller.validateMaxTemp,
+                onSaved: controller.saveMaxTemp,
                 keyboardType: TextInputType.numberWithOptions(signed: true),
                 inputFormatters: [FilteringTextInputFormatter.allow(RegExp(r'^-?[0-9]*'))],
               ),
               Consumer<CategoryItemsProvider>(
                 builder: (context, provider, _) {
                   return DropdownButtonFormField<String>(
+                    initialValue: controller.getInitialCategory(),
                     decoration: InputDecoration(labelText: 'Category'),
-                    validator: vm.validateDropdown,
+                    validator: controller.validateDropdown,
                     items: provider.names
                         .map((cat) => DropdownMenuItem(value: cat, child: Text(cat)))
                         .toList(),
-                    onSaved: vm.saveCategory,
+                    onSaved: controller.saveCategory,
                     onChanged: (_) {},
                   );
                 },
@@ -266,12 +275,13 @@ class AddClothingDialog extends StatelessWidget {
               Consumer<ActivityItemsProvider>(
                 builder: (context, provider, _) {
                   return DropdownButtonFormField<String>(
+                    initialValue: controller.getInitialActivity(),
                     decoration: InputDecoration(hintText: 'Activity'),
-                    validator: vm.validateDropdown,
+                    validator: controller.validateDropdown,
                     items: provider.names
                         .map((item) => DropdownMenuItem(value: item, child: Text(item)))
                         .toList(),
-                    onSaved: vm.saveActivity,
+                    onSaved: controller.saveActivity,
                     onChanged: (_) {},
                   );
                 },
@@ -286,7 +296,7 @@ class AddClothingDialog extends StatelessWidget {
                   ),
                   ElevatedButton(
                     onPressed: () async {
-                      if (await vm.saveClothing()) {
+                      if (await controller.saveClothing()) {
                         Navigator.pop(context, true);
                         await Provider.of<ClothingItemsProvider>(context, listen: false).refresh();
                       }
@@ -314,7 +324,7 @@ Future<bool> showAddRowDialog({
     case 'categories':
       return await AddCategoryDialog(editableData: editableData).show(context);
     case 'clothing':
-      return await AddClothingDialog().show(context);
+      return await AddClothingDialog(editableData: editableData).show(context);
   }
   throw Exception("Unknown table name $tableName");
 }

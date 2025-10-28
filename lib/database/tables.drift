@@ -47,6 +47,11 @@ updateCategory: UPDATE categories
 SET name = :name, norm_x = :norm_x, norm_y = :norm_y
 WHERE id = :id;
 
+updateClothing: UPDATE clothing
+SET name = :name, min_temp = :min_temp, max_temp = :max_temp,
+category = :category, activity = :activity
+WHERE id = :id;
+
 deleteActivity: DELETE FROM activities
 WHERE id == :id;
 
