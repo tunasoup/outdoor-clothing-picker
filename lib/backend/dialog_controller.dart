@@ -66,12 +66,14 @@ class ActivityDialogController extends DialogController {
   String? validateName(String? value) {
     value = value?.trim();
     if (value == null || value.isEmpty) return 'Enter a value';
-    if (value == _initialName) return 'Enter a new value';
-    // TODO: option to merge if a duplicate name given (i.e. delete and change clothing reference)
+    bool isInitial = value.toLowerCase() == _initialName?.toLowerCase();
+    bool editChecked = mode == DialogMode.edit && isBoxChecked;
+    if (isInitial && editChecked) return 'Choose a different existing activity for merging';
+    if (isInitial) return 'Enter a new value';
     List<String> existingNames = availableActivities.map((el) => el.toLowerCase()).toList();
-    if (existingNames.contains(value.toLowerCase())) {
-      return 'This activity already exists';
-    }
+    bool activityExists = existingNames.contains(value.toLowerCase());
+    if (editChecked && !activityExists) return 'Choose an existing activity for merging';
+    if (activityExists && !editChecked) return 'This activity already exists';
     return null;
   }
 
@@ -80,25 +82,41 @@ class ActivityDialogController extends DialogController {
   }
 
   @override
-  Future<bool> submitForm() async {
-    if (formKey.currentState?.validate() ?? false) {
-      formKey.currentState?.save();
-      await switch (mode) {
-        DialogMode.add => db.insertActivity(_name!),
-        DialogMode.edit => db.updateActivity(_name!, _id!),
-        DialogMode.copy => Future.value(),
-      };
-      return true;
-    }
-    return false;
-  }
-
-  @override
   String getCheckboxLabel() => switch (mode) {
     DialogMode.add => '',
     DialogMode.edit => 'Merge with an existing activity?',
     DialogMode.copy => 'Also duplicate referenced clothing?',
   };
+
+  Future<void> _handleEdit() async {
+    if (isBoxChecked) {
+      await db.changeClothingActivity(_name, _initialName);
+      await db.deleteActivity(_id);
+    } else {
+      await db.updateActivity(_name!, _id!);
+    }
+  }
+
+  Future<void> _handleCopy() async {
+    await db.insertActivity(_name!);
+    if (isBoxChecked) {
+      await db.duplicateActivityClothing(_name!, _initialName!);
+    }
+  }
+
+  @override
+  Future<bool> submitForm() async {
+    if (formKey.currentState?.validate() ?? false) {
+      formKey.currentState?.save();
+      await switch (mode) {
+        DialogMode.add => db.insertActivity(_name!),
+        DialogMode.edit => _handleEdit(),
+        DialogMode.copy => _handleCopy(),
+      };
+      return true;
+    }
+    return false;
+  }
 }
 
 class CategoryDialogController extends DialogController {

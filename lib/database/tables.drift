@@ -39,6 +39,24 @@ WHERE activity == :activity;
 clothingWithCategory: SELECT * FROM clothing
 WHERE category == :category;
 
+duplicateActivityClothing: INSERT INTO clothing (name, min_temp, max_temp, category, activity)
+SELECT name, min_temp, max_temp, category, :new_activity
+FROM clothing
+WHERE activity = :old_activity;
+
+duplicateCategoryClothing: INSERT INTO clothing (name, min_temp, max_temp, category, activity)
+SELECT name, min_temp, max_temp, :new_category, activity
+FROM clothing
+WHERE category = :old_category;
+
+changeClothingActivity: UPDATE clothing
+SET activity = :new_activity
+WHERE activity = :old_activity;
+
+changeClothingCategory: UPDATE clothing
+SET category = :new_category
+WHERE category = :old_category;
+
 updateActivity: UPDATE activities
 SET name = :name
 WHERE id = :id;

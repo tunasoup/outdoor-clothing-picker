@@ -4,6 +4,7 @@ import 'package:outdoor_clothing_picker/backend/dialog_controller.dart';
 import 'package:outdoor_clothing_picker/backend/items_provider.dart';
 import 'package:outdoor_clothing_picker/database/database.dart';
 import 'package:outdoor_clothing_picker/widgets/mannequin.dart';
+import 'package:outdoor_clothing_picker/widgets/utils.dart';
 import 'package:provider/provider.dart';
 
 /// Dialog where a new Activity item can be created or provided [initialData] modified.
@@ -61,15 +62,20 @@ class ActivityDialog extends StatelessWidget {
               children: [
                 TextButton(onPressed: () => Navigator.pop(context, false), child: Text('Cancel')),
                 ElevatedButton(
-                  onPressed: () async {
-                    if (await controller.submitForm()) {
-                      Navigator.pop(context, true);
-                      await Provider.of<ActivityItemsProvider>(context, listen: false).refresh();
-                      if (controller.mode != DialogMode.add) {
-                        // Refresh clothing in case references changed
-                        await Provider.of<ClothingItemsProvider>(context, listen: false).refresh();
+                  onPressed: () {
+                    errorWrapper(context, () async {
+                      if (await controller.submitForm()) {
+                        Navigator.pop(context, true);
+                        await Provider.of<ActivityItemsProvider>(context, listen: false).refresh();
+                        if (controller.mode != DialogMode.add) {
+                          // Refresh clothing in case references changed
+                          await Provider.of<ClothingItemsProvider>(
+                            context,
+                            listen: false,
+                          ).refresh();
+                        }
                       }
-                    }
+                    });
                   },
                   child: Text('Save'),
                 ),
@@ -139,15 +145,20 @@ class CategoryDialog extends StatelessWidget {
               children: [
                 TextButton(onPressed: () => Navigator.pop(context, false), child: Text('Cancel')),
                 ElevatedButton(
-                  onPressed: () async {
-                    if (await controller.submitForm()) {
-                      Navigator.pop(context, true);
-                      await Provider.of<CategoryItemsProvider>(context, listen: false).refresh();
-                      if (controller.mode != DialogMode.add) {
-                        // Refresh clothing in case references changed
-                        await Provider.of<ClothingItemsProvider>(context, listen: false).refresh();
+                  onPressed: () {
+                    errorWrapper(context, () async {
+                      if (await controller.submitForm()) {
+                        Navigator.pop(context, true);
+                        await Provider.of<CategoryItemsProvider>(context, listen: false).refresh();
+                        if (controller.mode != DialogMode.add) {
+                          // Refresh clothing in case references changed
+                          await Provider.of<ClothingItemsProvider>(
+                            context,
+                            listen: false,
+                          ).refresh();
+                        }
                       }
-                    }
+                    });
                   },
                   child: Text('Save'),
                 ),
@@ -302,11 +313,16 @@ class ClothingDialog extends StatelessWidget {
                     child: Text('Cancel'),
                   ),
                   ElevatedButton(
-                    onPressed: () async {
-                      if (await controller.submitForm()) {
-                        Navigator.pop(context, true);
-                        await Provider.of<ClothingItemsProvider>(context, listen: false).refresh();
-                      }
+                    onPressed: () {
+                      errorWrapper(context, () async {
+                        if (await controller.submitForm()) {
+                          Navigator.pop(context, true);
+                          await Provider.of<ClothingItemsProvider>(
+                            context,
+                            listen: false,
+                          ).refresh();
+                        }
+                      });
                     },
                     child: Text('Save'),
                   ),
