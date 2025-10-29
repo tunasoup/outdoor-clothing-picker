@@ -17,8 +17,8 @@ abstract class DialogController {
   DialogController({required this.db, required this.mode, this.initialData}) {
     if (mode != DialogMode.add && initialData?['id'] == null) {
       throw Exception(
-        'Initial data needs to be provided with an existing id when using a '
-        'other than add mode for a dialog controller.',
+        'Initial data needs to be provided with an existing id when using '
+        'other than \'add\' mode for a dialog controller.',
       );
     }
     _id = initialData?['id'];
@@ -64,16 +64,22 @@ class ActivityDialogController extends DialogController {
   String? getInitialName() => _initialName;
 
   String? validateName(String? value) {
+    // Never accept empty values
     value = value?.trim();
     if (value == null || value.isEmpty) return 'Enter a value';
+
+    // Never accept an initial value, but have different messages
     bool isInitial = value.toLowerCase() == _initialName?.toLowerCase();
-    bool editChecked = mode == DialogMode.edit && isBoxChecked;
-    if (isInitial && editChecked) return 'Choose a different existing activity for merging';
+    bool isMerging = mode == DialogMode.edit && isBoxChecked;
+    if (isInitial && isMerging) return 'Choose a different existing activity for merging';
     if (isInitial) return 'Enter a new value';
+
+    // Avoid duplicates, except require it when merging
     List<String> existingNames = availableActivities.map((el) => el.toLowerCase()).toList();
-    bool activityExists = existingNames.contains(value.toLowerCase());
-    if (editChecked && !activityExists) return 'Choose an existing activity for merging';
-    if (activityExists && !editChecked) return 'This activity already exists';
+    bool isDuplicate = existingNames.contains(value.toLowerCase());
+    if (isMerging && !isDuplicate) return 'Choose an existing activity for merging';
+    if (isDuplicate && !isMerging) return 'This activity already exists';
+
     return null;
   }
 
@@ -149,16 +155,32 @@ class CategoryDialogController extends DialogController {
       _initialNormX != null && _initialNormY != null ? Offset(_initialNormX, _initialNormY) : null;
 
   String? validateName(String? value) {
+    // Never accept empty values
     value = value?.trim();
     if (value == null || value.isEmpty) return 'Enter a value';
-    // The only allowed duplicate value is a possible initial one
-    if (value != _initialName && availableCategories.contains(value.toLowerCase())) {
-      return 'This category already exists';
-    }
+
+    // Initial value only acceptable when other editing is performed
+    bool isInitial = value.toLowerCase() == _initialName?.toLowerCase();
+    bool isMerging = mode == DialogMode.edit && isBoxChecked;
+    if (isInitial && mode != DialogMode.edit) return 'Enter a new value';
+    if (isInitial && isMerging) return 'Choose a different existing activity for merging';
+
+    // Duplicate handling
+    List<String> existingNames = availableCategories.map((el) => el.toLowerCase()).toList();
+    bool isDuplicate = existingNames.contains(value.toLowerCase());
+    // Avoid duplicate when not editing
+    if (isDuplicate && mode != DialogMode.edit) return 'This category already exists';
+    // Require duplicate when merging
+    if (isMerging && !isDuplicate) return 'Choose an existing activity for merging';
+    // Avoid duplicate when editing but not merging
+    if (isDuplicate && !isInitial && !isMerging) return 'This category already exists';
+
     return null;
   }
 
   String? validateCoords(double? x, double? y) {
+    // Coordinates are ignored when merging
+    if (mode == DialogMode.edit && isBoxChecked) return null;
     if (x == null || y == null) return 'Select coordinates';
     return null;
   }
@@ -173,13 +195,37 @@ class CategoryDialogController extends DialogController {
   }
 
   @override
+  String getCheckboxLabel() => switch (mode) {
+    DialogMode.add => '',
+    DialogMode.edit => 'Merge with an existing category?',
+    DialogMode.copy => 'Also duplicate referenced clothing?',
+  };
+
+  Future<void> _handleEdit() async {
+    if (isBoxChecked) {
+      // The data of _initialName is used, current form coordinates are ignored
+      await db.changeClothingCategory(_name, _initialName);
+      await db.deleteCategory(_id);
+    } else {
+      await db.updateCategory(_name!, _normX!, _normY!, _id);
+    }
+  }
+
+  Future<void> _handleCopy() async {
+    await db.insertCategory(_name!, _normX!, _normY!);
+    if (isBoxChecked) {
+      await db.duplicateCategoryClothing(_name!, _initialName!);
+    }
+  }
+
+  @override
   Future<bool> submitForm() async {
     if (formKey.currentState?.validate() ?? false) {
       formKey.currentState?.save();
       await switch (mode) {
         DialogMode.add => db.insertCategory(_name!, _normX!, _normY!),
-        DialogMode.edit => db.updateCategory(_name!, _normX!, _normY!, _id),
-        DialogMode.copy => Future.value(),
+        DialogMode.edit => _handleEdit(),
+        DialogMode.copy => _handleCopy(),
       };
       return true;
     }

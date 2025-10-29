@@ -83,7 +83,6 @@ class _DataVisualizationPageState extends State<DataVisualizationPage> {
         false;
   }
 
-  // TODO: implement remaining data modifications
   Future<void> _copyRow(
     BuildContext context,
     ItemsProvider provider,
@@ -91,9 +90,6 @@ class _DataVisualizationPageState extends State<DataVisualizationPage> {
     String tableName,
   ) async {
     if (kDebugMode) debugPrint('Copy $provider data: $data');
-    // activity copy: open edit dialogue but need unique name, and whether to copy referenced
-    // clothing
-    // category copy: same as activity
     await showRowDialog(
       context: context,
       tableName: tableName.toLowerCase(),

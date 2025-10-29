@@ -139,6 +139,8 @@ class CategoryDialog extends StatelessWidget {
               autofocus: true,
             ),
             InteractiveFigureFormField(context: context, size: size, controller: controller),
+            if (controller.mode case DialogMode.copy || DialogMode.edit)
+              CheckboxFormField(context: context, controller: controller),
             Padding(padding: EdgeInsets.all(16.0)),
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
