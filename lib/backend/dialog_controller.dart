@@ -68,10 +68,13 @@ class ActivityDialogController extends DialogController {
     value = value?.trim();
     if (value == null || value.isEmpty) return 'Enter a value';
 
-    // Never accept an initial value, but have different messages
+    // Never accept case-sensitive initial value, but allow changing the case during edit
     bool isInitial = value.toLowerCase() == _initialName?.toLowerCase();
+    bool caseChange = isInitial && value != _initialName;
     bool isMerging = mode == DialogMode.edit && isBoxChecked;
     if (isInitial && isMerging) return 'Choose a different existing activity for merging';
+    // Allow case change when in edit mode but not merging
+    if (mode == DialogMode.edit && caseChange) return null;
     if (isInitial) return 'Enter a new value';
 
     // Avoid duplicates, except require it when merging
@@ -96,7 +99,9 @@ class ActivityDialogController extends DialogController {
 
   Future<void> _handleEdit() async {
     if (isBoxChecked) {
-      await db.changeClothingActivity(_name, _initialName);
+      // Find the case-sensitive version of the merge target (allows running and RunNIng inputs)
+      String? canonicalName = findCaseInsensitiveMatch(availableActivities, _name!);
+      await db.changeClothingActivity(canonicalName!, _initialName);
       await db.deleteActivity(_id);
     } else {
       await db.updateActivity(_name!, _id!);
@@ -163,17 +168,17 @@ class CategoryDialogController extends DialogController {
     bool isInitial = value.toLowerCase() == _initialName?.toLowerCase();
     bool isMerging = mode == DialogMode.edit && isBoxChecked;
     if (isInitial && mode != DialogMode.edit) return 'Enter a new value';
-    if (isInitial && isMerging) return 'Choose a different existing activity for merging';
+    if (isInitial && isMerging) return 'Choose a different existing category for merging';
 
     // Duplicate handling
     List<String> existingNames = availableCategories.map((el) => el.toLowerCase()).toList();
     bool isDuplicate = existingNames.contains(value.toLowerCase());
     // Avoid duplicate when not editing
-    if (isDuplicate && mode != DialogMode.edit) return 'This category already exists';
+    if (isDuplicate && mode != DialogMode.edit) return 'This category name already exists';
     // Require duplicate when merging
     if (isMerging && !isDuplicate) return 'Choose an existing activity for merging';
     // Avoid duplicate when editing but not merging
-    if (isDuplicate && !isInitial && !isMerging) return 'This category already exists';
+    if (isDuplicate && !isInitial && !isMerging) return 'This category name already exists';
 
     return null;
   }
@@ -203,8 +208,10 @@ class CategoryDialogController extends DialogController {
 
   Future<void> _handleEdit() async {
     if (isBoxChecked) {
+      // Find the case-sensitive version of the merge target (allows torso and TorSO inputs)
+      String? canonicalName = findCaseInsensitiveMatch(availableCategories, _name!);
       // The data of _initialName is used, current form coordinates are ignored
-      await db.changeClothingCategory(_name, _initialName);
+      await db.changeClothingCategory(canonicalName!, _initialName);
       await db.deleteCategory(_id);
     } else {
       await db.updateCategory(_name!, _normX!, _normY!, _id);
@@ -341,4 +348,12 @@ class ClothingDialogController extends DialogController {
     }
     return false;
   }
+}
+
+String? findCaseInsensitiveMatch(List<String> list, String input) {
+  final lowerInput = input.toLowerCase();
+  for (final item in list) {
+    if (item.toLowerCase() == lowerInput) return item;
+  }
+  return null;
 }
