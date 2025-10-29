@@ -48,14 +48,6 @@ class ActivityItemsProvider extends ItemsProvider {
     itemList = result.map((el) => el.toJson()).toList();
   }
 
-  // TODO: unused but needs a working replacement
-  // Future<String?> getFirstItem() async {
-  //   if (items.isEmpty) {
-  //     await _loadItems();
-  //   }
-  //   return items.isNotEmpty ? items.first : null;
-  // }
-
   @override
   Future<List<ClothingData>> referencedBy(Map<String, dynamic> data) async {
     String name = data['name'];

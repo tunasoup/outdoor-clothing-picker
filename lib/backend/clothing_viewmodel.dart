@@ -1,5 +1,4 @@
 import 'package:flutter/foundation.dart';
-
 import 'package:outdoor_clothing_picker/database/database.dart';
 
 class ClothingViewModel extends ChangeNotifier {
@@ -17,7 +16,12 @@ class ClothingViewModel extends ChangeNotifier {
 
   List<ValidClothingResult> get filteredClothing => _filtered;
 
-  void setActivity(String? activity, {bool load = true}) {
+  void setDefaultActivity(List<String> activityNames) {
+    if (_activity != null && activityNames.contains(_activity)) return;
+    setActivity(activity: activityNames.firstOrNull, load: true);
+  }
+
+  void setActivity({required String? activity, bool load = true}) {
     bool changed = _activity != activity;
     _activity = activity;
     if (changed && load) _loadClothing();

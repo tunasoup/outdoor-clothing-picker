@@ -49,8 +49,9 @@ class _ClothingPageState extends State<ClothingPage> {
             SizedBox(
               width: 200,
               child: ActivityDropdown(
-                initialValue: context.read<ClothingViewModel>().activity,
-                onChanged: (value) => context.read<ClothingViewModel>().setActivity(value),
+                initialValue: context.watch<ClothingViewModel>().activity,
+                onChanged: (value) => context.read<ClothingViewModel>().setActivity(activity:
+                value),
               ),
             ),
             Expanded(child: const Mannequin()),
