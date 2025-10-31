@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:outdoor_clothing_picker/backend/clothing_viewmodel.dart';
 import 'package:outdoor_clothing_picker/backend/dialog_controller.dart';
 import 'package:outdoor_clothing_picker/backend/items_provider.dart';
+import 'package:outdoor_clothing_picker/backend/weather_viewmodel.dart';
 import 'package:outdoor_clothing_picker/widgets/add_dialogs.dart';
 import 'package:outdoor_clothing_picker/widgets/mannequin.dart';
 import 'package:outdoor_clothing_picker/widgets/weather_widget.dart';
@@ -35,23 +36,28 @@ class _ClothingPageState extends State<ClothingPage> {
         onPressed: () => showAddMenu(context: context, anchorKey: _fabKey),
         child: Icon(Icons.add),
       ),
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.all(16.0),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          spacing: 16,
-          children: [
-            const WeatherWidget(),
-            SizedBox(
-              width: 200,
-              child: ActivityDropdown(
-                initialValue: context.watch<ClothingViewModel>().activity,
-                onChanged: (value) =>
-                    context.read<ClothingViewModel>().setActivity(activity: value),
+      body: RefreshIndicator(
+        onRefresh: context.read<WeatherViewModel>().refresh,
+        child: SingleChildScrollView(
+          // Required by refresh indicator for large screens
+          physics: const AlwaysScrollableScrollPhysics(),
+          padding: const EdgeInsets.all(16.0),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            spacing: 16,
+            children: [
+              const WeatherWidget(),
+              SizedBox(
+                width: 200,
+                child: ActivityDropdown(
+                  initialValue: context.watch<ClothingViewModel>().activity,
+                  onChanged: (value) =>
+                      context.read<ClothingViewModel>().setActivity(activity: value),
+                ),
               ),
-            ),
-            const SizedBox(height: 400, child: Mannequin()),
-          ],
+              const SizedBox(height: 400, child: Mannequin()),
+            ],
+          ),
         ),
       ),
     );

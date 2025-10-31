@@ -1,18 +1,28 @@
 import 'package:flutter/foundation.dart';
-
 import 'package:outdoor_clothing_picker/backend/weather_model.dart';
 import 'package:outdoor_clothing_picker/backend/weather_service.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+
+const String manualTempPrefKey = 'manualTemperature';
 
 class WeatherViewModel extends ChangeNotifier {
   final WeatherService _weatherService;
 
-  WeatherViewModel(this._weatherService);
+  WeatherViewModel(this._weatherService) {
+    _initialize();
+  }
 
   String? _cityName;
   double? _apiTemperature;
   double? _manualTemperature;
   String? _mainCondition;
   bool _isLoading = false;
+
+  Future<void> _initialize() async {
+    final prefs = await SharedPreferences.getInstance();
+    final savedManualTemp = prefs.getString(manualTempPrefKey) ?? '';
+    await setManualTemperature(savedManualTemp);
+  }
 
   String? get cityName => _cityName;
 
@@ -28,13 +38,20 @@ class WeatherViewModel extends ChangeNotifier {
 
   double? get temperature => isUsingManual ? _manualTemperature : _apiTemperature;
 
-  void setManualTemperature(String value) {
+  Future<void> setManualTemperature(String value) async {
+    final prefs = await SharedPreferences.getInstance();
     if (value.isEmpty) {
       _manualTemperature = null;
+      await prefs.remove(manualTempPrefKey);
     } else {
       _manualTemperature = double.parse(value.trim());
+      await prefs.setString(manualTempPrefKey, value);
     }
     notifyListeners();
+  }
+
+  Future<void> refresh() {
+    return fetchWeather('');
   }
 
   Future<void> fetchWeather(String city) async {

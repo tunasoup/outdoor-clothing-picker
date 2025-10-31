@@ -1,9 +1,9 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:provider/provider.dart';
-
 import 'package:outdoor_clothing_picker/backend/weather_viewmodel.dart';
 import 'package:outdoor_clothing_picker/widgets/utils.dart';
+import 'package:provider/provider.dart';
 
 /// Widget for interacting with a weather API or manual user input.
 class WeatherWidget extends StatefulWidget {
@@ -47,25 +47,26 @@ class _WeatherWidgetState extends State<WeatherWidget> {
           inputFormatters: [FilteringTextInputFormatter.allow(RegExp(r'^-?[0-9]*'))],
         ),
         const SizedBox(height: 12),
-        Align(
-          alignment: Alignment.centerRight,
-          child: ElevatedButton(
-            style: ElevatedButton.styleFrom(
-              backgroundColor: Theme.of(context).colorScheme.primaryContainer,
-              foregroundColor: Theme.of(context).colorScheme.onPrimaryContainer,
+        if (kIsWeb)
+          Align(
+            alignment: Alignment.centerRight,
+            child: ElevatedButton(
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Theme.of(context).colorScheme.primaryContainer,
+                foregroundColor: Theme.of(context).colorScheme.onPrimaryContainer,
+              ),
+              onPressed: viewModel.isLoading
+                  ? null
+                  : () => errorWrapper(context, () => viewModel.fetchWeather(cityController.text)),
+              child: viewModel.isLoading
+                  ? const SizedBox(
+                      width: 16,
+                      height: 16,
+                      child: CircularProgressIndicator(strokeWidth: 2),
+                    )
+                  : const Text('Get Weather'),
             ),
-            onPressed: viewModel.isLoading
-                ? null
-                : () => errorWrapper(context, () => viewModel.fetchWeather(cityController.text)),
-            child: viewModel.isLoading
-                ? const SizedBox(
-                    width: 16,
-                    height: 16,
-                    child: CircularProgressIndicator(strokeWidth: 2),
-                  )
-                : const Text('Get Weather'),
           ),
-        ),
         const SizedBox(height: 24),
         Column(
           crossAxisAlignment: CrossAxisAlignment.start,
