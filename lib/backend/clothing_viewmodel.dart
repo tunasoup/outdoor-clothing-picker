@@ -1,10 +1,15 @@
 import 'package:flutter/foundation.dart';
 import 'package:outdoor_clothing_picker/database/database.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+
+const String activityPrefKey = 'selectedActivity';
 
 class ClothingViewModel extends ChangeNotifier {
   final AppDb _db;
 
-  ClothingViewModel(this._db);
+  ClothingViewModel(this._db) {
+    _initialize();
+  }
 
   int? _temperature;
   String? _activity;
@@ -12,19 +17,33 @@ class ClothingViewModel extends ChangeNotifier {
   List<ValidClothingResult> _valid = [];
   List<ValidClothingResult> _filtered = [];
 
+  Future<void> _initialize() async {
+    final prefs = await SharedPreferences.getInstance();
+    final savedActivity = prefs.getString(activityPrefKey);
+    await setActivity(activity: savedActivity);
+  }
+
   String? get activity => _activity;
 
   List<ValidClothingResult> get filteredClothing => _filtered;
 
-  void setDefaultActivity(List<String> activityNames) {
+  Future<void> setDefaultActivity(List<String> activityNames) async {
     if (_activity != null && activityNames.contains(_activity)) return;
-    setActivity(activity: activityNames.firstOrNull, load: true);
+    await setActivity(activity: activityNames.firstOrNull, load: true);
   }
 
-  void setActivity({required String? activity, bool load = true}) {
-    bool changed = _activity != activity;
+  Future<void> setActivity({required String? activity, bool load = true}) async {
+    if (_activity == activity) return;
+
     _activity = activity;
-    if (changed && load) _loadClothing();
+    final prefs = await SharedPreferences.getInstance();
+
+    // Update or remove saved preference
+    activity == null
+        ? await prefs.remove(activityPrefKey)
+        : await prefs.setString(activityPrefKey, activity);
+
+    if (load) await _loadClothing();
   }
 
   void setTemperature({required double? temp, bool load = true}) {
