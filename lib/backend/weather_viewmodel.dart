@@ -16,6 +16,7 @@ class WeatherViewModel extends ChangeNotifier {
   double? _apiTemperature;
   double? _manualTemperature;
   String? _mainCondition;
+  String? _updateInfo;
   bool _isLoading = false;
 
   Future<void> _initialize() async {
@@ -32,6 +33,8 @@ class WeatherViewModel extends ChangeNotifier {
 
   String? get mainCondition => _mainCondition;
 
+  String? get updateInfo => _updateInfo;
+
   bool get isUsingManual => _manualTemperature != null;
 
   bool get isLoading => _isLoading;
@@ -44,6 +47,7 @@ class WeatherViewModel extends ChangeNotifier {
       _manualTemperature = null;
       await prefs.remove(manualTempPrefKey);
     } else {
+      _updateInfo = 'Using Manual Temperature';
       _manualTemperature = double.parse(value.trim());
       await prefs.setString(manualTempPrefKey, value);
     }
@@ -51,18 +55,17 @@ class WeatherViewModel extends ChangeNotifier {
   }
 
   Future<void> refresh() {
-    return fetchWeather('');
+    return fetchWeather();
   }
 
-  Future<void> fetchWeather(String city) async {
+  Future<void> fetchWeather() async {
     try {
-      // TODO as city input does not work on web, decide which approach(es) to use
-      // final Weather weather = await _weatherService.getWeatherByCity(city);
       final Weather weather = await _weatherService.getWeatherByCurrentLocation();
       _cityName = weather.cityName;
       _apiTemperature = weather.temperature;
       _mainCondition = weather.mainCondition;
       _manualTemperature = null;
+      _updateInfo = 'Updated HH:MM';
     } catch (e) {
       _cityName = null;
       _apiTemperature = null;
