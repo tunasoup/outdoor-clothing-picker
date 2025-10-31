@@ -36,6 +36,19 @@ class ActivityDialog extends StatelessWidget {
     return success ?? false;
   }
 
+  Future<void> _submitForm(BuildContext context, ActivityDialogController controller) async {
+    errorWrapper(context, () async {
+      if (await controller.submitForm()) {
+        Navigator.pop(context, true);
+        await Provider.of<ActivityItemsProvider>(context, listen: false).refresh();
+        if (controller.mode != DialogMode.add) {
+          // Refresh clothing in case references changed
+          await Provider.of<ClothingItemsProvider>(context, listen: false).refresh();
+        }
+      }
+    });
+  }
+
   @override
   Widget build(BuildContext context) {
     final controller = context.read<ActivityDialogController>();
@@ -53,6 +66,11 @@ class ActivityDialog extends StatelessWidget {
               validator: controller.validateName,
               onSaved: controller.saveName,
               autofocus: controller.mode == DialogMode.add,
+              onFieldSubmitted: (_) async {
+                if (controller.mode == DialogMode.add) {
+                  await _submitForm(context, controller);
+                }
+              },
             ),
             if (controller.mode case DialogMode.copy || DialogMode.edit)
               CheckboxFormField(context: context, controller: controller),
@@ -62,20 +80,8 @@ class ActivityDialog extends StatelessWidget {
               children: [
                 TextButton(onPressed: () => Navigator.pop(context, false), child: Text('Cancel')),
                 ElevatedButton(
-                  onPressed: () {
-                    errorWrapper(context, () async {
-                      if (await controller.submitForm()) {
-                        Navigator.pop(context, true);
-                        await Provider.of<ActivityItemsProvider>(context, listen: false).refresh();
-                        if (controller.mode != DialogMode.add) {
-                          // Refresh clothing in case references changed
-                          await Provider.of<ClothingItemsProvider>(
-                            context,
-                            listen: false,
-                          ).refresh();
-                        }
-                      }
-                    });
+                  onPressed: () async {
+                    await _submitForm(context, controller);
                   },
                   child: Text('Save'),
                 ),
