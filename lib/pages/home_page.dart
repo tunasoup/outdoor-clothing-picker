@@ -22,7 +22,7 @@ class _HomePageState extends State<HomePage> {
   bool wideScreen = false;
 
   late final List<Widget> pages = [
-    ClothingPage(title: 'Clothing'), // Landing page
+    ClothingPage(), // Landing page
     DataVisualizationPage(),
     const SettingsPage(),
   ];

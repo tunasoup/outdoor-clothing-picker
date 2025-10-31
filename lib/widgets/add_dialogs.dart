@@ -52,7 +52,7 @@ class ActivityDialog extends StatelessWidget {
               decoration: InputDecoration(labelText: 'Activity Name'),
               validator: controller.validateName,
               onSaved: controller.saveName,
-              autofocus: true,
+              autofocus: controller.mode == DialogMode.add,
             ),
             if (controller.mode case DialogMode.copy || DialogMode.edit)
               CheckboxFormField(context: context, controller: controller),
@@ -94,9 +94,10 @@ class CategoryDialog extends StatelessWidget {
   final DialogMode mode;
   final Map<String, dynamic>? initialData;
 
-  CategoryDialog({super.key, required this.mode, this.initialData});
+  const CategoryDialog({super.key, required this.mode, this.initialData});
 
-  final Size size = Size(100, 200);
+  // Should be kept 1:1 ratio to maintain accuracy with the painting mannequin
+  static const Size mannequinSize = Size(300, 300);
 
   Future<bool> show(BuildContext context) async {
     final AppDb db = context.read<AppDb>();
@@ -128,45 +129,57 @@ class CategoryDialog extends StatelessWidget {
       title: Text(controller.getTitle()),
       content: Form(
         key: controller.formKey,
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            TextFormField(
-              initialValue: controller.getInitialName(),
-              decoration: InputDecoration(labelText: 'Category Name'),
-              validator: controller.validateName,
-              onSaved: controller.saveName,
-              autofocus: true,
-            ),
-            InteractiveFigureFormField(context: context, size: size, controller: controller),
-            if (controller.mode case DialogMode.copy || DialogMode.edit)
-              CheckboxFormField(context: context, controller: controller),
-            Padding(padding: EdgeInsets.all(16.0)),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                TextButton(onPressed: () => Navigator.pop(context, false), child: Text('Cancel')),
-                ElevatedButton(
-                  onPressed: () {
-                    errorWrapper(context, () async {
-                      if (await controller.submitForm()) {
-                        Navigator.pop(context, true);
-                        await Provider.of<CategoryItemsProvider>(context, listen: false).refresh();
-                        if (controller.mode != DialogMode.add) {
-                          // Refresh clothing in case references changed
-                          await Provider.of<ClothingItemsProvider>(
+        child: SingleChildScrollView(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              TextFormField(
+                initialValue: controller.getInitialName(),
+                decoration: InputDecoration(labelText: 'Category Name'),
+                validator: controller.validateName,
+                onSaved: controller.saveName,
+                autofocus: false,
+              ),
+              InteractiveFigureFormField(
+                context: context,
+                size: mannequinSize,
+                controller: controller,
+              ),
+              if (controller.mode case DialogMode.copy || DialogMode.edit)
+                CheckboxFormField(context: context, controller: controller),
+              Padding(padding: EdgeInsets.all(16.0)),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  TextButton(
+                    onPressed: () => Navigator.pop(context, false),
+                    child: Text('Cancel'),
+                  ),
+                  ElevatedButton(
+                    onPressed: () {
+                      errorWrapper(context, () async {
+                        if (await controller.submitForm()) {
+                          Navigator.pop(context, true);
+                          await Provider.of<CategoryItemsProvider>(
                             context,
                             listen: false,
                           ).refresh();
+                          if (controller.mode != DialogMode.add) {
+                            // Refresh clothing in case references changed
+                            await Provider.of<ClothingItemsProvider>(
+                              context,
+                              listen: false,
+                            ).refresh();
+                          }
                         }
-                      }
-                    });
-                  },
-                  child: Text('Save'),
-                ),
-              ],
-            ),
-          ],
+                      });
+                    },
+                    child: Text('Save'),
+                  ),
+                ],
+              ),
+            ],
+          ),
         ),
       ),
     );
@@ -204,8 +217,8 @@ class InteractiveFigureFormField extends FormField<Offset> {
                ),
                const SizedBox(height: 8),
                SizedBox(
-                 width: 300,
-                 height: 300,
+                 width: size.width,
+                 height: size.height,
                  child: Mannequin(
                    onTap: (normalizedOffset) => field.didChange(normalizedOffset),
                    isInteractiveMode: true,
