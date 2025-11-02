@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:outdoor_clothing_picker/backend/utils.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 class SettingsPage extends StatefulWidget {
@@ -9,8 +10,6 @@ class SettingsPage extends StatefulWidget {
 }
 
 class _SettingsPageState extends State<SettingsPage> {
-  static const String _apiKeyPrefKey = 'api_key_owm';
-
   final TextEditingController _controller = TextEditingController();
   bool _isLoading = true;
 
@@ -22,7 +21,7 @@ class _SettingsPageState extends State<SettingsPage> {
 
   Future<void> _loadApiKey() async {
     final prefs = await SharedPreferences.getInstance();
-    final savedKey = prefs.getString(_apiKeyPrefKey);
+    final savedKey = prefs.getString(PrefKeys.apiKeyOWM);
     _controller.text = savedKey ?? '';
     setState(() {
       _isLoading = false;
@@ -31,7 +30,7 @@ class _SettingsPageState extends State<SettingsPage> {
 
   Future<void> _saveApiKey(String value) async {
     final prefs = await SharedPreferences.getInstance();
-    await prefs.setString(_apiKeyPrefKey, value);
+    await prefs.setString(PrefKeys.apiKeyOWM, value);
   }
 
   @override

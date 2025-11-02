@@ -2,8 +2,7 @@ import 'package:flutter/foundation.dart';
 import 'package:outdoor_clothing_picker/backend/weather_model.dart';
 import 'package:outdoor_clothing_picker/backend/weather_service.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-
-const String manualTempPrefKey = 'manualTemperature';
+import 'package:outdoor_clothing_picker/backend/utils.dart';
 
 class WeatherViewModel extends ChangeNotifier {
   final WeatherService _weatherService;
@@ -21,7 +20,7 @@ class WeatherViewModel extends ChangeNotifier {
 
   Future<void> _initialize() async {
     final prefs = await SharedPreferences.getInstance();
-    final savedManualTemp = prefs.getString(manualTempPrefKey) ?? '';
+    final savedManualTemp = prefs.getString(PrefKeys.manualTemp) ?? '';
     await setManualTemperature(savedManualTemp);
   }
 
@@ -45,11 +44,11 @@ class WeatherViewModel extends ChangeNotifier {
     final prefs = await SharedPreferences.getInstance();
     if (value.isEmpty) {
       _manualTemperature = null;
-      await prefs.remove(manualTempPrefKey);
+      await prefs.remove(PrefKeys.manualTemp);
     } else {
       _updateInfo = 'Using Manual Temperature';
       _manualTemperature = double.parse(value.trim());
-      await prefs.setString(manualTempPrefKey, value);
+      await prefs.setString(PrefKeys.manualTemp, value);
     }
     notifyListeners();
   }

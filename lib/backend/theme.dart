@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:outdoor_clothing_picker/backend/utils.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
-const String themePrefKey = 'isDarkMode';
 const seedColor = Colors.green;
 ThemeData lightMode = ThemeData(colorScheme: ColorScheme.fromSeed(seedColor: seedColor));
 ThemeData darkMode = ThemeData(
@@ -21,7 +21,7 @@ class ThemeProvider with ChangeNotifier {
 
   Future<void> loadTheme() async {
     final prefs = await SharedPreferences.getInstance();
-    final isDark = prefs.getBool(themePrefKey) ?? false;
+    final isDark = prefs.getBool(PrefKeys.darkMode) ?? false;
     _themeData = isDark ? darkMode : lightMode;
     notifyListeners();
   }
@@ -32,6 +32,6 @@ class ThemeProvider with ChangeNotifier {
     notifyListeners();
 
     final prefs = await SharedPreferences.getInstance();
-    await prefs.setBool(themePrefKey, !isCurrentlyDark);
+    await prefs.setBool(PrefKeys.darkMode, !isCurrentlyDark);
   }
 }

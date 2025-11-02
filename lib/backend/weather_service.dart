@@ -4,6 +4,7 @@ import 'package:flutter/foundation.dart';
 import 'package:geocoding/geocoding.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:http/http.dart' as http;
+import 'package:outdoor_clothing_picker/backend/utils.dart';
 import 'package:outdoor_clothing_picker/backend/weather_model.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -25,7 +26,7 @@ class WeatherService {
 
   Future<Weather> getWeatherByLocation(Location location) async {
     final prefs = await SharedPreferences.getInstance();
-    final apiKey = prefs.getString('api_key_owm');
+    final apiKey = prefs.getString(PrefKeys.apiKeyOWM);
     double lat = location.latitude;
     double lon = location.longitude;
     if (kDebugMode) debugPrint('lat:$lat, lon:$lon');

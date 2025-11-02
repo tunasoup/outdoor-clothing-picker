@@ -5,6 +5,7 @@ import 'package:outdoor_clothing_picker/backend/items_provider.dart';
 import 'package:outdoor_clothing_picker/backend/weather_viewmodel.dart';
 import 'package:outdoor_clothing_picker/widgets/add_dialogs.dart';
 import 'package:outdoor_clothing_picker/widgets/mannequin.dart';
+import 'package:outdoor_clothing_picker/widgets/utils.dart';
 import 'package:outdoor_clothing_picker/widgets/weather_widget.dart';
 import 'package:provider/provider.dart';
 import 'package:universal_html/html.dart' as html;
@@ -37,7 +38,8 @@ class _ClothingPageState extends State<ClothingPage> {
         child: Icon(Icons.add),
       ),
       body: RefreshIndicator(
-        onRefresh: context.read<WeatherViewModel>().refresh,
+        onRefresh: () async =>
+            errorWrapper(context, () => context.read<WeatherViewModel>().refresh()),
         child: SingleChildScrollView(
           // Required by refresh indicator for large screens
           physics: const AlwaysScrollableScrollPhysics(),

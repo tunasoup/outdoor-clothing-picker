@@ -1,8 +1,7 @@
 import 'package:flutter/foundation.dart';
+import 'package:outdoor_clothing_picker/backend/utils.dart';
 import 'package:outdoor_clothing_picker/database/database.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-
-const String activityPrefKey = 'selectedActivity';
 
 class ClothingViewModel extends ChangeNotifier {
   final AppDb _db;
@@ -19,7 +18,7 @@ class ClothingViewModel extends ChangeNotifier {
 
   Future<void> _initialize() async {
     final prefs = await SharedPreferences.getInstance();
-    final savedActivity = prefs.getString(activityPrefKey);
+    final savedActivity = prefs.getString(PrefKeys.activity);
     await setActivity(activity: savedActivity);
   }
 
@@ -40,8 +39,8 @@ class ClothingViewModel extends ChangeNotifier {
 
     // Update or remove saved preference
     activity == null
-        ? await prefs.remove(activityPrefKey)
-        : await prefs.setString(activityPrefKey, activity);
+        ? await prefs.remove(PrefKeys.activity)
+        : await prefs.setString(PrefKeys.activity, activity);
 
     if (load) await _loadClothing();
   }
