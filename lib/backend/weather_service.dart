@@ -27,6 +27,7 @@ class WeatherService {
   Future<Weather> getWeatherByLocation(Location location) async {
     final prefs = await SharedPreferences.getInstance();
     final apiKey = prefs.getString(PrefKeys.apiKeyOWM);
+    if (apiKey == null) throw 'No API key, set it in Settings';
     double lat = location.latitude;
     double lon = location.longitude;
     if (kDebugMode) debugPrint('lat:$lat, lon:$lon');
@@ -35,7 +36,7 @@ class WeatherService {
     );
 
     if (response.statusCode == 200) {
-      return Weather.fromJson(jsonDecode(response.body));
+      return Weather.fromOWMJson(jsonDecode(response.body));
     } else {
       String msg =
           'Failed to load weather data, code ${response.statusCode}: ${response.reasonPhrase}';

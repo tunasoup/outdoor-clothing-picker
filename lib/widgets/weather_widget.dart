@@ -63,7 +63,7 @@ class _WeatherWidgetState extends State<WeatherWidget> {
                     ),
                     Text(
                       viewModel.updateInfo ??
-                          'This is a very long additional text that might not fit',
+                          'Pull down to fetch current weather or tap for input',
                       textAlign: TextAlign.center,
                       style: TextStyle(color: colorScheme.onPrimaryContainer),
                       maxLines: 1,

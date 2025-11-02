@@ -1,8 +1,8 @@
 import 'package:flutter/foundation.dart';
+import 'package:outdoor_clothing_picker/backend/utils.dart';
 import 'package:outdoor_clothing_picker/backend/weather_model.dart';
 import 'package:outdoor_clothing_picker/backend/weather_service.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'package:outdoor_clothing_picker/backend/utils.dart';
 
 class WeatherViewModel extends ChangeNotifier {
   final WeatherService _weatherService;
@@ -15,13 +15,21 @@ class WeatherViewModel extends ChangeNotifier {
   double? _apiTemperature;
   double? _manualTemperature;
   String? _mainCondition;
-  String? _updateInfo;
+  DateTime? _updateDate;
   bool _isLoading = false;
 
   Future<void> _initialize() async {
     final prefs = await SharedPreferences.getInstance();
-    final savedManualTemp = prefs.getString(PrefKeys.manualTemp) ?? '';
-    await setManualTemperature(savedManualTemp);
+    final String? savedManualTemp = prefs.getString(PrefKeys.manualTemp);
+    final String? savedApiWeather = prefs.getString(PrefKeys.apiWeather);
+    debugPrint('api weather in init: $savedApiWeather');
+    // Only one (or neither) of the values should exist at a time
+    if (savedApiWeather != null) {
+      final weather = Weather.fromJsonString(savedApiWeather);
+      await setApiWeather(weather);
+    } else {
+      await setManualTemperature(savedManualTemp);
+    }
   }
 
   String? get cityName => _cityName;
@@ -32,7 +40,13 @@ class WeatherViewModel extends ChangeNotifier {
 
   String? get mainCondition => _mainCondition;
 
-  String? get updateInfo => _updateInfo;
+  String? get updateInfo {
+    if (_manualTemperature == null && _apiTemperature == null) return null;
+    return isUsingManual
+        ? 'Using Manual Temperature'
+        : 'Updated '
+              '${formatTime(time: _updateDate!, showConditionalDay: true)}';
+  }
 
   bool get isUsingManual => _manualTemperature != null;
 
@@ -40,17 +54,33 @@ class WeatherViewModel extends ChangeNotifier {
 
   double? get temperature => isUsingManual ? _manualTemperature : _apiTemperature;
 
-  Future<void> setManualTemperature(String value) async {
+  /// Override the current temperature with the given [value] in string format, or reset if null
+  /// is provided.
+  Future<void> setManualTemperature(String? value) async {
     final prefs = await SharedPreferences.getInstance();
-    if (value.isEmpty) {
+    if (value == null) {
       _manualTemperature = null;
       await prefs.remove(PrefKeys.manualTemp);
     } else {
-      _updateInfo = 'Using Manual Temperature';
       _manualTemperature = double.parse(value.trim());
       await prefs.setString(PrefKeys.manualTemp, value);
+      await setApiWeather(null);
     }
     notifyListeners();
+  }
+
+  Future<void> setApiWeather(Weather? weather) async {
+    _cityName = weather?.cityName;
+    _apiTemperature = weather?.temperature;
+    _mainCondition = weather?.mainCondition;
+    _updateDate = weather?.updateDate;
+    if (weather == null) {
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.remove(PrefKeys.apiWeather);
+    } else {
+      await weather.save();
+      await setManualTemperature(null);
+    }
   }
 
   Future<void> refresh() {
@@ -60,15 +90,9 @@ class WeatherViewModel extends ChangeNotifier {
   Future<void> fetchWeather() async {
     try {
       final Weather weather = await _weatherService.getWeatherByCurrentLocation();
-      _cityName = weather.cityName;
-      _apiTemperature = weather.temperature;
-      _mainCondition = weather.mainCondition;
-      _manualTemperature = null;
-      _updateInfo = 'Updated HH:MM';
+      await setApiWeather(weather);
     } catch (e) {
-      _cityName = null;
-      _apiTemperature = null;
-      _mainCondition = null;
+      await setApiWeather(null);
       rethrow;
     } finally {
       _isLoading = false;
