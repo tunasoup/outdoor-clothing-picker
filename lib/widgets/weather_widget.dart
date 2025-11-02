@@ -132,7 +132,7 @@ class GetWeatherButton extends StatelessWidget {
           ),
           onPressed: viewModel.isLoading
               ? null
-              : () => errorWrapper(context, viewModel.fetchWeather),
+              : () => errorWrapper(context, viewModel.tryFetchWeather),
           child: viewModel.isLoading
               ? const SizedBox(
                   width: 16,

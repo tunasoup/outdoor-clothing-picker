@@ -55,3 +55,8 @@ bool isToday(DateTime date) {
   final today = DateTime.now();
   return date.year == today.year && date.month == today.month && date.day == today.day;
 }
+
+/// Returns true if [date] is older than [duration] compared to now.
+bool isOlderThan(DateTime date, Duration duration) {
+  return DateTime.now().difference(date) > duration;
+}

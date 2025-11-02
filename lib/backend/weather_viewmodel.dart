@@ -22,12 +22,24 @@ class WeatherViewModel extends ChangeNotifier {
     final prefs = await SharedPreferences.getInstance();
     final String? savedManualTemp = prefs.getString(PrefKeys.manualTemp);
     final String? savedApiWeather = prefs.getString(PrefKeys.apiWeather);
-    debugPrint('api weather in init: $savedApiWeather');
     // Only one (or neither) of the values should exist at a time
     if (savedApiWeather != null) {
+      // If API was active last, try to fetch new weather if the saved one is old
       final weather = Weather.fromJsonString(savedApiWeather);
-      await setApiWeather(weather);
+      if (isOlderThan(weather.updateDate, Duration(minutes: 30))) {
+        try {
+          if (kDebugMode) debugPrint('Fetching newer weather...');
+          await fetchWeather();
+        } catch (_) {
+          if (kDebugMode) debugPrint('New weather unavailable, using old');
+          await setApiWeather(weather);
+        }
+      } else {
+        if (kDebugMode) debugPrint('Loading old weather as it is recent');
+        await setApiWeather(weather);
+      }
     } else {
+      if (kDebugMode) debugPrint('Starting with earlier manual weather');
       await setManualTemperature(savedManualTemp);
     }
   }
@@ -84,13 +96,20 @@ class WeatherViewModel extends ChangeNotifier {
   }
 
   Future<void> refresh() {
-    return fetchWeather();
+    return tryFetchWeather();
   }
 
   Future<void> fetchWeather() async {
+    final Weather weather = await _weatherService.getWeatherByCurrentLocation();
+    await setApiWeather(weather);
+  }
+
+  Future<void> tryFetchWeather() async {
+    _isLoading = true;
+    notifyListeners();
+
     try {
-      final Weather weather = await _weatherService.getWeatherByCurrentLocation();
-      await setApiWeather(weather);
+      await fetchWeather();
     } catch (e) {
       await setApiWeather(null);
       rethrow;
