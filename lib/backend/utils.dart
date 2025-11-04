@@ -28,7 +28,7 @@ extension DateTimeExtensions on DateTime {
 
 enum TimeFormat { t24, t12 }
 
-/// Format [time] to a given [timeFormat], and optionally with [showConditionalDay] show the
+/// Format UTC [time] to a given [timeFormat], and optionally with [showConditionalDay] show the
 /// date if it differs from today.
 String formatTime({
   required DateTime time,
@@ -36,6 +36,7 @@ String formatTime({
   bool showConditionalDay = false,
 }) {
   String? formatted;
+  time = time.toLocal();
   String minute = time.minute.toString().padLeft(2, '0');
   switch (timeFormat) {
     case TimeFormat.t12:
