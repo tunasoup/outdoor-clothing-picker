@@ -117,17 +117,6 @@ class _DataVisualizationPageState extends State<DataVisualizationPage> {
     final tableName = provider.tableName;
     final rows = provider.itemList;
 
-    if (provider.isLoading) {
-      return const Center(child: CircularProgressIndicator());
-    }
-
-    if (rows.isEmpty) {
-      return Padding(
-        padding: const EdgeInsets.symmetric(vertical: 16),
-        child: Text('${tableName.toUpperCase()}: No data found.'),
-      );
-    }
-
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -136,55 +125,62 @@ class _DataVisualizationPageState extends State<DataVisualizationPage> {
             Text(tableName.toUpperCase(), style: Theme.of(context).textTheme.titleLarge),
             const SizedBox(width: 8),
             ElevatedButton(
-              onPressed: () async {
-                await showRowDialog(
-                  context: context,
-                  tableName: tableName.toLowerCase(),
-                  mode: DialogMode.add,
-                );
-              },
+              onPressed: provider.isLoading
+                  ? null
+                  : () async {
+                      await showRowDialog(
+                        context: context,
+                        tableName: tableName.toLowerCase(),
+                        mode: DialogMode.add,
+                      );
+                    },
               child: const Text('Add New'),
             ),
           ],
         ),
-        const SizedBox(height: 8),
-        ...rows.map(
-          (row) => Card(
-            margin: const EdgeInsets.symmetric(vertical: 4),
-            child: ListTile(
-              title: Text(row.entries.map((e) => '${e.key}: ${e.value}').join(', ')),
-              trailing: Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  IconButton(
-                    icon: const Icon(Icons.edit),
-                    onPressed: () {
-                      errorWrapper(context, () async {
-                        await _editRow(context, provider, row, tableName.toLowerCase());
-                      });
-                    },
-                  ),
-                  IconButton(
-                    icon: const Icon(Icons.copy),
-                    onPressed: () {
-                      errorWrapper(context, () async {
-                        await _copyRow(context, provider, row, tableName.toLowerCase());
-                      });
-                    },
-                  ),
-                  IconButton(
-                    icon: const Icon(Icons.delete),
-                    onPressed: () {
-                      errorWrapper(context, () async {
-                        await _deleteRow(context, provider, row);
-                      });
-                    },
-                  ),
-                ],
+        Padding(padding: EdgeInsets.symmetric(vertical: 8)),
+        if (provider.isLoading)
+          Center(child: CircularProgressIndicator())
+        else if (rows.isEmpty)
+          Text('No data')
+        else
+          ...rows.map(
+            (row) => Card(
+              margin: const EdgeInsets.symmetric(vertical: 4),
+              child: ListTile(
+                title: Text(row.entries.map((e) => '${e.key}: ${e.value}').join(', ')),
+                trailing: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    IconButton(
+                      icon: const Icon(Icons.edit),
+                      onPressed: () {
+                        errorWrapper(context, () async {
+                          await _editRow(context, provider, row, tableName.toLowerCase());
+                        });
+                      },
+                    ),
+                    IconButton(
+                      icon: const Icon(Icons.copy),
+                      onPressed: () {
+                        errorWrapper(context, () async {
+                          await _copyRow(context, provider, row, tableName.toLowerCase());
+                        });
+                      },
+                    ),
+                    IconButton(
+                      icon: const Icon(Icons.delete),
+                      onPressed: () {
+                        errorWrapper(context, () async {
+                          await _deleteRow(context, provider, row);
+                        });
+                      },
+                    ),
+                  ],
+                ),
               ),
             ),
           ),
-        ),
         const Divider(height: 32),
       ],
     );
