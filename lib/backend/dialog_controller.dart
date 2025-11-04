@@ -12,7 +12,7 @@ abstract class DialogController {
 
   final formKey = GlobalKey<FormState>();
   late final int? _id;
-  late final String? _initialName;
+  late final String? initialName;
 
   DialogController({required this.db, required this.mode, this.initialData}) {
     if (mode != DialogMode.add && initialData?['id'] == null) {
@@ -22,7 +22,7 @@ abstract class DialogController {
       );
     }
     _id = initialData?['id'];
-    _initialName = initialData?['name'];
+    initialName = initialData?['name'];
   }
 
   bool isBoxChecked = false;
@@ -57,11 +57,9 @@ class ActivityDialogController extends DialogController {
   @override
   String getTitle() => switch (mode) {
     DialogMode.add => 'Add Activity',
-    DialogMode.edit => 'Edit Activity \'$_initialName\'',
-    DialogMode.copy => 'Copy Activity \'$_initialName\'',
+    DialogMode.edit => 'Edit Activity \'$initialName\'',
+    DialogMode.copy => 'Copy Activity \'$initialName\'',
   };
-
-  String? getInitialName() => _initialName;
 
   String? validateName(String? value) {
     // Never accept empty values
@@ -69,8 +67,8 @@ class ActivityDialogController extends DialogController {
     if (value == null || value.isEmpty) return 'Enter a value';
 
     // Never accept case-sensitive initial value, but allow changing the case during edit
-    bool isInitial = value.toLowerCase() == _initialName?.toLowerCase();
-    bool caseChange = isInitial && value != _initialName;
+    bool isInitial = value.toLowerCase() == initialName?.toLowerCase();
+    bool caseChange = isInitial && value != initialName;
     bool isMerging = mode == DialogMode.edit && isBoxChecked;
     if (isInitial && isMerging) return 'Choose a different existing activity for merging';
     // Allow case change when in edit mode but not merging
@@ -101,7 +99,7 @@ class ActivityDialogController extends DialogController {
     if (isBoxChecked) {
       // Find the case-sensitive version of the merge target (allows running and RunNIng inputs)
       String? canonicalName = findCaseInsensitiveMatch(availableActivities, _name!);
-      await db.changeClothingActivity(canonicalName!, _initialName);
+      await db.changeClothingActivity(canonicalName!, initialName);
       await db.deleteActivity(_id);
     } else {
       await db.updateActivity(_name!, _id!);
@@ -111,7 +109,7 @@ class ActivityDialogController extends DialogController {
   Future<void> _handleCopy() async {
     await db.insertActivity(_name!);
     if (isBoxChecked) {
-      await db.duplicateActivityClothing(_name!, _initialName!);
+      await db.duplicateActivityClothing(_name!, initialName!);
     }
   }
 
@@ -150,11 +148,9 @@ class CategoryDialogController extends DialogController {
   @override
   String getTitle() => switch (mode) {
     DialogMode.add => 'Add Category',
-    DialogMode.edit => 'Edit Category \'$_initialName\'',
-    DialogMode.copy => 'Copy Category \'$_initialName\'',
+    DialogMode.edit => 'Edit Category \'$initialName\'',
+    DialogMode.copy => 'Copy Category \'$initialName\'',
   };
-
-  String? getInitialName() => _initialName;
 
   Offset? getInitialCoords() =>
       _initialNormX != null && _initialNormY != null ? Offset(_initialNormX, _initialNormY) : null;
@@ -165,7 +161,7 @@ class CategoryDialogController extends DialogController {
     if (value == null || value.isEmpty) return 'Enter a value';
 
     // Initial value only acceptable when other editing is performed
-    bool isInitial = value.toLowerCase() == _initialName?.toLowerCase();
+    bool isInitial = value.toLowerCase() == initialName?.toLowerCase();
     bool isMerging = mode == DialogMode.edit && isBoxChecked;
     if (isInitial && mode != DialogMode.edit) return 'Enter a new value';
     if (isInitial && isMerging) return 'Choose a different existing category for merging';
@@ -211,7 +207,7 @@ class CategoryDialogController extends DialogController {
       // Find the case-sensitive version of the merge target (allows torso and TorSO inputs)
       String? canonicalName = findCaseInsensitiveMatch(availableCategories, _name!);
       // The data of _initialName is used, current form coordinates are ignored
-      await db.changeClothingCategory(canonicalName!, _initialName);
+      await db.changeClothingCategory(canonicalName!, initialName);
       await db.deleteCategory(_id);
     } else {
       await db.updateCategory(_name!, _normX!, _normY!, _id);
@@ -221,7 +217,7 @@ class CategoryDialogController extends DialogController {
   Future<void> _handleCopy() async {
     await db.insertCategory(_name!, _normX!, _normY!);
     if (isBoxChecked) {
-      await db.duplicateCategoryClothing(_name!, _initialName!);
+      await db.duplicateCategoryClothing(_name!, initialName!);
     }
   }
 
@@ -241,16 +237,16 @@ class CategoryDialogController extends DialogController {
 }
 
 class ClothingDialogController extends DialogController {
-  late final int? _initialMinTemp;
-  late final int? _initialMaxTemp;
-  late final String? _initialActivity;
-  late final String? _initialCategory;
+  late final int? initialMinTemp;
+  late final int? initialMaxTemp;
+  late final String? initialActivity;
+  late final String? initialCategory;
 
   ClothingDialogController({required super.db, required super.mode, super.initialData})
-    : _initialMinTemp = initialData?['min_temp'],
-      _initialMaxTemp = initialData?['max_temp'],
-      _initialActivity = initialData?['activity'],
-      _initialCategory = initialData?['category'];
+    : initialMinTemp = initialData?['min_temp'],
+      initialMaxTemp = initialData?['max_temp'],
+      initialActivity = initialData?['activity'],
+      initialCategory = initialData?['category'];
 
   String? _name;
   int? _minTemp;
@@ -262,19 +258,9 @@ class ClothingDialogController extends DialogController {
   @override
   String getTitle() => switch (mode) {
     DialogMode.add => 'Add Clothing Item',
-    DialogMode.edit => 'Edit Clothing \'$_initialName\'',
-    DialogMode.copy => 'Copy Clothing \'$_initialName\'',
+    DialogMode.edit => 'Edit Clothing \'$initialName\'',
+    DialogMode.copy => 'Copy Clothing \'$initialName\'',
   };
-
-  String? getInitialName() => _initialName;
-
-  int? getInitialMinTemp() => _initialMinTemp;
-
-  int? getInitialMaxTemp() => _initialMaxTemp;
-
-  String? getInitialActivity() => _initialActivity;
-
-  String? getInitialCategory() => _initialCategory;
 
   String? validateName(String? value) {
     return value == null || value.trim().isEmpty ? 'Enter a value' : null;

@@ -71,6 +71,7 @@ class CategoryItemsProvider extends ItemsProvider {
   @override
   Future<void> _loadItems() async {
     final result = await db.allCategories().get();
+    // TODO sorting vertically or alphabetically
     names = result.map((el) => el.name).toList();
     itemList = result.map((el) => el.toJson()).toList();
   }

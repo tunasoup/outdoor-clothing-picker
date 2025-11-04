@@ -61,7 +61,7 @@ class ActivityDialog extends StatelessWidget {
           mainAxisSize: MainAxisSize.min,
           children: [
             TextFormField(
-              initialValue: controller.getInitialName(),
+              initialValue: controller.initialName,
               decoration: InputDecoration(labelText: 'Activity Name'),
               validator: controller.validateName,
               onSaved: controller.saveName,
@@ -140,7 +140,7 @@ class CategoryDialog extends StatelessWidget {
             mainAxisSize: MainAxisSize.min,
             children: [
               TextFormField(
-                initialValue: controller.getInitialName(),
+                initialValue: controller.initialName,
                 decoration: InputDecoration(labelText: 'Category Name'),
                 validator: controller.validateName,
                 onSaved: controller.saveName,
@@ -276,13 +276,13 @@ class ClothingDialog extends StatelessWidget {
           child: Column(
             children: [
               TextFormField(
-                initialValue: controller.getInitialName(),
+                initialValue: controller.initialName,
                 decoration: InputDecoration(labelText: 'Name'),
                 validator: controller.validateName,
                 onSaved: controller.saveName,
               ),
               TextFormField(
-                initialValue: controller.getInitialMinTemp()?.toString(),
+                initialValue: controller.initialMinTemp?.toString(),
                 decoration: InputDecoration(labelText: 'Min Temperature'),
                 validator: controller.validateMinTemp,
                 onSaved: controller.saveMinTemp,
@@ -290,7 +290,7 @@ class ClothingDialog extends StatelessWidget {
                 inputFormatters: [FilteringTextInputFormatter.allow(RegExp(r'^-?[0-9]*'))],
               ),
               TextFormField(
-                initialValue: controller.getInitialMaxTemp()?.toString(),
+                initialValue: controller.initialMaxTemp?.toString(),
                 decoration: InputDecoration(labelText: 'Max Temperature'),
                 validator: controller.validateMaxTemp,
                 onSaved: controller.saveMaxTemp,
@@ -300,7 +300,7 @@ class ClothingDialog extends StatelessWidget {
               Consumer<CategoryItemsProvider>(
                 builder: (context, provider, _) {
                   return DropdownButtonFormField<String>(
-                    initialValue: controller.getInitialCategory(),
+                    initialValue: controller.initialCategory,
                     decoration: InputDecoration(labelText: 'Category'),
                     validator: controller.validateDropdown,
                     items: provider.names
@@ -311,10 +311,11 @@ class ClothingDialog extends StatelessWidget {
                   );
                 },
               ),
+              // TODO allow choosing multiple activities
               Consumer<ActivityItemsProvider>(
                 builder: (context, provider, _) {
                   return DropdownButtonFormField<String>(
-                    initialValue: controller.getInitialActivity(),
+                    initialValue: controller.initialActivity,
                     decoration: InputDecoration(hintText: 'Activity'),
                     validator: controller.validateDropdown,
                     items: provider.names

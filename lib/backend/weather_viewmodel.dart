@@ -101,6 +101,7 @@ class WeatherViewModel extends ChangeNotifier {
 
   Future<void> fetchWeather() async {
     final Weather weather = await _weatherService.getWeatherByCurrentLocation();
+    if (kDebugMode) debugPrint('start to set weather');
     await setApiWeather(weather);
   }
 

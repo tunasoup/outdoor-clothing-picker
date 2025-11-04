@@ -20,11 +20,13 @@ class WeatherService {
   }
 
   Future<Weather> getWeatherByCurrentLocation() async {
+    if (kDebugMode) debugPrint('In get location');
     Location location = await getCurrentLocation();
     return getWeatherByLocation(location);
   }
 
   Future<Weather> getWeatherByLocation(Location location) async {
+    if (kDebugMode) debugPrint('In weather by location');
     final prefs = await SharedPreferences.getInstance();
     final apiKey = prefs.getString(PrefKeys.apiKeyOWM);
     if (apiKey == null) throw 'No API key, set it in Settings';
@@ -46,12 +48,17 @@ class WeatherService {
   }
 
   Future<Location> getCurrentLocation() async {
+    // FIXME occasionally gets stuck somewhere here
+    if (kDebugMode) debugPrint('In get current location');
     LocationPermission permission = await Geolocator.checkPermission();
+    if (kDebugMode) debugPrint('checked permission');
     if (permission == LocationPermission.denied) {
       permission = await Geolocator.requestPermission();
     }
 
+    if (kDebugMode) debugPrint('getting position');
     Position position = await Geolocator.getCurrentPosition();
+    if (kDebugMode) debugPrint('got position');
     return Location(
       latitude: position.latitude,
       longitude: position.longitude,
