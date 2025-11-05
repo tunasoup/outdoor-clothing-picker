@@ -267,25 +267,21 @@ class ClothingDialogController extends DialogController {
   }
 
   String? validateMinTemp(String? value) {
-    if (value == null || value.isEmpty) {
-      return 'Enter a value';
-    }
-    _minTempVal = int.tryParse(value);
+    _minTempVal = value != null ? int.tryParse(value) : null;
+    if (value == null || value.isEmpty) return null;
     if (_minTempVal == null) {
-      return 'Enter a valid whole number';
+      return 'Enter a whole number or leave empty';
     }
     return null;
   }
 
   String? validateMaxTemp(String? value) {
-    if (value == null || value.isEmpty) {
-      return 'Enter a value';
-    }
+    if (value == null || value.isEmpty) return null;
     int? number = int.tryParse(value);
     if (number == null) {
-      return 'Enter a valid whole number';
+      return 'Enter a whole number or leave empty';
     } else if (_minTempVal != null && number < _minTempVal!) {
-      return 'Must be ≥ Min Temp';
+      return 'Must be ≥ Min Temperature';
     }
     return null;
   }
@@ -299,11 +295,12 @@ class ClothingDialogController extends DialogController {
   }
 
   void saveMinTemp(String? value) {
-    _minTemp = int.parse(value!);
+    // Need to tryParse as input is an empty string by default
+    _minTemp = value != null ? int.tryParse(value) : null;
   }
 
   void saveMaxTemp(String? value) {
-    _maxTemp = int.parse(value!);
+    _maxTemp = value != null ? int.tryParse(value) : null;
   }
 
   void saveActivity(String? value) {
@@ -320,11 +317,11 @@ class ClothingDialogController extends DialogController {
       formKey.currentState?.save();
       await switch (mode) {
         DialogMode.add ||
-        DialogMode.copy => db.insertClothing(_name!, _minTemp!, _maxTemp!, _category, _activity),
+        DialogMode.copy => db.insertClothing(_name!, _minTemp, _maxTemp, _category, _activity),
         DialogMode.edit => db.updateClothing(
           _name!,
-          _minTemp!,
-          _maxTemp!,
+          _minTemp,
+          _maxTemp,
           _category,
           _activity,
           _id,
