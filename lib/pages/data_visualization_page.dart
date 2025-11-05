@@ -148,7 +148,17 @@ class _DataVisualizationPageState extends State<DataVisualizationPage> {
             (row) => Card(
               margin: const EdgeInsets.symmetric(vertical: 4),
               child: ListTile(
-                title: Text(row.entries.map((e) => '${e.key}: ${e.value}').join(', ')),
+                title: Text(
+                  row.entries
+                      .map((e) {
+                        final key = e.key;
+                        final value = e.value;
+                        if (key == 'min_temp' && value == null) return '$key: -inf';
+                        if (key == 'max_temp' && value == null) return '$key: inf';
+                        return '$key: $value';
+                      })
+                      .join(', '),
+                ),
                 trailing: Row(
                   mainAxisSize: MainAxisSize.min,
                   children: [
