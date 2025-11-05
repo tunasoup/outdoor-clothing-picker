@@ -43,6 +43,9 @@ allCategories: SELECT * FROM categories;
 
 allClothing: SELECT * FROM clothing;
 
+categoryFromName: SELECT * FROM categories
+WHERE name = :name;
+
 clothingWithActivity: SELECT cl.* FROM clothing cl
 INNER JOIN clothing_activities cla ON cl.id = cla.clothing_id
 INNER JOIN activities a ON a.id = cla.activity_id

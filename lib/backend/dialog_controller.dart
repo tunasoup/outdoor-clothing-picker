@@ -296,7 +296,7 @@ class ClothingDialogController extends DialogController {
   }
 
   String? validateDropdown(String? value) {
-    return value == null ? 'Select a value' : null;
+    return null;
   }
 
   String? validateMultiselect(List<String>? values) {
@@ -328,12 +328,20 @@ class ClothingDialogController extends DialogController {
   Future<bool> submitForm() async {
     if (formKey.currentState?.validate() ?? false) {
       formKey.currentState?.save();
-      await switch (mode) {
-        // TODO add activity links
-        // TODO include category id
-        DialogMode.add || DialogMode.copy => db.insertClothing(_name!, _minTemp, _maxTemp, null),
-        DialogMode.edit => db.updateClothing(_name!, _minTemp, _maxTemp, null, _id!),
-      };
+      // TODO add activity links
+      final int? categoryID = _category == null
+          ? null
+          : (await db.categoryFromName(_category!).getSingleOrNull())?.id;
+
+      switch (mode) {
+        case DialogMode.add:
+        case DialogMode.copy:
+          await db.insertClothing(_name!, _minTemp, _maxTemp, categoryID);
+          break;
+        case DialogMode.edit:
+          await db.updateClothing(_name!, _minTemp, _maxTemp, categoryID, _id!);
+          break;
+      }
       return true;
     }
     return false;
