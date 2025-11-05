@@ -43,6 +43,9 @@ allCategories: SELECT * FROM categories;
 
 allClothing: SELECT * FROM clothing;
 
+activityFromName: SELECT * FROM activities
+WHERE name = :name;
+
 categoryFromName: SELECT * FROM categories
 WHERE name = :name;
 
@@ -95,12 +98,18 @@ WHERE id == :id;
 deleteClothing: DELETE FROM clothing
 WHERE id == :id;
 
+deleteClothingActivity: DELETE FROM clothing_activities
+WHERE clothing_id == :clothing_id AND activity_id == :activity_id;
+
 insertActivity: INSERT INTO activities (name) VALUES (:name);
 
 insertCategory: INSERT INTO categories (name, norm_x, norm_y) VALUES (:name, :norm_x, :norm_y);
 
 insertClothing: INSERT INTO clothing (name, min_temp, max_temp, category_id)
 VALUES (:name, :min_temp, :max_temp, :category_id);
+
+insertClothingActivity: INSERT INTO clothing_activities (clothing_id, activity_id)
+VALUES (:clothing_id, :activity_id);
 
 createDefaultActivities: INSERT INTO activities (name) VALUES
 ('Default'),

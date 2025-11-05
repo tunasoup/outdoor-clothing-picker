@@ -256,7 +256,6 @@ class ClothingDialogController extends DialogController {
       initialActivities = initialData?['activities'],
       initialCategory = initialData?['category'];
 
-
   String? _name;
   int? _minTemp;
   int? _minTempVal;
@@ -328,18 +327,22 @@ class ClothingDialogController extends DialogController {
   Future<bool> submitForm() async {
     if (formKey.currentState?.validate() ?? false) {
       formKey.currentState?.save();
-      // TODO add activity links
-      final int? categoryID = _category == null
-          ? null
-          : (await db.categoryFromName(_category!).getSingleOrNull())?.id;
+      final int? categoryID = await getCategoryID(db, _category);
 
       switch (mode) {
         case DialogMode.add:
         case DialogMode.copy:
-          await db.insertClothing(_name!, _minTemp, _maxTemp, categoryID);
+          final clothingID = await db.insertClothing(_name!, _minTemp, _maxTemp, categoryID);
+          await changeClothingActivities(db, clothingID, _activities, initialActivities);
           break;
         case DialogMode.edit:
-          await db.updateClothing(_name!, _minTemp, _maxTemp, categoryID, _id!);
+          final hasChanged =
+              (_name != initialName ||
+              _minTemp != initialMinTemp ||
+              _maxTemp != initialMaxTemp ||
+              _category != initialCategory);
+          if (hasChanged) await db.updateClothing(_name!, _minTemp, _maxTemp, categoryID, _id!);
+          await changeClothingActivities(db, _id!, _activities, initialActivities);
           break;
       }
       return true;
@@ -354,4 +357,26 @@ String? findCaseInsensitiveMatch(List<String> list, String input) {
     if (item.toLowerCase() == lowerInput) return item;
   }
   return null;
+}
+
+Future<int?> getCategoryID(AppDb db, String? category) async {
+  return category == null ? null : (await db.categoryFromName(category).getSingleOrNull())?.id;
+}
+
+Future<void> changeClothingActivities(
+  AppDb db,
+  int clothingID,
+  List<String>? newActivities,
+  List<String>? oldActivities,
+) async {
+  final toAdd = (newActivities ?? []).where((e) => !(oldActivities ?? []).contains(e)).toList();
+  final toRemove = (oldActivities ?? []).where((e) => !(newActivities ?? []).contains(e)).toList();
+  for (final act in toAdd) {
+    final actID = (await db.activityFromName(act).getSingle()).id;
+    await db.insertClothingActivity(clothingID, actID);
+  }
+  for (final act in toRemove) {
+    final actID = (await db.activityFromName(act).getSingle()).id;
+    await db.deleteClothingActivity(clothingID, actID);
+  }
 }
