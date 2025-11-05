@@ -247,21 +247,22 @@ class CategoryDialogController extends DialogController {
 class ClothingDialogController extends DialogController {
   late final int? initialMinTemp;
   late final int? initialMaxTemp;
-  late final String? initialActivity;
+  late final List<String>? initialActivities;
   late final String? initialCategory;
 
   ClothingDialogController({required super.db, required super.mode, super.initialData})
     : initialMinTemp = initialData?['min_temp'],
       initialMaxTemp = initialData?['max_temp'],
-      initialActivity = initialData?['activity'],
+      initialActivities = initialData?['activities'],
       initialCategory = initialData?['category'];
+
 
   String? _name;
   int? _minTemp;
   int? _minTempVal;
   int? _maxTemp;
-  String? _activity;
   String? _category;
+  List<String>? _activities;
 
   @override
   String getTitle() => switch (mode) {
@@ -298,6 +299,10 @@ class ClothingDialogController extends DialogController {
     return value == null ? 'Select a value' : null;
   }
 
+  String? validateMultiselect(List<String>? values) {
+    return null;
+  }
+
   void saveName(String? value) {
     _name = value?.trim();
   }
@@ -311,8 +316,8 @@ class ClothingDialogController extends DialogController {
     _maxTemp = value != null ? int.tryParse(value) : null;
   }
 
-  void saveActivity(String? value) {
-    _activity = value;
+  void saveActivities(List<String>? values) {
+    _activities = values;
   }
 
   void saveCategory(String? value) {
