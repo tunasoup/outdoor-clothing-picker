@@ -37,6 +37,14 @@ class AppDb extends _$AppDb {
   MigrationStrategy get migration => MigrationStrategy(
     beforeOpen: (details) async {
       await customStatement('PRAGMA foreign_keys = ON');
+
+      // Insert default data
+      if (kDebugMode && details.wasCreated) {
+        await createDefaultActivities();
+        await createDefaultCategories();
+        await createDefaultClothing();
+        await createDefaultActivityLinks();
+      }
     },
     onUpgrade: _schemaUpgrade,
   );

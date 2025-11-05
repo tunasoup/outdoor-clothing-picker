@@ -172,8 +172,9 @@ final class Schema3 extends i0.VersionedSchema {
   @override
   late final List<i1.DatabaseSchemaEntity> entities = [
     categories,
-    activities,
     clothing,
+    activities,
+    clothingActivities,
   ];
   late final Shape0 categories = Shape0(
     source: i0.VersionedTable(
@@ -181,7 +182,18 @@ final class Schema3 extends i0.VersionedSchema {
       withoutRowId: false,
       isStrict: false,
       tableConstraints: [],
-      columns: [_column_0, _column_1, _column_2, _column_3],
+      columns: [_column_9, _column_1, _column_2, _column_3],
+      attachedDatabase: database,
+    ),
+    alias: null,
+  );
+  late final Shape3 clothing = Shape3(
+    source: i0.VersionedTable(
+      entityName: 'clothing',
+      withoutRowId: false,
+      isStrict: false,
+      tableConstraints: [],
+      columns: [_column_9, _column_4, _column_10, _column_11, _column_12],
       attachedDatabase: database,
     ),
     alias: null,
@@ -192,25 +204,18 @@ final class Schema3 extends i0.VersionedSchema {
       withoutRowId: false,
       isStrict: false,
       tableConstraints: [],
-      columns: [_column_0, _column_1],
+      columns: [_column_9, _column_1],
       attachedDatabase: database,
     ),
     alias: null,
   );
-  late final Shape2 clothing = Shape2(
+  late final Shape4 clothingActivities = Shape4(
     source: i0.VersionedTable(
-      entityName: 'clothing',
+      entityName: 'clothing_activities',
       withoutRowId: false,
       isStrict: false,
-      tableConstraints: [],
-      columns: [
-        _column_0,
-        _column_4,
-        _column_9,
-        _column_10,
-        _column_7,
-        _column_8,
-      ],
+      tableConstraints: ['PRIMARY KEY(clothing_id, activity_id)'],
+      columns: [_column_13, _column_14],
       attachedDatabase: database,
     ),
     alias: null,
@@ -219,19 +224,76 @@ final class Schema3 extends i0.VersionedSchema {
 
 i1.GeneratedColumn<int> _column_9(String aliasedName) =>
     i1.GeneratedColumn<int>(
+      'id',
+      aliasedName,
+      false,
+      hasAutoIncrement: true,
+      type: i1.DriftSqlType.int,
+      $customConstraints: 'NOT NULL PRIMARY KEY AUTOINCREMENT',
+    );
+
+class Shape3 extends i0.VersionedTable {
+  Shape3({required super.source, required super.alias}) : super.aliased();
+  i1.GeneratedColumn<int> get id =>
+      columnsByName['id']! as i1.GeneratedColumn<int>;
+  i1.GeneratedColumn<String> get name =>
+      columnsByName['name']! as i1.GeneratedColumn<String>;
+  i1.GeneratedColumn<int> get minTemp =>
+      columnsByName['min_temp']! as i1.GeneratedColumn<int>;
+  i1.GeneratedColumn<int> get maxTemp =>
+      columnsByName['max_temp']! as i1.GeneratedColumn<int>;
+  i1.GeneratedColumn<int> get categoryId =>
+      columnsByName['category_id']! as i1.GeneratedColumn<int>;
+}
+
+i1.GeneratedColumn<int> _column_10(String aliasedName) =>
+    i1.GeneratedColumn<int>(
       'min_temp',
       aliasedName,
       true,
       type: i1.DriftSqlType.int,
       $customConstraints: '',
     );
-i1.GeneratedColumn<int> _column_10(String aliasedName) =>
+i1.GeneratedColumn<int> _column_11(String aliasedName) =>
     i1.GeneratedColumn<int>(
       'max_temp',
       aliasedName,
       true,
       type: i1.DriftSqlType.int,
       $customConstraints: '',
+    );
+i1.GeneratedColumn<int> _column_12(String aliasedName) =>
+    i1.GeneratedColumn<int>(
+      'category_id',
+      aliasedName,
+      true,
+      type: i1.DriftSqlType.int,
+      $customConstraints: 'REFERENCES categories(id)ON DELETE SET NULL',
+    );
+
+class Shape4 extends i0.VersionedTable {
+  Shape4({required super.source, required super.alias}) : super.aliased();
+  i1.GeneratedColumn<int> get clothingId =>
+      columnsByName['clothing_id']! as i1.GeneratedColumn<int>;
+  i1.GeneratedColumn<int> get activityId =>
+      columnsByName['activity_id']! as i1.GeneratedColumn<int>;
+}
+
+i1.GeneratedColumn<int> _column_13(String aliasedName) =>
+    i1.GeneratedColumn<int>(
+      'clothing_id',
+      aliasedName,
+      false,
+      type: i1.DriftSqlType.int,
+      $customConstraints: 'NOT NULL REFERENCES clothing(id)ON DELETE CASCADE',
+    );
+i1.GeneratedColumn<int> _column_14(String aliasedName) =>
+    i1.GeneratedColumn<int>(
+      'activity_id',
+      aliasedName,
+      false,
+      type: i1.DriftSqlType.int,
+      $customConstraints: 'NOT NULL REFERENCES activities(id)ON DELETE CASCADE',
     );
 i0.MigrationStepWithVersion migrationSteps({
   required Future<void> Function(i1.Migrator m, Schema2 schema) from1To2,
