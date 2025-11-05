@@ -311,20 +311,10 @@ class ClothingDialog extends StatelessWidget {
                   );
                 },
               ),
-              // TODO allow choosing multiple activities
-              Consumer<ActivityItemsProvider>(
-                builder: (context, provider, _) {
-                  return DropdownButtonFormField<String>(
-                    initialValue: controller.initialActivity,
-                    decoration: InputDecoration(hintText: 'Activity'),
-                    validator: controller.validateDropdown,
-                    items: provider.names
-                        .map((item) => DropdownMenuItem(value: item, child: Text(item)))
-                        .toList(),
-                    onSaved: controller.saveActivity,
-                    onChanged: (_) {},
-                  );
-                },
+              MultiSelectActivitiesFormField(
+                initialValue: controller.initialActivities,
+                validator: controller.validateMultiselect,
+                onSaved: controller.saveActivities,
               ),
               Padding(padding: EdgeInsets.all(16.0)),
               Row(
@@ -398,6 +388,59 @@ class CheckboxFormField extends FormField<bool> {
 
   final BuildContext context;
   final DialogController controller;
+}
+
+class MultiSelectActivitiesFormField extends FormField<List<String>> {
+  MultiSelectActivitiesFormField({
+    super.key,
+    List<String>? initialValue,
+    super.onSaved,
+    super.validator,
+    AutovalidateMode super.autovalidateMode = AutovalidateMode.disabled,
+  }) : super(
+         initialValue: initialValue ?? <String>[],
+         builder: (field) {
+           return Consumer<ActivityItemsProvider>(
+             builder: (context, provider, _) {
+               return Column(
+                 children: [
+                   const SizedBox(height: 8),
+                   Text('Activities', style: Theme.of(context).textTheme.bodyLarge),
+                   const SizedBox(height: 8),
+                   // Scrollable area
+                   Container(
+                     constraints: const BoxConstraints(maxHeight: 100, maxWidth: 300),
+                     child: SingleChildScrollView(
+                       child: Wrap(
+                         spacing: 8,
+                         runSpacing: 4,
+                         children: provider.names.map((act) {
+                           final isSelected = field.value!.contains(act);
+                           return FilterChip(
+                             label: Text(act),
+                             selected: isSelected,
+                             showCheckmark: false,
+                             onSelected: (selected) {
+                               final newSelected = List<String>.from(field.value!);
+                               if (selected) {
+                                 newSelected.add(act);
+                               } else {
+                                 newSelected.remove(act);
+                               }
+                               field.didChange(newSelected);
+                             },
+                           );
+                         }).toList(),
+                       ),
+                     ),
+                   ),
+                   buildErrorText(context, field.errorText),
+                 ],
+               );
+             },
+           );
+         },
+       );
 }
 
 /// Show [errorText]] if it exists, meant for failed validation on custom Form Fields.
