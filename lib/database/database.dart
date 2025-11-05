@@ -93,7 +93,33 @@ extension Migrations on GeneratedDatabase {
     },
     from2To3: (Migrator m, Schema3 schema) async {
       await customStatement('PRAGMA foreign_keys = OFF;');
+
+      // Change clothing tabel's category name to id
+      await m.addColumn(schema.clothing, schema.clothing.categoryId);
+      await m.database.customStatement('''
+        UPDATE clothing
+        SET category_id = (
+          SELECT id FROM categories
+          WHERE categories.name = clothing.category
+        )
+      ''');
+
+      // Add clothing activities to a link table for many-to-many relations
+      await m.createTable(schema.clothingActivities);
+      await m.database.customStatement('''
+        INSERT INTO clothing_activities (clothing_id, activity_id)
+        SELECT cl.id AS clothing_id, a.id AS activity_id
+        FROM clothing cl
+        INNER JOIN activities a ON a.name = cl.activity
+        WHERE cl.activity IS NOT NULL
+      ''');
+
+      // Drop the old category name and activity, and remove NOT NULL from temperatures
       await m.alterTable(TableMigration(schema.clothing));
+
+      // Add NOT NULL on primary keys
+      await m.alterTable(TableMigration(schema.activities));
+      await m.alterTable(TableMigration(schema.categories));
     },
   );
 }
