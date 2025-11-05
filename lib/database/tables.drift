@@ -24,8 +24,10 @@ CREATE TABLE activities (
 -- Check for clothing that fit the provided temperature and activity
 validClothing: SELECT cl.*, ca.norm_x, ca.norm_y FROM clothing cl
 INNER JOIN categories ca ON cl.category = ca.name
-WHERE min_temp <= :temp AND max_temp >= :temp
-AND activity == :activity;
+WHERE
+    (cl.min_temp IS NULL OR cl.min_temp <= :temp)
+    AND (cl.max_temp IS NULL OR cl.max_temp >= :temp)
+    AND cl.activity = :activity;
 
 allActivities: SELECT * FROM activities;
 
