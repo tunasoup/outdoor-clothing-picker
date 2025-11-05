@@ -31,7 +31,7 @@ class AppDb extends _$AppDb {
       );
 
   @override
-  int get schemaVersion => 2;
+  int get schemaVersion => 3;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -48,7 +48,7 @@ extension Migrations on GeneratedDatabase {
   // This ensures that each step brings the database into the correct snapshot.
   OnUpgrade get _schemaUpgrade => stepByStep(
     // Add autoincrementing primary keys to 2 tables
-    from1To2: (m, schema) async {
+    from1To2: (Migrator m, Schema2 schema) async {
       await customStatement('PRAGMA foreign_keys = OFF;');
 
       await customStatement('''
@@ -82,6 +82,10 @@ extension Migrations on GeneratedDatabase {
 
       await m.deleteTable('activities');
       await customStatement('ALTER TABLE activities_temp RENAME TO activities;');
+    },
+    from2To3: (Migrator m, Schema3 schema) async {
+      await customStatement('PRAGMA foreign_keys = OFF;');
+      await m.alterTable(TableMigration(schema.clothing));
     },
   );
 }
