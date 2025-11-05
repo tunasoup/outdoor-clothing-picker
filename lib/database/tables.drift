@@ -1,8 +1,8 @@
 CREATE TABLE clothing (
     id INT PRIMARY KEY AUTOINCREMENT,
     name TEXT NOT NULL,
-    min_temp INT NOT NULL,
-    max_temp INT NOT NULL,
+    min_temp INT,
+    max_temp INT,
     category TEXT REFERENCES categories(name) ON DELETE SET NULL ON UPDATE CASCADE,
     activity TEXT REFERENCES activities(name) ON DELETE SET NULL ON UPDATE CASCADE
 );
