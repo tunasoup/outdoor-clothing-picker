@@ -15,13 +15,13 @@ abstract class DialogController {
   late final String? initialName;
 
   DialogController({required this.db, required this.mode, this.initialData}) {
-    if (mode != DialogMode.add && initialData?['id'] == null) {
+    _id = initialData?['id'];
+    if (mode != DialogMode.add && _id == null) {
       throw Exception(
         'Initial data needs to be provided with an existing id when using '
         'other than \'add\' mode for a dialog controller.',
       );
     }
-    _id = initialData?['id'];
     initialName = initialData?['name'];
   }
 
@@ -97,10 +97,12 @@ class ActivityDialogController extends DialogController {
 
   Future<void> _handleEdit() async {
     if (isBoxChecked) {
+      // TODO update
+      throw Exception('Not yet implemented');
       // Find the case-sensitive version of the merge target (allows running and RunNIng inputs)
       String? canonicalName = findCaseInsensitiveMatch(availableActivities, _name!);
-      await db.changeClothingActivity(canonicalName!, initialName);
-      await db.deleteActivity(_id);
+      // await db.changeClothingActivity(canonicalName!, initialName);
+      await db.deleteActivity(_id!);
     } else {
       await db.updateActivity(_name!, _id!);
     }
@@ -109,7 +111,9 @@ class ActivityDialogController extends DialogController {
   Future<void> _handleCopy() async {
     await db.insertActivity(_name!);
     if (isBoxChecked) {
-      await db.duplicateActivityClothing(_name!, initialName!);
+      // TODO update
+      throw Exception('Not yet implemented');
+      // await db.duplicateActivityClothing(_name!, initialName!);
     }
   }
 
@@ -204,20 +208,24 @@ class CategoryDialogController extends DialogController {
 
   Future<void> _handleEdit() async {
     if (isBoxChecked) {
+      // TODO update
+      throw Exception('Not yet implemented');
       // Find the case-sensitive version of the merge target (allows torso and TorSO inputs)
       String? canonicalName = findCaseInsensitiveMatch(availableCategories, _name!);
       // The data of _initialName is used, current form coordinates are ignored
-      await db.changeClothingCategory(canonicalName!, initialName);
-      await db.deleteCategory(_id);
+      // await db.changeClothingCategory(canonicalName!, initialName);
+      await db.deleteCategory(_id!);
     } else {
-      await db.updateCategory(_name!, _normX!, _normY!, _id);
+      await db.updateCategory(_name!, _normX!, _normY!, _id!);
     }
   }
 
   Future<void> _handleCopy() async {
     await db.insertCategory(_name!, _normX!, _normY!);
     if (isBoxChecked) {
-      await db.duplicateCategoryClothing(_name!, initialName!);
+      // TODO update
+      throw Exception('Not yet implemented');
+      // await db.duplicateCategoryClothing(_name!, initialName!);
     }
   }
 
@@ -316,16 +324,10 @@ class ClothingDialogController extends DialogController {
     if (formKey.currentState?.validate() ?? false) {
       formKey.currentState?.save();
       await switch (mode) {
-        DialogMode.add ||
-        DialogMode.copy => db.insertClothing(_name!, _minTemp, _maxTemp, _category, _activity),
-        DialogMode.edit => db.updateClothing(
-          _name!,
-          _minTemp,
-          _maxTemp,
-          _category,
-          _activity,
-          _id,
-        ),
+        // TODO add activity links
+        // TODO include category id
+        DialogMode.add || DialogMode.copy => db.insertClothing(_name!, _minTemp, _maxTemp, null),
+        DialogMode.edit => db.updateClothing(_name!, _minTemp, _maxTemp, null, _id!),
       };
       return true;
     }

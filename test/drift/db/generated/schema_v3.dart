@@ -11,11 +11,11 @@ class Categories extends Table with TableInfo<Categories, CategoriesData> {
   late final GeneratedColumn<int> id = GeneratedColumn<int>(
     'id',
     aliasedName,
-    true,
+    false,
     hasAutoIncrement: true,
     type: DriftSqlType.int,
     requiredDuringInsert: false,
-    $customConstraints: 'PRIMARY KEY AUTOINCREMENT',
+    $customConstraints: 'NOT NULL PRIMARY KEY AUTOINCREMENT',
   );
   late final GeneratedColumn<String> name = GeneratedColumn<String>(
     'name',
@@ -57,7 +57,7 @@ class Categories extends Table with TableInfo<Categories, CategoriesData> {
       id: attachedDatabase.typeMapping.read(
         DriftSqlType.int,
         data['${effectivePrefix}id'],
-      ),
+      )!,
       name: attachedDatabase.typeMapping.read(
         DriftSqlType.string,
         data['${effectivePrefix}name'],
@@ -83,12 +83,12 @@ class Categories extends Table with TableInfo<Categories, CategoriesData> {
 }
 
 class CategoriesData extends DataClass implements Insertable<CategoriesData> {
-  final int? id;
+  final int id;
   final String name;
   final double normX;
   final double normY;
   const CategoriesData({
-    this.id,
+    required this.id,
     required this.name,
     required this.normX,
     required this.normY,
@@ -96,9 +96,7 @@ class CategoriesData extends DataClass implements Insertable<CategoriesData> {
   @override
   Map<String, Expression> toColumns(bool nullToAbsent) {
     final map = <String, Expression>{};
-    if (!nullToAbsent || id != null) {
-      map['id'] = Variable<int>(id);
-    }
+    map['id'] = Variable<int>(id);
     map['name'] = Variable<String>(name);
     map['norm_x'] = Variable<double>(normX);
     map['norm_y'] = Variable<double>(normY);
@@ -107,7 +105,7 @@ class CategoriesData extends DataClass implements Insertable<CategoriesData> {
 
   CategoriesCompanion toCompanion(bool nullToAbsent) {
     return CategoriesCompanion(
-      id: id == null && nullToAbsent ? const Value.absent() : Value(id),
+      id: Value(id),
       name: Value(name),
       normX: Value(normX),
       normY: Value(normY),
@@ -120,7 +118,7 @@ class CategoriesData extends DataClass implements Insertable<CategoriesData> {
   }) {
     serializer ??= driftRuntimeOptions.defaultSerializer;
     return CategoriesData(
-      id: serializer.fromJson<int?>(json['id']),
+      id: serializer.fromJson<int>(json['id']),
       name: serializer.fromJson<String>(json['name']),
       normX: serializer.fromJson<double>(json['normX']),
       normY: serializer.fromJson<double>(json['normY']),
@@ -130,7 +128,7 @@ class CategoriesData extends DataClass implements Insertable<CategoriesData> {
   Map<String, dynamic> toJson({ValueSerializer? serializer}) {
     serializer ??= driftRuntimeOptions.defaultSerializer;
     return <String, dynamic>{
-      'id': serializer.toJson<int?>(id),
+      'id': serializer.toJson<int>(id),
       'name': serializer.toJson<String>(name),
       'normX': serializer.toJson<double>(normX),
       'normY': serializer.toJson<double>(normY),
@@ -138,12 +136,12 @@ class CategoriesData extends DataClass implements Insertable<CategoriesData> {
   }
 
   CategoriesData copyWith({
-    Value<int?> id = const Value.absent(),
+    int? id,
     String? name,
     double? normX,
     double? normY,
   }) => CategoriesData(
-    id: id.present ? id.value : this.id,
+    id: id ?? this.id,
     name: name ?? this.name,
     normX: normX ?? this.normX,
     normY: normY ?? this.normY,
@@ -181,7 +179,7 @@ class CategoriesData extends DataClass implements Insertable<CategoriesData> {
 }
 
 class CategoriesCompanion extends UpdateCompanion<CategoriesData> {
-  final Value<int?> id;
+  final Value<int> id;
   final Value<String> name;
   final Value<double> normX;
   final Value<double> normY;
@@ -214,7 +212,7 @@ class CategoriesCompanion extends UpdateCompanion<CategoriesData> {
   }
 
   CategoriesCompanion copyWith({
-    Value<int?>? id,
+    Value<int>? id,
     Value<String>? name,
     Value<double>? normX,
     Value<double>? normY,
@@ -257,6 +255,310 @@ class CategoriesCompanion extends UpdateCompanion<CategoriesData> {
   }
 }
 
+class Clothing extends Table with TableInfo<Clothing, ClothingData> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  Clothing(this.attachedDatabase, [this._alias]);
+  late final GeneratedColumn<int> id = GeneratedColumn<int>(
+    'id',
+    aliasedName,
+    false,
+    hasAutoIncrement: true,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+    $customConstraints: 'NOT NULL PRIMARY KEY AUTOINCREMENT',
+  );
+  late final GeneratedColumn<String> name = GeneratedColumn<String>(
+    'name',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+    $customConstraints: 'NOT NULL',
+  );
+  late final GeneratedColumn<int> minTemp = GeneratedColumn<int>(
+    'min_temp',
+    aliasedName,
+    true,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+    $customConstraints: '',
+  );
+  late final GeneratedColumn<int> maxTemp = GeneratedColumn<int>(
+    'max_temp',
+    aliasedName,
+    true,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+    $customConstraints: '',
+  );
+  late final GeneratedColumn<int> categoryId = GeneratedColumn<int>(
+    'category_id',
+    aliasedName,
+    true,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+    $customConstraints: 'REFERENCES categories(id)ON DELETE SET NULL',
+  );
+  @override
+  List<GeneratedColumn> get $columns => [
+    id,
+    name,
+    minTemp,
+    maxTemp,
+    categoryId,
+  ];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'clothing';
+  @override
+  Set<GeneratedColumn> get $primaryKey => {id};
+  @override
+  ClothingData map(Map<String, dynamic> data, {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return ClothingData(
+      id: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}id'],
+      )!,
+      name: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}name'],
+      )!,
+      minTemp: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}min_temp'],
+      ),
+      maxTemp: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}max_temp'],
+      ),
+      categoryId: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}category_id'],
+      ),
+    );
+  }
+
+  @override
+  Clothing createAlias(String alias) {
+    return Clothing(attachedDatabase, alias);
+  }
+
+  @override
+  bool get dontWriteConstraints => true;
+}
+
+class ClothingData extends DataClass implements Insertable<ClothingData> {
+  final int id;
+  final String name;
+  final int? minTemp;
+  final int? maxTemp;
+  final int? categoryId;
+  const ClothingData({
+    required this.id,
+    required this.name,
+    this.minTemp,
+    this.maxTemp,
+    this.categoryId,
+  });
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['id'] = Variable<int>(id);
+    map['name'] = Variable<String>(name);
+    if (!nullToAbsent || minTemp != null) {
+      map['min_temp'] = Variable<int>(minTemp);
+    }
+    if (!nullToAbsent || maxTemp != null) {
+      map['max_temp'] = Variable<int>(maxTemp);
+    }
+    if (!nullToAbsent || categoryId != null) {
+      map['category_id'] = Variable<int>(categoryId);
+    }
+    return map;
+  }
+
+  ClothingCompanion toCompanion(bool nullToAbsent) {
+    return ClothingCompanion(
+      id: Value(id),
+      name: Value(name),
+      minTemp: minTemp == null && nullToAbsent
+          ? const Value.absent()
+          : Value(minTemp),
+      maxTemp: maxTemp == null && nullToAbsent
+          ? const Value.absent()
+          : Value(maxTemp),
+      categoryId: categoryId == null && nullToAbsent
+          ? const Value.absent()
+          : Value(categoryId),
+    );
+  }
+
+  factory ClothingData.fromJson(
+    Map<String, dynamic> json, {
+    ValueSerializer? serializer,
+  }) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return ClothingData(
+      id: serializer.fromJson<int>(json['id']),
+      name: serializer.fromJson<String>(json['name']),
+      minTemp: serializer.fromJson<int?>(json['minTemp']),
+      maxTemp: serializer.fromJson<int?>(json['maxTemp']),
+      categoryId: serializer.fromJson<int?>(json['categoryId']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'id': serializer.toJson<int>(id),
+      'name': serializer.toJson<String>(name),
+      'minTemp': serializer.toJson<int?>(minTemp),
+      'maxTemp': serializer.toJson<int?>(maxTemp),
+      'categoryId': serializer.toJson<int?>(categoryId),
+    };
+  }
+
+  ClothingData copyWith({
+    int? id,
+    String? name,
+    Value<int?> minTemp = const Value.absent(),
+    Value<int?> maxTemp = const Value.absent(),
+    Value<int?> categoryId = const Value.absent(),
+  }) => ClothingData(
+    id: id ?? this.id,
+    name: name ?? this.name,
+    minTemp: minTemp.present ? minTemp.value : this.minTemp,
+    maxTemp: maxTemp.present ? maxTemp.value : this.maxTemp,
+    categoryId: categoryId.present ? categoryId.value : this.categoryId,
+  );
+  ClothingData copyWithCompanion(ClothingCompanion data) {
+    return ClothingData(
+      id: data.id.present ? data.id.value : this.id,
+      name: data.name.present ? data.name.value : this.name,
+      minTemp: data.minTemp.present ? data.minTemp.value : this.minTemp,
+      maxTemp: data.maxTemp.present ? data.maxTemp.value : this.maxTemp,
+      categoryId: data.categoryId.present
+          ? data.categoryId.value
+          : this.categoryId,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('ClothingData(')
+          ..write('id: $id, ')
+          ..write('name: $name, ')
+          ..write('minTemp: $minTemp, ')
+          ..write('maxTemp: $maxTemp, ')
+          ..write('categoryId: $categoryId')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode => Object.hash(id, name, minTemp, maxTemp, categoryId);
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is ClothingData &&
+          other.id == this.id &&
+          other.name == this.name &&
+          other.minTemp == this.minTemp &&
+          other.maxTemp == this.maxTemp &&
+          other.categoryId == this.categoryId);
+}
+
+class ClothingCompanion extends UpdateCompanion<ClothingData> {
+  final Value<int> id;
+  final Value<String> name;
+  final Value<int?> minTemp;
+  final Value<int?> maxTemp;
+  final Value<int?> categoryId;
+  const ClothingCompanion({
+    this.id = const Value.absent(),
+    this.name = const Value.absent(),
+    this.minTemp = const Value.absent(),
+    this.maxTemp = const Value.absent(),
+    this.categoryId = const Value.absent(),
+  });
+  ClothingCompanion.insert({
+    this.id = const Value.absent(),
+    required String name,
+    this.minTemp = const Value.absent(),
+    this.maxTemp = const Value.absent(),
+    this.categoryId = const Value.absent(),
+  }) : name = Value(name);
+  static Insertable<ClothingData> custom({
+    Expression<int>? id,
+    Expression<String>? name,
+    Expression<int>? minTemp,
+    Expression<int>? maxTemp,
+    Expression<int>? categoryId,
+  }) {
+    return RawValuesInsertable({
+      if (id != null) 'id': id,
+      if (name != null) 'name': name,
+      if (minTemp != null) 'min_temp': minTemp,
+      if (maxTemp != null) 'max_temp': maxTemp,
+      if (categoryId != null) 'category_id': categoryId,
+    });
+  }
+
+  ClothingCompanion copyWith({
+    Value<int>? id,
+    Value<String>? name,
+    Value<int?>? minTemp,
+    Value<int?>? maxTemp,
+    Value<int?>? categoryId,
+  }) {
+    return ClothingCompanion(
+      id: id ?? this.id,
+      name: name ?? this.name,
+      minTemp: minTemp ?? this.minTemp,
+      maxTemp: maxTemp ?? this.maxTemp,
+      categoryId: categoryId ?? this.categoryId,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (id.present) {
+      map['id'] = Variable<int>(id.value);
+    }
+    if (name.present) {
+      map['name'] = Variable<String>(name.value);
+    }
+    if (minTemp.present) {
+      map['min_temp'] = Variable<int>(minTemp.value);
+    }
+    if (maxTemp.present) {
+      map['max_temp'] = Variable<int>(maxTemp.value);
+    }
+    if (categoryId.present) {
+      map['category_id'] = Variable<int>(categoryId.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('ClothingCompanion(')
+          ..write('id: $id, ')
+          ..write('name: $name, ')
+          ..write('minTemp: $minTemp, ')
+          ..write('maxTemp: $maxTemp, ')
+          ..write('categoryId: $categoryId')
+          ..write(')'))
+        .toString();
+  }
+}
+
 class Activities extends Table with TableInfo<Activities, ActivitiesData> {
   @override
   final GeneratedDatabase attachedDatabase;
@@ -265,11 +567,11 @@ class Activities extends Table with TableInfo<Activities, ActivitiesData> {
   late final GeneratedColumn<int> id = GeneratedColumn<int>(
     'id',
     aliasedName,
-    true,
+    false,
     hasAutoIncrement: true,
     type: DriftSqlType.int,
     requiredDuringInsert: false,
-    $customConstraints: 'PRIMARY KEY AUTOINCREMENT',
+    $customConstraints: 'NOT NULL PRIMARY KEY AUTOINCREMENT',
   );
   late final GeneratedColumn<String> name = GeneratedColumn<String>(
     'name',
@@ -295,7 +597,7 @@ class Activities extends Table with TableInfo<Activities, ActivitiesData> {
       id: attachedDatabase.typeMapping.read(
         DriftSqlType.int,
         data['${effectivePrefix}id'],
-      ),
+      )!,
       name: attachedDatabase.typeMapping.read(
         DriftSqlType.string,
         data['${effectivePrefix}name'],
@@ -313,24 +615,19 @@ class Activities extends Table with TableInfo<Activities, ActivitiesData> {
 }
 
 class ActivitiesData extends DataClass implements Insertable<ActivitiesData> {
-  final int? id;
+  final int id;
   final String name;
-  const ActivitiesData({this.id, required this.name});
+  const ActivitiesData({required this.id, required this.name});
   @override
   Map<String, Expression> toColumns(bool nullToAbsent) {
     final map = <String, Expression>{};
-    if (!nullToAbsent || id != null) {
-      map['id'] = Variable<int>(id);
-    }
+    map['id'] = Variable<int>(id);
     map['name'] = Variable<String>(name);
     return map;
   }
 
   ActivitiesCompanion toCompanion(bool nullToAbsent) {
-    return ActivitiesCompanion(
-      id: id == null && nullToAbsent ? const Value.absent() : Value(id),
-      name: Value(name),
-    );
+    return ActivitiesCompanion(id: Value(id), name: Value(name));
   }
 
   factory ActivitiesData.fromJson(
@@ -339,7 +636,7 @@ class ActivitiesData extends DataClass implements Insertable<ActivitiesData> {
   }) {
     serializer ??= driftRuntimeOptions.defaultSerializer;
     return ActivitiesData(
-      id: serializer.fromJson<int?>(json['id']),
+      id: serializer.fromJson<int>(json['id']),
       name: serializer.fromJson<String>(json['name']),
     );
   }
@@ -347,18 +644,13 @@ class ActivitiesData extends DataClass implements Insertable<ActivitiesData> {
   Map<String, dynamic> toJson({ValueSerializer? serializer}) {
     serializer ??= driftRuntimeOptions.defaultSerializer;
     return <String, dynamic>{
-      'id': serializer.toJson<int?>(id),
+      'id': serializer.toJson<int>(id),
       'name': serializer.toJson<String>(name),
     };
   }
 
-  ActivitiesData copyWith({
-    Value<int?> id = const Value.absent(),
-    String? name,
-  }) => ActivitiesData(
-    id: id.present ? id.value : this.id,
-    name: name ?? this.name,
-  );
+  ActivitiesData copyWith({int? id, String? name}) =>
+      ActivitiesData(id: id ?? this.id, name: name ?? this.name);
   ActivitiesData copyWithCompanion(ActivitiesCompanion data) {
     return ActivitiesData(
       id: data.id.present ? data.id.value : this.id,
@@ -386,7 +678,7 @@ class ActivitiesData extends DataClass implements Insertable<ActivitiesData> {
 }
 
 class ActivitiesCompanion extends UpdateCompanion<ActivitiesData> {
-  final Value<int?> id;
+  final Value<int> id;
   final Value<String> name;
   const ActivitiesCompanion({
     this.id = const Value.absent(),
@@ -406,7 +698,7 @@ class ActivitiesCompanion extends UpdateCompanion<ActivitiesData> {
     });
   }
 
-  ActivitiesCompanion copyWith({Value<int?>? id, Value<String>? name}) {
+  ActivitiesCompanion copyWith({Value<int>? id, Value<String>? name}) {
     return ActivitiesCompanion(id: id ?? this.id, name: name ?? this.name);
   }
 
@@ -432,347 +724,203 @@ class ActivitiesCompanion extends UpdateCompanion<ActivitiesData> {
   }
 }
 
-class Clothing extends Table with TableInfo<Clothing, ClothingData> {
+class ClothingActivities extends Table
+    with TableInfo<ClothingActivities, ClothingActivitiesData> {
   @override
   final GeneratedDatabase attachedDatabase;
   final String? _alias;
-  Clothing(this.attachedDatabase, [this._alias]);
-  late final GeneratedColumn<int> id = GeneratedColumn<int>(
-    'id',
-    aliasedName,
-    true,
-    hasAutoIncrement: true,
-    type: DriftSqlType.int,
-    requiredDuringInsert: false,
-    $customConstraints: 'PRIMARY KEY AUTOINCREMENT',
-  );
-  late final GeneratedColumn<String> name = GeneratedColumn<String>(
-    'name',
+  ClothingActivities(this.attachedDatabase, [this._alias]);
+  late final GeneratedColumn<int> clothingId = GeneratedColumn<int>(
+    'clothing_id',
     aliasedName,
     false,
-    type: DriftSqlType.string,
+    type: DriftSqlType.int,
     requiredDuringInsert: true,
-    $customConstraints: 'NOT NULL',
+    $customConstraints: 'NOT NULL REFERENCES clothing(id)ON DELETE CASCADE',
   );
-  late final GeneratedColumn<int> minTemp = GeneratedColumn<int>(
-    'min_temp',
+  late final GeneratedColumn<int> activityId = GeneratedColumn<int>(
+    'activity_id',
     aliasedName,
-    true,
+    false,
     type: DriftSqlType.int,
-    requiredDuringInsert: false,
-    $customConstraints: '',
-  );
-  late final GeneratedColumn<int> maxTemp = GeneratedColumn<int>(
-    'max_temp',
-    aliasedName,
-    true,
-    type: DriftSqlType.int,
-    requiredDuringInsert: false,
-    $customConstraints: '',
-  );
-  late final GeneratedColumn<String> category = GeneratedColumn<String>(
-    'category',
-    aliasedName,
-    true,
-    type: DriftSqlType.string,
-    requiredDuringInsert: false,
-    $customConstraints:
-        'REFERENCES categories(name)ON UPDATE CASCADE ON DELETE SET NULL',
-  );
-  late final GeneratedColumn<String> activity = GeneratedColumn<String>(
-    'activity',
-    aliasedName,
-    true,
-    type: DriftSqlType.string,
-    requiredDuringInsert: false,
-    $customConstraints:
-        'REFERENCES activities(name)ON UPDATE CASCADE ON DELETE SET NULL',
+    requiredDuringInsert: true,
+    $customConstraints: 'NOT NULL REFERENCES activities(id)ON DELETE CASCADE',
   );
   @override
-  List<GeneratedColumn> get $columns => [
-    id,
-    name,
-    minTemp,
-    maxTemp,
-    category,
-    activity,
-  ];
+  List<GeneratedColumn> get $columns => [clothingId, activityId];
   @override
   String get aliasedName => _alias ?? actualTableName;
   @override
   String get actualTableName => $name;
-  static const String $name = 'clothing';
+  static const String $name = 'clothing_activities';
   @override
-  Set<GeneratedColumn> get $primaryKey => {id};
+  Set<GeneratedColumn> get $primaryKey => {clothingId, activityId};
   @override
-  ClothingData map(Map<String, dynamic> data, {String? tablePrefix}) {
+  ClothingActivitiesData map(Map<String, dynamic> data, {String? tablePrefix}) {
     final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
-    return ClothingData(
-      id: attachedDatabase.typeMapping.read(
+    return ClothingActivitiesData(
+      clothingId: attachedDatabase.typeMapping.read(
         DriftSqlType.int,
-        data['${effectivePrefix}id'],
-      ),
-      name: attachedDatabase.typeMapping.read(
-        DriftSqlType.string,
-        data['${effectivePrefix}name'],
+        data['${effectivePrefix}clothing_id'],
       )!,
-      minTemp: attachedDatabase.typeMapping.read(
+      activityId: attachedDatabase.typeMapping.read(
         DriftSqlType.int,
-        data['${effectivePrefix}min_temp'],
-      ),
-      maxTemp: attachedDatabase.typeMapping.read(
-        DriftSqlType.int,
-        data['${effectivePrefix}max_temp'],
-      ),
-      category: attachedDatabase.typeMapping.read(
-        DriftSqlType.string,
-        data['${effectivePrefix}category'],
-      ),
-      activity: attachedDatabase.typeMapping.read(
-        DriftSqlType.string,
-        data['${effectivePrefix}activity'],
-      ),
+        data['${effectivePrefix}activity_id'],
+      )!,
     );
   }
 
   @override
-  Clothing createAlias(String alias) {
-    return Clothing(attachedDatabase, alias);
+  ClothingActivities createAlias(String alias) {
+    return ClothingActivities(attachedDatabase, alias);
   }
 
+  @override
+  List<String> get customConstraints => const [
+    'PRIMARY KEY(clothing_id, activity_id)',
+  ];
   @override
   bool get dontWriteConstraints => true;
 }
 
-class ClothingData extends DataClass implements Insertable<ClothingData> {
-  final int? id;
-  final String name;
-  final int? minTemp;
-  final int? maxTemp;
-  final String? category;
-  final String? activity;
-  const ClothingData({
-    this.id,
-    required this.name,
-    this.minTemp,
-    this.maxTemp,
-    this.category,
-    this.activity,
+class ClothingActivitiesData extends DataClass
+    implements Insertable<ClothingActivitiesData> {
+  final int clothingId;
+  final int activityId;
+  const ClothingActivitiesData({
+    required this.clothingId,
+    required this.activityId,
   });
   @override
   Map<String, Expression> toColumns(bool nullToAbsent) {
     final map = <String, Expression>{};
-    if (!nullToAbsent || id != null) {
-      map['id'] = Variable<int>(id);
-    }
-    map['name'] = Variable<String>(name);
-    if (!nullToAbsent || minTemp != null) {
-      map['min_temp'] = Variable<int>(minTemp);
-    }
-    if (!nullToAbsent || maxTemp != null) {
-      map['max_temp'] = Variable<int>(maxTemp);
-    }
-    if (!nullToAbsent || category != null) {
-      map['category'] = Variable<String>(category);
-    }
-    if (!nullToAbsent || activity != null) {
-      map['activity'] = Variable<String>(activity);
-    }
+    map['clothing_id'] = Variable<int>(clothingId);
+    map['activity_id'] = Variable<int>(activityId);
     return map;
   }
 
-  ClothingCompanion toCompanion(bool nullToAbsent) {
-    return ClothingCompanion(
-      id: id == null && nullToAbsent ? const Value.absent() : Value(id),
-      name: Value(name),
-      minTemp: minTemp == null && nullToAbsent
-          ? const Value.absent()
-          : Value(minTemp),
-      maxTemp: maxTemp == null && nullToAbsent
-          ? const Value.absent()
-          : Value(maxTemp),
-      category: category == null && nullToAbsent
-          ? const Value.absent()
-          : Value(category),
-      activity: activity == null && nullToAbsent
-          ? const Value.absent()
-          : Value(activity),
+  ClothingActivitiesCompanion toCompanion(bool nullToAbsent) {
+    return ClothingActivitiesCompanion(
+      clothingId: Value(clothingId),
+      activityId: Value(activityId),
     );
   }
 
-  factory ClothingData.fromJson(
+  factory ClothingActivitiesData.fromJson(
     Map<String, dynamic> json, {
     ValueSerializer? serializer,
   }) {
     serializer ??= driftRuntimeOptions.defaultSerializer;
-    return ClothingData(
-      id: serializer.fromJson<int?>(json['id']),
-      name: serializer.fromJson<String>(json['name']),
-      minTemp: serializer.fromJson<int?>(json['minTemp']),
-      maxTemp: serializer.fromJson<int?>(json['maxTemp']),
-      category: serializer.fromJson<String?>(json['category']),
-      activity: serializer.fromJson<String?>(json['activity']),
+    return ClothingActivitiesData(
+      clothingId: serializer.fromJson<int>(json['clothingId']),
+      activityId: serializer.fromJson<int>(json['activityId']),
     );
   }
   @override
   Map<String, dynamic> toJson({ValueSerializer? serializer}) {
     serializer ??= driftRuntimeOptions.defaultSerializer;
     return <String, dynamic>{
-      'id': serializer.toJson<int?>(id),
-      'name': serializer.toJson<String>(name),
-      'minTemp': serializer.toJson<int?>(minTemp),
-      'maxTemp': serializer.toJson<int?>(maxTemp),
-      'category': serializer.toJson<String?>(category),
-      'activity': serializer.toJson<String?>(activity),
+      'clothingId': serializer.toJson<int>(clothingId),
+      'activityId': serializer.toJson<int>(activityId),
     };
   }
 
-  ClothingData copyWith({
-    Value<int?> id = const Value.absent(),
-    String? name,
-    Value<int?> minTemp = const Value.absent(),
-    Value<int?> maxTemp = const Value.absent(),
-    Value<String?> category = const Value.absent(),
-    Value<String?> activity = const Value.absent(),
-  }) => ClothingData(
-    id: id.present ? id.value : this.id,
-    name: name ?? this.name,
-    minTemp: minTemp.present ? minTemp.value : this.minTemp,
-    maxTemp: maxTemp.present ? maxTemp.value : this.maxTemp,
-    category: category.present ? category.value : this.category,
-    activity: activity.present ? activity.value : this.activity,
-  );
-  ClothingData copyWithCompanion(ClothingCompanion data) {
-    return ClothingData(
-      id: data.id.present ? data.id.value : this.id,
-      name: data.name.present ? data.name.value : this.name,
-      minTemp: data.minTemp.present ? data.minTemp.value : this.minTemp,
-      maxTemp: data.maxTemp.present ? data.maxTemp.value : this.maxTemp,
-      category: data.category.present ? data.category.value : this.category,
-      activity: data.activity.present ? data.activity.value : this.activity,
+  ClothingActivitiesData copyWith({int? clothingId, int? activityId}) =>
+      ClothingActivitiesData(
+        clothingId: clothingId ?? this.clothingId,
+        activityId: activityId ?? this.activityId,
+      );
+  ClothingActivitiesData copyWithCompanion(ClothingActivitiesCompanion data) {
+    return ClothingActivitiesData(
+      clothingId: data.clothingId.present
+          ? data.clothingId.value
+          : this.clothingId,
+      activityId: data.activityId.present
+          ? data.activityId.value
+          : this.activityId,
     );
   }
 
   @override
   String toString() {
-    return (StringBuffer('ClothingData(')
-          ..write('id: $id, ')
-          ..write('name: $name, ')
-          ..write('minTemp: $minTemp, ')
-          ..write('maxTemp: $maxTemp, ')
-          ..write('category: $category, ')
-          ..write('activity: $activity')
+    return (StringBuffer('ClothingActivitiesData(')
+          ..write('clothingId: $clothingId, ')
+          ..write('activityId: $activityId')
           ..write(')'))
         .toString();
   }
 
   @override
-  int get hashCode =>
-      Object.hash(id, name, minTemp, maxTemp, category, activity);
+  int get hashCode => Object.hash(clothingId, activityId);
   @override
   bool operator ==(Object other) =>
       identical(this, other) ||
-      (other is ClothingData &&
-          other.id == this.id &&
-          other.name == this.name &&
-          other.minTemp == this.minTemp &&
-          other.maxTemp == this.maxTemp &&
-          other.category == this.category &&
-          other.activity == this.activity);
+      (other is ClothingActivitiesData &&
+          other.clothingId == this.clothingId &&
+          other.activityId == this.activityId);
 }
 
-class ClothingCompanion extends UpdateCompanion<ClothingData> {
-  final Value<int?> id;
-  final Value<String> name;
-  final Value<int?> minTemp;
-  final Value<int?> maxTemp;
-  final Value<String?> category;
-  final Value<String?> activity;
-  const ClothingCompanion({
-    this.id = const Value.absent(),
-    this.name = const Value.absent(),
-    this.minTemp = const Value.absent(),
-    this.maxTemp = const Value.absent(),
-    this.category = const Value.absent(),
-    this.activity = const Value.absent(),
+class ClothingActivitiesCompanion
+    extends UpdateCompanion<ClothingActivitiesData> {
+  final Value<int> clothingId;
+  final Value<int> activityId;
+  final Value<int> rowid;
+  const ClothingActivitiesCompanion({
+    this.clothingId = const Value.absent(),
+    this.activityId = const Value.absent(),
+    this.rowid = const Value.absent(),
   });
-  ClothingCompanion.insert({
-    this.id = const Value.absent(),
-    required String name,
-    this.minTemp = const Value.absent(),
-    this.maxTemp = const Value.absent(),
-    this.category = const Value.absent(),
-    this.activity = const Value.absent(),
-  }) : name = Value(name);
-  static Insertable<ClothingData> custom({
-    Expression<int>? id,
-    Expression<String>? name,
-    Expression<int>? minTemp,
-    Expression<int>? maxTemp,
-    Expression<String>? category,
-    Expression<String>? activity,
+  ClothingActivitiesCompanion.insert({
+    required int clothingId,
+    required int activityId,
+    this.rowid = const Value.absent(),
+  }) : clothingId = Value(clothingId),
+       activityId = Value(activityId);
+  static Insertable<ClothingActivitiesData> custom({
+    Expression<int>? clothingId,
+    Expression<int>? activityId,
+    Expression<int>? rowid,
   }) {
     return RawValuesInsertable({
-      if (id != null) 'id': id,
-      if (name != null) 'name': name,
-      if (minTemp != null) 'min_temp': minTemp,
-      if (maxTemp != null) 'max_temp': maxTemp,
-      if (category != null) 'category': category,
-      if (activity != null) 'activity': activity,
+      if (clothingId != null) 'clothing_id': clothingId,
+      if (activityId != null) 'activity_id': activityId,
+      if (rowid != null) 'rowid': rowid,
     });
   }
 
-  ClothingCompanion copyWith({
-    Value<int?>? id,
-    Value<String>? name,
-    Value<int?>? minTemp,
-    Value<int?>? maxTemp,
-    Value<String?>? category,
-    Value<String?>? activity,
+  ClothingActivitiesCompanion copyWith({
+    Value<int>? clothingId,
+    Value<int>? activityId,
+    Value<int>? rowid,
   }) {
-    return ClothingCompanion(
-      id: id ?? this.id,
-      name: name ?? this.name,
-      minTemp: minTemp ?? this.minTemp,
-      maxTemp: maxTemp ?? this.maxTemp,
-      category: category ?? this.category,
-      activity: activity ?? this.activity,
+    return ClothingActivitiesCompanion(
+      clothingId: clothingId ?? this.clothingId,
+      activityId: activityId ?? this.activityId,
+      rowid: rowid ?? this.rowid,
     );
   }
 
   @override
   Map<String, Expression> toColumns(bool nullToAbsent) {
     final map = <String, Expression>{};
-    if (id.present) {
-      map['id'] = Variable<int>(id.value);
+    if (clothingId.present) {
+      map['clothing_id'] = Variable<int>(clothingId.value);
     }
-    if (name.present) {
-      map['name'] = Variable<String>(name.value);
+    if (activityId.present) {
+      map['activity_id'] = Variable<int>(activityId.value);
     }
-    if (minTemp.present) {
-      map['min_temp'] = Variable<int>(minTemp.value);
-    }
-    if (maxTemp.present) {
-      map['max_temp'] = Variable<int>(maxTemp.value);
-    }
-    if (category.present) {
-      map['category'] = Variable<String>(category.value);
-    }
-    if (activity.present) {
-      map['activity'] = Variable<String>(activity.value);
+    if (rowid.present) {
+      map['rowid'] = Variable<int>(rowid.value);
     }
     return map;
   }
 
   @override
   String toString() {
-    return (StringBuffer('ClothingCompanion(')
-          ..write('id: $id, ')
-          ..write('name: $name, ')
-          ..write('minTemp: $minTemp, ')
-          ..write('maxTemp: $maxTemp, ')
-          ..write('category: $category, ')
-          ..write('activity: $activity')
+    return (StringBuffer('ClothingActivitiesCompanion(')
+          ..write('clothingId: $clothingId, ')
+          ..write('activityId: $activityId, ')
+          ..write('rowid: $rowid')
           ..write(')'))
         .toString();
   }
@@ -781,16 +929,18 @@ class ClothingCompanion extends UpdateCompanion<ClothingData> {
 class DatabaseAtV3 extends GeneratedDatabase {
   DatabaseAtV3(QueryExecutor e) : super(e);
   late final Categories categories = Categories(this);
-  late final Activities activities = Activities(this);
   late final Clothing clothing = Clothing(this);
+  late final Activities activities = Activities(this);
+  late final ClothingActivities clothingActivities = ClothingActivities(this);
   @override
   Iterable<TableInfo<Table, Object?>> get allTables =>
       allSchemaEntities.whereType<TableInfo<Table, Object?>>();
   @override
   List<DatabaseSchemaEntity> get allSchemaEntities => [
     categories,
-    activities,
     clothing,
+    activities,
+    clothingActivities,
   ];
   @override
   int get schemaVersion => 3;

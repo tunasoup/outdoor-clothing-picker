@@ -15,9 +15,6 @@ void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   db = AppDb();
 
-  // Insert default data when not in release mode if the tables are empty
-  if (kDebugMode) await insertDefaultDataIfNeeded(db);
-
   final themeProvider = ThemeProvider();
   await themeProvider.loadTheme();
 
@@ -42,20 +39,6 @@ void main() async {
       child: const MyApp(),
     ),
   );
-}
-
-/// Insert default data to [db] if the tables are empty.
-Future<void> insertDefaultDataIfNeeded(AppDb db) async {
-  // Check if tables are empty
-  final clothingCount = await db.select(db.clothing).get().then((rows) => rows.length);
-  final categoryCount = await db.select(db.categories).get().then((rows) => rows.length);
-  final activityCount = await db.select(db.activities).get().then((rows) => rows.length);
-
-  if (clothingCount == 0 && categoryCount == 0 && activityCount == 0) {
-    await db.createDefaultCategories();
-    await db.createDefaultActivities();
-    await db.createDefaultClothing();
-  }
 }
 
 class MyApp extends StatelessWidget {

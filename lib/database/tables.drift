@@ -1,15 +1,14 @@
 CREATE TABLE clothing (
-    id INT PRIMARY KEY AUTOINCREMENT,
+    id INT NOT NULL PRIMARY KEY AUTOINCREMENT,
     name TEXT NOT NULL,
     min_temp INT,
     max_temp INT,
-    category TEXT REFERENCES categories(name) ON DELETE SET NULL ON UPDATE CASCADE,
-    activity TEXT REFERENCES activities(name) ON DELETE SET NULL ON UPDATE CASCADE
+    category_id INT REFERENCES categories(id) ON DELETE SET NULL
 );
 
 -- Location of clothing, e.g., head, hand, feet
 CREATE TABLE categories (
-    id INT PRIMARY KEY AUTOINCREMENT,
+    id INT NOT NULL PRIMARY KEY AUTOINCREMENT,
     name TEXT NOT NULL UNIQUE,
     norm_x FLOAT NOT NULL,
     norm_y FLOAT NOT NULL
@@ -17,17 +16,26 @@ CREATE TABLE categories (
 
 -- User defined activities, such as walking or skiing
 CREATE TABLE activities (
-    id INT PRIMARY KEY AUTOINCREMENT,
+    id INT NOT NULL PRIMARY KEY AUTOINCREMENT,
     name TEXT NOT NULL UNIQUE
 ) as activity;
 
+-- Link clothing and activities, allowing a clothing to have multiple activites
+CREATE TABLE clothing_activities (
+    clothing_id INT NOT NULL REFERENCES clothing(id) ON DELETE CASCADE,
+    activity_id INT NOT NULL REFERENCES activities(id) ON DELETE CASCADE,
+    PRIMARY KEY (clothing_id, activity_id)
+);
+
 -- Check for clothing that fit the provided temperature and activity
-validClothing: SELECT cl.*, ca.norm_x, ca.norm_y FROM clothing cl
-INNER JOIN categories ca ON cl.category = ca.name
+validClothing: SELECT cl.*, ca.name AS category_name, ca.norm_x, ca.norm_y FROM clothing cl
+INNER JOIN categories ca ON cl.category_id = ca.id
+INNER JOIN clothing_activities cla ON cl.id = cla.clothing_id
+INNER JOIN activities a ON a.id = cla.activity_id
 WHERE
     (cl.min_temp IS NULL OR cl.min_temp <= :temp)
     AND (cl.max_temp IS NULL OR cl.max_temp >= :temp)
-    AND cl.activity = :activity;
+    AND a.name = :activity;
 
 allActivities: SELECT * FROM activities;
 
@@ -35,29 +43,32 @@ allCategories: SELECT * FROM categories;
 
 allClothing: SELECT * FROM clothing;
 
-clothingWithActivity: SELECT * FROM clothing
-WHERE activity == :activity;
+clothingWithActivity: SELECT cl.* FROM clothing cl
+INNER JOIN clothing_activities cla ON cl.id = cla.clothing_id
+INNER JOIN activities a ON a.id = cla.activity_id
+WHERE a.name == :activity;
 
-clothingWithCategory: SELECT * FROM clothing
-WHERE category == :category;
+clothingWithCategory: SELECT cl.* FROM clothing cl
+JOIN categories ca on cl.category_id = ca.id
+WHERE ca.name == :category;
 
-duplicateActivityClothing: INSERT INTO clothing (name, min_temp, max_temp, category, activity)
-SELECT name, min_temp, max_temp, category, :new_activity
-FROM clothing
-WHERE activity = :old_activity;
+-- duplicateActivityClothing: INSERT INTO clothing (name, min_temp, max_temp, category, activity)
+-- SELECT name, min_temp, max_temp, category, :new_activity
+-- FROM clothing
+-- WHERE activity = :old_activity;
 
-duplicateCategoryClothing: INSERT INTO clothing (name, min_temp, max_temp, category, activity)
-SELECT name, min_temp, max_temp, :new_category, activity
-FROM clothing
-WHERE category = :old_category;
+-- duplicateCategoryClothing: INSERT INTO clothing (name, min_temp, max_temp, category)
+-- SELECT name, min_temp, max_temp, :new_category
+-- FROM clothing
+--  WHERE category = :old_category;
 
-changeClothingActivity: UPDATE clothing
-SET activity = :new_activity
-WHERE activity = :old_activity;
+-- changeClothingActivity: UPDATE clothing
+-- SET activity = :new_activity
+-- WHERE activity = :old_activity;
 
-changeClothingCategory: UPDATE clothing
-SET category = :new_category
-WHERE category = :old_category;
+-- changeClothingCategory: UPDATE clothing
+-- SET category = :new_category
+-- WHERE category = :old_category;
 
 updateActivity: UPDATE activities
 SET name = :name
@@ -69,7 +80,7 @@ WHERE id = :id;
 
 updateClothing: UPDATE clothing
 SET name = :name, min_temp = :min_temp, max_temp = :max_temp,
-category = :category, activity = :activity
+category_id = :category_id
 WHERE id = :id;
 
 deleteActivity: DELETE FROM activities
@@ -85,8 +96,8 @@ insertActivity: INSERT INTO activities (name) VALUES (:name);
 
 insertCategory: INSERT INTO categories (name, norm_x, norm_y) VALUES (:name, :norm_x, :norm_y);
 
-insertClothing: INSERT INTO clothing (name, min_temp, max_temp, category, activity)
-VALUES (:name, :min_temp, :max_temp, :category, :activity);
+insertClothing: INSERT INTO clothing (name, min_temp, max_temp, category_id)
+VALUES (:name, :min_temp, :max_temp, :category_id);
 
 createDefaultActivities: INSERT INTO activities (name) VALUES
 ('Default'),
@@ -97,7 +108,12 @@ createDefaultCategories: INSERT INTO categories (name, norm_x, norm_y) VALUES
 ('Torso', 0.5, 0.4),
 ('Legs', 0.5, 0.9);
 
-createDefaultClothing: INSERT INTO clothing (name, min_temp, max_temp, category, activity) VALUES
-('Hat', 0, 20, 'Head', 'Default'),
-('Jacket', -20, 10, 'Torso', 'Default'),
-('Shorts', 0, 20, 'Legs', 'Jog');
+createDefaultClothing: INSERT INTO clothing (name, min_temp, max_temp, category_id) VALUES
+('Hat', 0, 20, 1),
+('Jacket', -20, 10, 2),
+('Shorts', 0, 20, 3);
+
+createDefaultActivityLinks: INSERT INTO clothing_activities (clothing_id, activity_id) VALUES
+(1, 1),
+(2, 1),
+(3, 2);

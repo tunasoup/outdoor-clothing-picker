@@ -65,7 +65,7 @@ class ClothingViewModel extends ChangeNotifier {
     _valid = await _db.validClothing(_temperature!, _activity!).get();
     Map<String, ValidClothingResult?> outfit = {};
     for (var category in categories) {
-      final categoryItems = _valid.where((item) => item.category == category.name).toList();
+      final categoryItems = _valid.where((item) => item.categoryName == category.name).toList();
       if (categoryItems.isNotEmpty) {
         // If there are multiple items, choose the first
         // TODO: Choose the first chosen based on temperature range
