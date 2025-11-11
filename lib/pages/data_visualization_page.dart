@@ -19,10 +19,13 @@ class _DataVisualizationPageState extends State<DataVisualizationPage> {
   // TODO change modification icon buttons to something cleane
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      body: ListView(
-        padding: const EdgeInsets.all(16),
-        children: [ActivityDataView(), CategoryDataView(), ClothingDataView()],
+    return ChangeNotifierProvider(
+      create: (_) => SelectionProvider(),
+      child: Scaffold(
+        body: ListView(
+          padding: const EdgeInsets.all(16),
+          children: [ActivityDataView(), CategoryDataView(), ClothingDataView()],
+        ),
       ),
     );
   }
@@ -139,6 +142,32 @@ abstract class DataView extends StatelessWidget {
         .join(', ');
   }
 
+  Widget _buildDataRow(BuildContext context, Map<String, dynamic> row, ItemsProvider provider) {
+    final selection = Provider.of<SelectionProvider>(context);
+    final rowId = row['id'] as int;
+
+    final selected = selection.isSelected(tableName, rowId);
+
+    return Card(
+      margin: const EdgeInsets.symmetric(vertical: 4),
+      child: ListTile(
+        title: Text('${row['name']}'),
+        subtitle: Text(_cardText(row)),
+        selected: selected,
+        onLongPress: () => selection.toggleSelection(tableName, rowId),
+        onTap: () {
+          if (selection.isSelectionMode) {
+            selection.toggleSelection(tableName, rowId);
+          } else {
+            errorWrapper(context, () async {
+              await _editRow(context, provider, row, tableName.toLowerCase());
+            });
+          }
+        },
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final provider = _getProvider(context);
@@ -165,49 +194,13 @@ abstract class DataView extends StatelessWidget {
             ),
           ],
         ),
-        Padding(padding: EdgeInsets.symmetric(vertical: 8)),
+        Padding(padding: EdgeInsets.symmetric(vertical: 4)),
         if (provider.isLoading)
           Center(child: CircularProgressIndicator())
         else if (rows.isEmpty)
           Text('No data')
         else
-          ...rows.map(
-            (row) => Card(
-              margin: const EdgeInsets.symmetric(vertical: 4),
-              child: ListTile(
-                title: Text(_cardText(row)),
-                trailing: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    IconButton(
-                      icon: const Icon(Icons.edit),
-                      onPressed: () {
-                        errorWrapper(context, () async {
-                          await _editRow(context, provider, row, tableName.toLowerCase());
-                        });
-                      },
-                    ),
-                    IconButton(
-                      icon: const Icon(Icons.copy),
-                      onPressed: () {
-                        errorWrapper(context, () async {
-                          await _copyRow(context, provider, row, tableName.toLowerCase());
-                        });
-                      },
-                    ),
-                    IconButton(
-                      icon: const Icon(Icons.delete),
-                      onPressed: () {
-                        errorWrapper(context, () async {
-                          await _deleteRow(context, provider, row);
-                        });
-                      },
-                    ),
-                  ],
-                ),
-              ),
-            ),
-          ),
+          ...rows.map((row) => _buildDataRow(context, row, provider)),
         const Divider(height: 32),
       ],
     );
@@ -255,5 +248,29 @@ class ClothingDataView extends DataView {
           return '$key: $value';
         })
         .join(', ');
+  }
+}
+
+class SelectionProvider extends ChangeNotifier {
+  // Key: table, value: set of row IDs
+  final Map<String, Set<int>> selectedItems = {};
+
+  bool isSelected(String table, int rowId) => selectedItems[table]?.contains(rowId) ?? false;
+
+  bool get isSelectionMode => selectedItems.values.any((set) => set.isNotEmpty);
+
+  void toggleSelection(String table, int rowId) {
+    selectedItems.putIfAbsent(table, () => {});
+    if (selectedItems[table]!.contains(rowId)) {
+      selectedItems[table]!.remove(rowId);
+    } else {
+      selectedItems[table]!.add(rowId);
+    }
+    notifyListeners();
+  }
+
+  void clearSelection() {
+    selectedItems.clear();
+    notifyListeners();
   }
 }
