@@ -16,104 +16,130 @@ class DataVisualizationPage extends StatefulWidget {
 
 class _DataVisualizationPageState extends State<DataVisualizationPage> {
   // TODO allow selecting and modifying multiple items at the same time
-  // TODO change modification icon buttons to something cleaner
-  Future<void> _deleteRow(
-    BuildContext context,
-    ItemsProvider provider,
-    Map<String, dynamic> data,
-  ) async {
-    if (kDebugMode) debugPrint('Delete $provider data: $data');
-    int referenceCount = await provider.referencedByCount(data);
-    String message = _createDeleteMessage(data, referenceCount);
-    final bool confirmed = await _showDeleteAlert(context, message);
-    if (confirmed) {
-      await provider.deleteItem(data);
-      // Also refresh clothing table due to references
-      if (referenceCount > 0 && provider.runtimeType != ClothingItemsProvider) {
-        await Provider.of<ClothingItemsProvider>(context, listen: false).refresh();
-      }
+  // TODO change modification icon buttons to something cleane
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      body: ListView(
+        padding: const EdgeInsets.all(16),
+        children: [ActivityDataView(), CategoryDataView(), ClothingDataView()],
+      ),
+    );
+  }
+}
+
+Future<void> _deleteRow(
+  BuildContext context,
+  ItemsProvider provider,
+  Map<String, dynamic> data,
+) async {
+  if (kDebugMode) debugPrint('Delete $provider data: $data');
+  int referenceCount = await provider.referencedByCount(data);
+  String message = _createDeleteMessage(data, referenceCount);
+  final bool confirmed = await _showDeleteAlert(context, message);
+  if (confirmed) {
+    await provider.deleteItem(data);
+    // Also refresh clothing table due to references
+    if (referenceCount > 0 && provider.runtimeType != ClothingItemsProvider) {
+      await Provider.of<ClothingItemsProvider>(context, listen: false).refresh();
     }
   }
+}
 
-  String _createDeleteMessage(Map<String, dynamic> data, int referenceCount) {
-    String msg = 'You are about to delete the following data item:';
-    msg += '\n$data';
-    if (referenceCount > 0) {
-      msg += '\nThe item affects $referenceCount clothing item(s).';
-    }
-    msg += '\nAre you sure?';
-    return msg;
+String _createDeleteMessage(Map<String, dynamic> data, int referenceCount) {
+  String msg = 'You are about to delete the following data item:';
+  msg += '\n$data';
+  if (referenceCount > 0) {
+    msg += '\nThe item affects $referenceCount clothing item(s).';
   }
+  msg += '\nAre you sure?';
+  return msg;
+}
 
-  Future<bool> _showDeleteAlert(BuildContext context, String message) async {
-    return await showDialog<bool>(
-          context: context,
-          builder: (context) => AlertDialog(
-            title: Text(
-              'Confirm Deletion',
-              textAlign: TextAlign.center,
-              style: Theme.of(context).textTheme.headlineMedium,
-            ),
-            content: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Text(message, textAlign: TextAlign.center),
-                Padding(padding: EdgeInsets.all(16.0)),
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    TextButton(
-                      onPressed: () => Navigator.pop(context, false),
-                      child: Text('Cancel'),
-                    ),
-                    ElevatedButton(
-                      onPressed: () => Navigator.pop(context, true),
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: Theme.of(context).colorScheme.errorContainer,
-                        foregroundColor: Theme.of(context).colorScheme.onErrorContainer,
-                      ),
-                      child: Text('Delete'),
-                    ),
-                  ],
-                ),
-              ],
-            ),
+Future<bool> _showDeleteAlert(BuildContext context, String message) async {
+  return await showDialog<bool>(
+        context: context,
+        builder: (context) => AlertDialog(
+          title: Text(
+            'Confirm Deletion',
+            textAlign: TextAlign.center,
+            style: Theme.of(context).textTheme.headlineMedium,
           ),
-        ) ??
-        false;
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text(message, textAlign: TextAlign.center),
+              Padding(padding: EdgeInsets.all(16.0)),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  TextButton(
+                    onPressed: () => Navigator.pop(context, false),
+                    child: Text('Cancel'),
+                  ),
+                  ElevatedButton(
+                    onPressed: () => Navigator.pop(context, true),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Theme.of(context).colorScheme.errorContainer,
+                      foregroundColor: Theme.of(context).colorScheme.onErrorContainer,
+                    ),
+                    child: Text('Delete'),
+                  ),
+                ],
+              ),
+            ],
+          ),
+        ),
+      ) ??
+      false;
+}
+
+Future<void> _copyRow(
+  BuildContext context,
+  ItemsProvider provider,
+  Map<String, dynamic> data,
+  String tableName,
+) async {
+  if (kDebugMode) debugPrint('Copy $provider data: $data');
+  await showRowDialog(
+    context: context,
+    tableName: tableName.toLowerCase(),
+    mode: DialogMode.copy,
+    initialData: data,
+  );
+}
+
+Future<void> _editRow(
+  BuildContext context,
+  ItemsProvider provider,
+  Map<String, dynamic> data,
+  String tableName,
+) async {
+  if (kDebugMode) debugPrint('Edit $provider data: $data');
+  await showRowDialog(
+    context: context,
+    tableName: tableName.toLowerCase(),
+    mode: DialogMode.edit,
+    initialData: data,
+  );
+}
+
+abstract class DataView extends StatelessWidget {
+  const DataView({super.key});
+
+  ItemsProvider _getProvider(BuildContext context);
+
+  String _cardText(Map<String, dynamic> row) {
+    return row.entries
+        .map((e) {
+          return '${e.key}: ${e.value}';
+        })
+        .join(', ');
   }
 
-  Future<void> _copyRow(
-    BuildContext context,
-    ItemsProvider provider,
-    Map<String, dynamic> data,
-    String tableName,
-  ) async {
-    if (kDebugMode) debugPrint('Copy $provider data: $data');
-    await showRowDialog(
-      context: context,
-      tableName: tableName.toLowerCase(),
-      mode: DialogMode.copy,
-      initialData: data,
-    );
-  }
-
-  Future<void> _editRow(
-    BuildContext context,
-    ItemsProvider provider,
-    Map<String, dynamic> data,
-    String tableName,
-  ) async {
-    if (kDebugMode) debugPrint('Edit $provider data: $data');
-    await showRowDialog(
-      context: context,
-      tableName: tableName.toLowerCase(),
-      mode: DialogMode.edit,
-      initialData: data,
-    );
-  }
-
-  Widget _buildProviderSection(BuildContext context, ItemsProvider provider) {
+  @override
+  Widget build(BuildContext context) {
+    final provider = _getProvider(context);
     final tableName = provider.tableName;
     final rows = provider.itemList;
 
@@ -148,17 +174,7 @@ class _DataVisualizationPageState extends State<DataVisualizationPage> {
             (row) => Card(
               margin: const EdgeInsets.symmetric(vertical: 4),
               child: ListTile(
-                title: Text(
-                  row.entries
-                      .map((e) {
-                        final key = e.key;
-                        final value = e.value;
-                        if (key == 'min_temp' && value == null) return '$key: -inf';
-                        if (key == 'max_temp' && value == null) return '$key: inf';
-                        return '$key: $value';
-                      })
-                      .join(', '),
-                ),
+                title: Text(_cardText(row)),
                 trailing: Row(
                   mainAxisSize: MainAxisSize.min,
                   children: [
@@ -195,22 +211,40 @@ class _DataVisualizationPageState extends State<DataVisualizationPage> {
       ],
     );
   }
+}
+
+class ActivityDataView extends DataView {
+  const ActivityDataView({super.key});
 
   @override
-  Widget build(BuildContext context) {
-    final activityProvider = context.watch<ActivityItemsProvider>();
-    final categoryProvider = context.watch<CategoryItemsProvider>();
-    final clothingProvider = context.watch<ClothingItemsProvider>();
+  ItemsProvider _getProvider(BuildContext context) => context.watch<ActivityItemsProvider>();
+}
 
-    return Scaffold(
-      body: ListView(
-        padding: const EdgeInsets.all(16),
-        children: [
-          _buildProviderSection(context, activityProvider),
-          _buildProviderSection(context, categoryProvider),
-          _buildProviderSection(context, clothingProvider),
-        ],
-      ),
-    );
+class CategoryDataView extends DataView {
+  const CategoryDataView({super.key});
+
+  @override
+  ItemsProvider _getProvider(BuildContext context) => context.watch<CategoryItemsProvider>();
+}
+
+class ClothingDataView extends DataView {
+  const ClothingDataView({super.key});
+
+  @override
+  ItemsProvider _getProvider(BuildContext context) => context.watch<ClothingItemsProvider>();
+
+  @override
+  String _cardText(Map<String, dynamic> row) {
+    // TODO list activities and change category id to name, provider is not enough,
+    //  also need category names and clothing activity info
+    return row.entries
+        .map((e) {
+          final key = e.key;
+          final value = e.value;
+          if (key == 'min_temp' && value == null) return '$key: -inf';
+          if (key == 'max_temp' && value == null) return '$key: inf';
+          return '$key: $value';
+        })
+        .join(', ');
   }
 }
