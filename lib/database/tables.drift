@@ -43,6 +43,14 @@ allCategories: SELECT * FROM categories;
 
 allClothing: SELECT * FROM clothing;
 
+allClothingFull: SELECT cl.id, cl.name, cl.min_temp, cl.max_temp, ca.name AS category,
+GROUP_CONCAT(a.name, ';') AS activities
+FROM clothing cl
+LEFT JOIN clothing_activities cla ON cl.id = cla.clothing_id
+LEFT JOIN activities a ON a.id = cla.activity_id
+LEFT JOIN categories ca ON ca.id = cl.category_id
+GROUP BY cl.id;
+
 activityFromName: SELECT * FROM activities
 WHERE name = :name;
 
@@ -55,7 +63,7 @@ INNER JOIN activities a ON a.id = cla.activity_id
 WHERE a.name == :activity;
 
 clothingWithCategory: SELECT cl.* FROM clothing cl
-JOIN categories ca on cl.category_id = ca.id
+INNER JOIN categories ca on cl.category_id = ca.id
 WHERE ca.name == :category;
 
 -- duplicateActivityClothing: INSERT INTO clothing (name, min_temp, max_temp, category, activity)

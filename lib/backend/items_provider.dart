@@ -15,8 +15,6 @@ abstract class ItemsProvider extends ChangeNotifier {
   List<Map<String, dynamic>> itemList = [];
   List<String> names = [];
 
-  String get tableName;
-
   Future<void> refresh() async {
     isLoading = true;
     notifyListeners();
@@ -37,9 +35,6 @@ abstract class ItemsProvider extends ChangeNotifier {
 
 class ActivityItemsProvider extends ItemsProvider {
   ActivityItemsProvider(super.db);
-
-  @override
-  String get tableName => "Activities";
 
   @override
   Future<void> _loadItems() async {
@@ -64,9 +59,6 @@ class ActivityItemsProvider extends ItemsProvider {
 
 class CategoryItemsProvider extends ItemsProvider {
   CategoryItemsProvider(super.db);
-
-  @override
-  String get tableName => "Categories";
 
   @override
   Future<void> _loadItems() async {
@@ -94,12 +86,18 @@ class ClothingItemsProvider extends ItemsProvider {
   ClothingItemsProvider(super.db);
 
   @override
-  String get tableName => "Clothing";
-
-  @override
   Future<void> _loadItems() async {
-    final result = await db.allClothing().get();
-    itemList = result.map((el) => el.toJson()).toList();
+    final result = await db.allClothingFull().get();
+    itemList = result.map((e) {
+      return {
+        'id': e.id,
+        'name': e.name,
+        'min_temp': e.minTemp,
+        'max_temp': e.maxTemp,
+        'category': e.category,
+        'activities': e.activities?.split(';').toList(),
+      };
+    }).toList();
   }
 
   @override

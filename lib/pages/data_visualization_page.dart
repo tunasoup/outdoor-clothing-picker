@@ -127,6 +127,8 @@ Future<void> _editRow(
 abstract class DataView extends StatelessWidget {
   const DataView({super.key});
 
+  String get tableName;
+
   ItemsProvider _getProvider(BuildContext context);
 
   String _cardText(Map<String, dynamic> row) {
@@ -140,7 +142,6 @@ abstract class DataView extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final provider = _getProvider(context);
-    final tableName = provider.tableName;
     final rows = provider.itemList;
 
     return Column(
@@ -217,11 +218,17 @@ class ActivityDataView extends DataView {
   const ActivityDataView({super.key});
 
   @override
+  String get tableName => "Activities";
+
+  @override
   ItemsProvider _getProvider(BuildContext context) => context.watch<ActivityItemsProvider>();
 }
 
 class CategoryDataView extends DataView {
   const CategoryDataView({super.key});
+
+  @override
+  String get tableName => "Categories";
 
   @override
   ItemsProvider _getProvider(BuildContext context) => context.watch<CategoryItemsProvider>();
@@ -231,18 +238,20 @@ class ClothingDataView extends DataView {
   const ClothingDataView({super.key});
 
   @override
+  String get tableName => "Clothing";
+
+  @override
   ItemsProvider _getProvider(BuildContext context) => context.watch<ClothingItemsProvider>();
 
   @override
   String _cardText(Map<String, dynamic> row) {
-    // TODO list activities and change category id to name, provider is not enough,
-    //  also need category names and clothing activity info
     return row.entries
         .map((e) {
           final key = e.key;
           final value = e.value;
           if (key == 'min_temp' && value == null) return '$key: -inf';
           if (key == 'max_temp' && value == null) return '$key: inf';
+          if (key == 'activities') return '$key: ${value.join(', ')}';
           return '$key: $value';
         })
         .join(', ');
