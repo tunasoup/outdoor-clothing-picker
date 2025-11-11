@@ -251,7 +251,7 @@ class ClothingDataView extends DataView {
           final value = e.value;
           if (key == 'min_temp' && value == null) return '$key: -inf';
           if (key == 'max_temp' && value == null) return '$key: inf';
-          if (key == 'activities') return '$key: ${value.join(', ')}';
+          if (key == 'activities') return '$key: ${value?.join(', ')}';
           return '$key: $value';
         })
         .join(', ');
