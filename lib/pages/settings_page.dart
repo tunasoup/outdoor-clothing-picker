@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:outdoor_clothing_picker/backend/theme.dart';
 import 'package:outdoor_clothing_picker/backend/utils.dart';
+import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 class SettingsPage extends StatefulWidget {
@@ -16,16 +18,20 @@ class _SettingsPageState extends State<SettingsPage> {
   @override
   void initState() {
     super.initState();
-    _loadApiKey();
+    _loadSettings();
   }
 
-  Future<void> _loadApiKey() async {
+  Future<void> _loadSettings() async {
     final prefs = await SharedPreferences.getInstance();
+
+    await Future.wait([_loadApiKey(prefs)]);
+
+    if (mounted) setState(() => _isLoading = false);
+  }
+
+  Future<void> _loadApiKey(SharedPreferences prefs) async {
     final savedKey = prefs.getString(PrefKeys.apiKeyOWM);
     _controller.text = savedKey ?? '';
-    setState(() {
-      _isLoading = false;
-    });
   }
 
   Future<void> _saveApiKey(String value) async {
@@ -33,22 +39,29 @@ class _SettingsPageState extends State<SettingsPage> {
     await prefs.setString(PrefKeys.apiKeyOWM, value);
   }
 
+  Widget _buildAPIKeyBox() {
+    return TextField(
+      controller: _controller,
+      decoration: const InputDecoration(
+        labelText: 'OpenWeatherMap API Key',
+        border: OutlineInputBorder(),
+      ),
+      onChanged: _saveApiKey,
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Settings')),
+      appBar: AppBar(
+        title: const Text('Settings'),
+        backgroundColor: Theme.of(context).colorScheme.surfaceContainerHigh,
+      ),
       body: _isLoading
           ? const Center(child: CircularProgressIndicator())
-          : Padding(
-              padding: const EdgeInsets.all(16.0),
-              child: TextField(
-                controller: _controller,
-                decoration: const InputDecoration(
-                  labelText: 'OpenWeatherMap API Key',
-                  border: OutlineInputBorder(),
-                ),
-                onChanged: _saveApiKey,
-              ),
+          : ListView(
+              padding: const EdgeInsets.all(16),
+              children: [_buildAPIKeyBox(), const ThemeSelectorTile()],
             ),
     );
   }
@@ -57,5 +70,33 @@ class _SettingsPageState extends State<SettingsPage> {
   void dispose() {
     _controller.dispose();
     super.dispose();
+  }
+}
+
+class ThemeSelectorTile extends StatelessWidget {
+  const ThemeSelectorTile({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    final themeProvider = context.watch<ThemeProvider>();
+    final isDarkMode = themeProvider.isDarkMode;
+
+    return ListTile(
+      leading: Icon(
+        isDarkMode ? Icons.dark_mode : Icons.light_mode,
+        color: Theme.of(context).colorScheme.primary,
+      ),
+      title: const Text('Theme'),
+      subtitle: Text(isDarkMode ? 'Dark mode' : 'Light mode'),
+      trailing: Switch.adaptive(
+        value: isDarkMode,
+        onChanged: (_) async {
+          await Provider.of<ThemeProvider>(context, listen: false).toggleTheme();
+        },
+      ),
+      onTap: () async {
+        await Provider.of<ThemeProvider>(context, listen: false).toggleTheme();
+      },
+    );
   }
 }
