@@ -22,6 +22,10 @@ class _DataVisualizationPageState extends State<DataVisualizationPage> {
     return ChangeNotifierProvider(
       create: (_) => SelectionProvider(),
       child: Scaffold(
+        appBar: AppBar(
+          title: const Text('Data'),
+          backgroundColor: Theme.of(context).colorScheme.surfaceContainerHigh,
+        ),
         body: ListView(
           padding: const EdgeInsets.all(16),
           children: [ActivityDataView(), CategoryDataView(), ClothingDataView()],
@@ -201,6 +205,10 @@ abstract class DataView extends StatelessWidget {
                         mode: DialogMode.add,
                       );
                     },
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Theme.of(context).colorScheme.primaryContainer,
+                foregroundColor: Theme.of(context).colorScheme.onPrimaryContainer,
+              ),
               child: const Text('Add New'),
             ),
           ],
