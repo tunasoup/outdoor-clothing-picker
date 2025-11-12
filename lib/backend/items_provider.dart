@@ -25,12 +25,16 @@ abstract class ItemsProvider extends ChangeNotifier {
 
   Future<void> _loadItems();
 
-  Future<List<ClothingData>> referencedBy(Map<String, dynamic> data);
+  Future<List<ClothingData>> referencedBy(int id);
 
-  Future<int> referencedByCount(Map<String, dynamic> data) async =>
-      (await referencedBy(data)).length;
+  Future<int> referencedByCount(int id) async => (await referencedBy(id)).length;
 
-  Future<void> deleteItem(Map<String, dynamic> data);
+  Future<void> deleteItems(List<int> ids);
+
+  Future<void> deleteItem(int id) async {
+    final ids = [id];
+    await deleteItems(ids);
+  }
 }
 
 class ActivityItemsProvider extends ItemsProvider {
@@ -44,15 +48,13 @@ class ActivityItemsProvider extends ItemsProvider {
   }
 
   @override
-  Future<List<ClothingData>> referencedBy(Map<String, dynamic> data) async {
-    String name = data['name'];
-    return await db.clothingWithActivity(name).get();
+  Future<List<ClothingData>> referencedBy(int id) async {
+    return await db.clothingWithActivity(id).get();
   }
 
   @override
-  Future<void> deleteItem(Map<String, dynamic> data) async {
-    int id = data['id'];
-    await db.deleteActivity(id);
+  Future<void> deleteItems(List<int> ids) async {
+    await db.deleteActivities(ids);
     await refresh();
   }
 }
@@ -69,15 +71,13 @@ class CategoryItemsProvider extends ItemsProvider {
   }
 
   @override
-  Future<List<ClothingData>> referencedBy(Map<String, dynamic> data) async {
-    String name = data['name'];
-    return await db.clothingWithCategory(name).get();
+  Future<List<ClothingData>> referencedBy(int id) async {
+    return await db.clothingWithCategory(id).get();
   }
 
   @override
-  Future<void> deleteItem(Map<String, dynamic> data) async {
-    int id = data['id'];
-    await db.deleteCategory(id);
+  Future<void> deleteItems(List<int> ids) async {
+    await db.deleteCategories(ids);
     await refresh();
   }
 }
@@ -101,14 +101,13 @@ class ClothingItemsProvider extends ItemsProvider {
   }
 
   @override
-  Future<List<ClothingData>> referencedBy(Map<String, dynamic> data) async {
+  Future<List<ClothingData>> referencedBy(int id) async {
     return [];
   }
 
   @override
-  Future<void> deleteItem(Map<String, dynamic> data) async {
-    int id = data['id'];
-    await db.deleteClothing(id);
+  Future<void> deleteItems(List<int> ids) async {
+    await db.deleteClothing(ids);
     await refresh();
   }
 }

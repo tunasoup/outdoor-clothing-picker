@@ -57,14 +57,14 @@ WHERE name = :name;
 categoryFromName: SELECT * FROM categories
 WHERE name = :name;
 
-clothingWithActivity: SELECT cl.* FROM clothing cl
+clothingWithActivity: SELECT DISTINCT cl.* FROM clothing cl
 INNER JOIN clothing_activities cla ON cl.id = cla.clothing_id
 INNER JOIN activities a ON a.id = cla.activity_id
-WHERE a.name == :activity;
+WHERE a.id == :activity_id;
 
 clothingWithCategory: SELECT cl.* FROM clothing cl
 INNER JOIN categories ca on cl.category_id = ca.id
-WHERE ca.name == :category;
+WHERE ca.id == :category_id;
 
 -- duplicateActivityClothing: INSERT INTO clothing (name, min_temp, max_temp, category, activity)
 -- SELECT name, min_temp, max_temp, category, :new_activity
@@ -97,14 +97,14 @@ SET name = :name, min_temp = :min_temp, max_temp = :max_temp,
 category_id = :category_id
 WHERE id = :id;
 
-deleteActivity: DELETE FROM activities
-WHERE id == :id;
+deleteActivities: DELETE FROM activities
+WHERE id IN :ids;
 
-deleteCategory: DELETE FROM categories
-WHERE id == :id;
+deleteCategories: DELETE FROM categories
+WHERE id IN :ids;
 
 deleteClothing: DELETE FROM clothing
-WHERE id == :id;
+WHERE id IN :ids;
 
 deleteClothingActivity: DELETE FROM clothing_activities
 WHERE clothing_id == :clothing_id AND activity_id == :activity_id;

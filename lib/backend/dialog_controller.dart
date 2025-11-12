@@ -102,7 +102,7 @@ class ActivityDialogController extends DialogController {
       // Find the case-sensitive version of the merge target (allows running and RunNIng inputs)
       String? canonicalName = findCaseInsensitiveMatch(availableActivities, _name!);
       // await db.changeClothingActivity(canonicalName!, initialName);
-      await db.deleteActivity(_id!);
+      // await db.deleteActivity(_id!);
     } else {
       await db.updateActivity(_name!, _id!);
     }
@@ -214,7 +214,7 @@ class CategoryDialogController extends DialogController {
       String? canonicalName = findCaseInsensitiveMatch(availableCategories, _name!);
       // The data of _initialName is used, current form coordinates are ignored
       // await db.changeClothingCategory(canonicalName!, initialName);
-      await db.deleteCategory(_id!);
+      // await db.deleteCategory(_id!);
     } else {
       await db.updateCategory(_name!, _normX!, _normY!, _id!);
     }

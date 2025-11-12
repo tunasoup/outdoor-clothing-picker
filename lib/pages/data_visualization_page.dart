@@ -80,8 +80,27 @@ class DataAppBar extends StatelessWidget implements PreferredSizeWidget {
           IconButton(
             icon: Icon(Icons.delete, color: Theme.of(context).colorScheme.error),
             tooltip: 'Delete selected',
-            onPressed: () {
-              // TODO: implement deletion
+            onPressed: () async {
+              final count = selectionProvider.selectedCount;
+              if (count == 1) {
+                selectionProvider.selectedItems.forEach((dataView, ids) {
+                  errorWrapper(context, () async {
+                    // FIXME: singular should have a distinct confirmation alert, but not trigger
+                    //  when more tables are selected as well
+                    await dataView.deleteRows(context, ids);
+                  });
+                });
+              } else if (count > 1) {
+                // TODO: deletion message for multiple items
+                final bool confirmed = await showDeleteAlert(context, 'Delete $count items?');
+                if (confirmed) {
+                  selectionProvider.selectedItems.forEach((dataView, ids) {
+                    errorWrapper(context, () async {
+                      await dataView.deleteRows(context, ids);
+                    });
+                  });
+                }
+              }
               selectionProvider.clearSelection();
             },
           )
@@ -98,27 +117,38 @@ class DataAppBar extends StatelessWidget implements PreferredSizeWidget {
   }
 }
 
-Future<void> _deleteRow(
-  BuildContext context,
-  ItemsProvider provider,
-  Map<String, dynamic> data,
-) async {
-  if (kDebugMode) debugPrint('Delete $provider data: $data');
-  int referenceCount = await provider.referencedByCount(data);
-  String message = _createDeleteMessage(data, referenceCount);
-  final bool confirmed = await _showDeleteAlert(context, message);
+Future<void> deleteRow(BuildContext context, ItemsProvider provider, int rowId) async {
+  if (kDebugMode) debugPrint('Delete $provider data: $rowId');
+  int referenceCount = await provider.referencedByCount(rowId);
+  String message = createDeleteMessage(rowId, referenceCount);
+  final bool confirmed = await showDeleteAlert(context, message);
   if (confirmed) {
-    await provider.deleteItem(data);
+    await provider.deleteItem(rowId);
     // Also refresh clothing table due to references
     if (referenceCount > 0 && provider.runtimeType != ClothingItemsProvider) {
-      await Provider.of<ClothingItemsProvider>(context, listen: false).refresh();
+      await context.read<ClothingItemsProvider>().refresh();
     }
   }
 }
 
-String _createDeleteMessage(Map<String, dynamic> data, int referenceCount) {
+Future<void> deleteRows(BuildContext context, ItemsProvider provider, int rowId) async {
+  if (kDebugMode) debugPrint('Delete $provider data: $rowId');
+  int referenceCount = await provider.referencedByCount(rowId);
+  String message = createDeleteMessage(rowId, referenceCount);
+  final bool confirmed = await showDeleteAlert(context, message);
+  if (confirmed) {
+    await provider.deleteItem(rowId);
+    // Also refresh clothing table due to references
+    if (referenceCount > 0 && provider.runtimeType != ClothingItemsProvider) {
+      await context.read<ClothingItemsProvider>().refresh();
+    }
+  }
+}
+
+String createDeleteMessage(int id, int referenceCount) {
+  // TODO include whole data contents and not just id
   String msg = 'You are about to delete the following data item:';
-  msg += '\n$data';
+  msg += '\n$id';
   if (referenceCount > 0) {
     msg += '\nThe item affects $referenceCount clothing item(s).';
   }
@@ -126,7 +156,7 @@ String _createDeleteMessage(Map<String, dynamic> data, int referenceCount) {
   return msg;
 }
 
-Future<bool> _showDeleteAlert(BuildContext context, String message) async {
+Future<bool> showDeleteAlert(BuildContext context, String message) async {
   return await showDialog<bool>(
         context: context,
         builder: (context) => AlertDialog(
@@ -164,7 +194,7 @@ Future<bool> _showDeleteAlert(BuildContext context, String message) async {
       false;
 }
 
-Future<void> _copyRow(
+Future<void> copyRow(
   BuildContext context,
   ItemsProvider provider,
   Map<String, dynamic> data,
@@ -179,7 +209,7 @@ Future<void> _copyRow(
   );
 }
 
-Future<void> _editRow(
+Future<void> editRow(
   BuildContext context,
   ItemsProvider provider,
   Map<String, dynamic> data,
@@ -199,7 +229,13 @@ abstract class DataView extends StatelessWidget {
 
   String get tableName;
 
-  ItemsProvider _getProvider(BuildContext context);
+  ItemsProvider _getProvider(BuildContext context, bool listen);
+
+  Future<void> deleteRows(BuildContext context, Iterable<int> rowIds) async {
+    if (rowIds.isEmpty) return;
+    final provider = _getProvider(context, false);
+    await provider.deleteItems(rowIds.toList());
+  }
 
   String _cardText(Map<String, dynamic> row) {
     return row.entries
@@ -213,9 +249,10 @@ abstract class DataView extends StatelessWidget {
     final rowId = row['id'] as int;
 
     // FIXME something closer to root causes unnecessary rebuilds
+    // FIXME Selector disables rebuild of checkmarks when isSelectionMode changes
     // Use a selector to avoid rebuild when selection has not changed
     return Selector<SelectionProvider, bool>(
-      selector: (_, selProvider) => selProvider.isSelected(tableName, rowId),
+      selector: (_, selProvider) => selProvider.isSelected(this, rowId),
       builder: (_, isSelected, _) {
         final selection = context.read<SelectionProvider>();
         return Card(
@@ -224,13 +261,13 @@ abstract class DataView extends StatelessWidget {
             title: Text('${row['name']}'),
             subtitle: Text(_cardText(row)),
             selected: isSelected,
-            onLongPress: () => selection.toggleSelection(tableName, rowId),
+            onLongPress: () => selection.toggleSelection(this, rowId),
             onTap: () {
               if (selection.isSelectionMode) {
-                selection.toggleSelection(tableName, rowId);
+                selection.toggleSelection(this, rowId);
               } else {
                 errorWrapper(context, () async {
-                  await _editRow(context, provider, row, tableName.toLowerCase());
+                  await editRow(context, provider, row, tableName.toLowerCase());
                 });
               }
             },
@@ -253,7 +290,7 @@ abstract class DataView extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final provider = _getProvider(context);
+    final provider = _getProvider(context, true);
     final selectionProvider = context.read<SelectionProvider>();
     final rows = provider.itemList;
     // TODO filter rows according to an optional query
@@ -261,7 +298,7 @@ abstract class DataView extends StatelessWidget {
     // Update provider (in the next frame) with currently visible rows for this table
     final visibleIds = rows.map((row) => row['id'] as int).toSet();
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      selectionProvider.updateVisibleItems(tableName, visibleIds);
+      selectionProvider.updateVisibleItems(this, visibleIds);
     });
 
     return Column(
@@ -309,7 +346,8 @@ class ActivityDataView extends DataView {
   String get tableName => "Activities";
 
   @override
-  ItemsProvider _getProvider(BuildContext context) => context.watch<ActivityItemsProvider>();
+  ItemsProvider _getProvider(BuildContext context, bool listen) =>
+      Provider.of<ActivityItemsProvider>(context, listen: listen);
 }
 
 class CategoryDataView extends DataView {
@@ -319,7 +357,8 @@ class CategoryDataView extends DataView {
   String get tableName => "Categories";
 
   @override
-  ItemsProvider _getProvider(BuildContext context) => context.watch<CategoryItemsProvider>();
+  ItemsProvider _getProvider(BuildContext context, bool listen) =>
+      Provider.of<CategoryItemsProvider>(context, listen: listen);
 }
 
 class ClothingDataView extends DataView {
@@ -329,7 +368,8 @@ class ClothingDataView extends DataView {
   String get tableName => "Clothing";
 
   @override
-  ItemsProvider _getProvider(BuildContext context) => context.watch<ClothingItemsProvider>();
+  ItemsProvider _getProvider(BuildContext context, bool listen) =>
+      Provider.of<ClothingItemsProvider>(context, listen: listen);
 
   @override
   String _cardText(Map<String, dynamic> row) {
@@ -348,12 +388,10 @@ class ClothingDataView extends DataView {
 
 class SelectionProvider extends ChangeNotifier {
   // Key: table, value: set of row IDs
-  final Map<String, Set<int>> selectedItems = {};
+  final Map<DataView, Set<int>> visibleItems = {};
+  final Map<DataView, Set<int>> selectedItems = {};
 
-  // Map: table name -> set of currently visible row IDs
-  final Map<String, Set<int>> visibleItems = {};
-
-  bool isSelected(String table, int rowId) => selectedItems[table]?.contains(rowId) ?? false;
+  bool isSelected(DataView table, int rowId) => selectedItems[table]?.contains(rowId) ?? false;
 
   bool get isSelectionMode => selectedItems.values.any((set) => set.isNotEmpty);
 
@@ -369,7 +407,7 @@ class SelectionProvider extends ChangeNotifier {
         (entry) => selectedItems[entry.key]?.containsAll(entry.value) ?? false,
       );
 
-  void updateVisibleItems(String table, Set<int> ids) {
+  void updateVisibleItems(DataView table, Set<int> ids) {
     final oldIds = visibleItems[table] ?? {};
     if (!setEquals(oldIds, ids)) {
       visibleItems[table] = ids;
@@ -377,7 +415,7 @@ class SelectionProvider extends ChangeNotifier {
     }
   }
 
-  void toggleSelection(String table, int rowId) {
+  void toggleSelection(DataView table, int rowId) {
     selectedItems.putIfAbsent(table, () => {});
     if (selectedItems[table]!.contains(rowId)) {
       selectedItems[table]!.remove(rowId);
