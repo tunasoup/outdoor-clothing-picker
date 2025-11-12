@@ -43,18 +43,6 @@ class _HomePageState extends State<HomePage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Outdoor Clothing Picker'),
-        backgroundColor: Theme.of(context).colorScheme.surfaceContainerHigh,
-        actions: <Widget>[
-          IconButton(
-            icon: const Icon(Icons.brightness_6),
-            onPressed: () async {
-              await Provider.of<ThemeProvider>(context, listen: false).toggleTheme();
-            },
-          ),
-        ],
-      ),
       body: wideScreen
           ? Row(
               children: [

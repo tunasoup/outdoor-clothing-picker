@@ -37,28 +37,30 @@ class _ClothingPageState extends State<ClothingPage> {
         onPressed: () => showAddMenu(context: context, anchorKey: _fabKey),
         child: Icon(Icons.add),
       ),
-      body: RefreshIndicator(
-        onRefresh: () async =>
-            errorWrapper(context, () => context.read<WeatherViewModel>().refresh()),
-        child: SingleChildScrollView(
-          // Required by refresh indicator for large screens
-          physics: const AlwaysScrollableScrollPhysics(),
-          padding: const EdgeInsets.all(16.0),
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            spacing: 16,
-            children: [
-              const WeatherWidget(),
-              SizedBox(
-                width: 200,
-                child: ActivityDropdown(
-                  initialValue: context.watch<ClothingViewModel>().activity,
-                  onChanged: (value) =>
-                      context.read<ClothingViewModel>().setActivity(activity: value),
+      body: SafeArea(
+        child: RefreshIndicator(
+          onRefresh: () async =>
+              errorWrapper(context, () => context.read<WeatherViewModel>().refresh()),
+          child: SingleChildScrollView(
+            // Required by refresh indicator for large screens
+            physics: const AlwaysScrollableScrollPhysics(),
+            padding: const EdgeInsets.all(16.0),
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              spacing: 16,
+              children: [
+                const WeatherWidget(),
+                SizedBox(
+                  width: 200,
+                  child: ActivityDropdown(
+                    initialValue: context.watch<ClothingViewModel>().activity,
+                    onChanged: (value) =>
+                        context.read<ClothingViewModel>().setActivity(activity: value),
+                  ),
                 ),
-              ),
-              const SizedBox(height: 400, child: Mannequin()),
-            ],
+                const SizedBox(height: 400, child: Mannequin()),
+              ],
+            ),
           ),
         ),
       ),
