@@ -15,22 +15,85 @@ class DataVisualizationPage extends StatefulWidget {
 }
 
 class _DataVisualizationPageState extends State<DataVisualizationPage> {
-  // TODO allow selecting and modifying multiple items at the same time
-  // TODO change modification icon buttons to something cleane
   @override
   Widget build(BuildContext context) {
     return ChangeNotifierProvider(
       create: (_) => SelectionProvider(),
       child: Scaffold(
-        appBar: AppBar(
-          title: const Text('Data'),
-          backgroundColor: Theme.of(context).colorScheme.surfaceContainerHigh,
-        ),
+        appBar: DataAppBar(),
         body: ListView(
           padding: const EdgeInsets.all(16),
           children: [ActivityDataView(), CategoryDataView(), ClothingDataView()],
         ),
       ),
+    );
+  }
+}
+
+class DataAppBar extends StatelessWidget implements PreferredSizeWidget {
+  const DataAppBar({super.key});
+
+  @override
+  Size get preferredSize => const Size.fromHeight(kToolbarHeight);
+
+  @override
+  Widget build(BuildContext context) {
+    final selectionProvider = context.watch<SelectionProvider>();
+    final isSelectionMode = selectionProvider.isSelectionMode;
+
+    return AppBar(
+      title: isSelectionMode
+          ? Row(
+              children: [
+                Text(
+                  '${selectionProvider.selectedCount}',
+                  style: Theme.of(context).textTheme.titleLarge,
+                ),
+              ],
+            )
+          : const Text('Data'),
+      leading: isSelectionMode
+          ? Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                IconButton(
+                  icon: Icon(
+                    selectionProvider.allSelected
+                        ? Icons.check_circle
+                        : Icons.radio_button_unchecked,
+                  ),
+                  tooltip: selectionProvider.allSelected ? 'Cancel selection' : 'Select all',
+                  onPressed: () {
+                    if (selectionProvider.allSelected) {
+                      selectionProvider.clearSelection();
+                    } else {
+                      selectionProvider.selectAllVisible();
+                    }
+                  },
+                ),
+                // const Text('All', style: TextStyle(fontSize: 12)),
+              ],
+            )
+          : null,
+      actions: [
+        if (isSelectionMode)
+          IconButton(
+            icon: Icon(Icons.delete, color: Theme.of(context).colorScheme.error),
+            tooltip: 'Delete selected',
+            onPressed: () {
+              // TODO: implement deletion
+              selectionProvider.clearSelection();
+            },
+          )
+        else
+          IconButton(
+            icon: const Icon(Icons.search),
+            tooltip: 'Search',
+            onPressed: () {
+              // TODO: implement search
+            },
+          ),
+      ],
     );
   }
 }
@@ -147,46 +210,59 @@ abstract class DataView extends StatelessWidget {
   }
 
   Widget _buildDataRow(BuildContext context, Map<String, dynamic> row, ItemsProvider provider) {
-    final selection = Provider.of<SelectionProvider>(context);
     final rowId = row['id'] as int;
 
-    final isSelected = selection.isSelected(tableName, rowId);
-
-    return Card(
-      margin: const EdgeInsets.symmetric(vertical: 4),
-      child: ListTile(
-        title: Text('${row['name']}'),
-        subtitle: Text(_cardText(row)),
-        selected: isSelected,
-        onLongPress: () => selection.toggleSelection(tableName, rowId),
-        onTap: () {
-          if (selection.isSelectionMode) {
-            selection.toggleSelection(tableName, rowId);
-          } else {
-            errorWrapper(context, () async {
-              await _editRow(context, provider, row, tableName.toLowerCase());
-            });
-          }
-        },
-        trailing: AnimatedSwitcher(
-          duration: const Duration(milliseconds: 200),
-          child: selection.isSelectionMode
-              ? Icon(
-                  isSelected ? Icons.check_circle : Icons.radio_button_unchecked,
-                  color: isSelected
-                      ? Theme.of(context).colorScheme.primary
-                      : Theme.of(context).colorScheme.outlineVariant,
-                )
-              : const SizedBox.shrink(),
-        ),
-      ),
+    // FIXME something closer to root causes unnecessary rebuilds
+    // Use a selector to avoid rebuild when selection has not changed
+    return Selector<SelectionProvider, bool>(
+      selector: (_, selProvider) => selProvider.isSelected(tableName, rowId),
+      builder: (_, isSelected, _) {
+        final selection = context.read<SelectionProvider>();
+        return Card(
+          margin: const EdgeInsets.symmetric(vertical: 4),
+          child: ListTile(
+            title: Text('${row['name']}'),
+            subtitle: Text(_cardText(row)),
+            selected: isSelected,
+            onLongPress: () => selection.toggleSelection(tableName, rowId),
+            onTap: () {
+              if (selection.isSelectionMode) {
+                selection.toggleSelection(tableName, rowId);
+              } else {
+                errorWrapper(context, () async {
+                  await _editRow(context, provider, row, tableName.toLowerCase());
+                });
+              }
+            },
+            trailing: AnimatedSwitcher(
+              duration: const Duration(milliseconds: 200),
+              child: selection.isSelectionMode
+                  ? Icon(
+                      isSelected ? Icons.check_circle : Icons.radio_button_unchecked,
+                      color: isSelected
+                          ? Theme.of(context).colorScheme.primary
+                          : Theme.of(context).colorScheme.outlineVariant,
+                    )
+                  : const SizedBox.shrink(),
+            ),
+          ),
+        );
+      },
     );
   }
 
   @override
   Widget build(BuildContext context) {
     final provider = _getProvider(context);
+    final selectionProvider = context.read<SelectionProvider>();
     final rows = provider.itemList;
+    // TODO filter rows according to an optional query
+
+    // Update provider (in the next frame) with currently visible rows for this table
+    final visibleIds = rows.map((row) => row['id'] as int).toSet();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      selectionProvider.updateVisibleItems(tableName, visibleIds);
+    });
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -274,9 +350,32 @@ class SelectionProvider extends ChangeNotifier {
   // Key: table, value: set of row IDs
   final Map<String, Set<int>> selectedItems = {};
 
+  // Map: table name -> set of currently visible row IDs
+  final Map<String, Set<int>> visibleItems = {};
+
   bool isSelected(String table, int rowId) => selectedItems[table]?.contains(rowId) ?? false;
 
   bool get isSelectionMode => selectedItems.values.any((set) => set.isNotEmpty);
+
+  // Total selected rows across all tables
+  int get selectedCount => selectedItems.values.fold(0, (sum, set) => sum + set.length);
+
+  // Total visible rows across all tables
+  int get visibleCount => visibleItems.values.fold(0, (sum, set) => sum + set.length);
+
+  bool get allSelected =>
+      visibleCount > 0 &&
+      visibleItems.entries.every(
+        (entry) => selectedItems[entry.key]?.containsAll(entry.value) ?? false,
+      );
+
+  void updateVisibleItems(String table, Set<int> ids) {
+    final oldIds = visibleItems[table] ?? {};
+    if (!setEquals(oldIds, ids)) {
+      visibleItems[table] = ids;
+      notifyListeners(); // Only trigger if changed
+    }
+  }
 
   void toggleSelection(String table, int rowId) {
     selectedItems.putIfAbsent(table, () => {});
@@ -284,6 +383,14 @@ class SelectionProvider extends ChangeNotifier {
       selectedItems[table]!.remove(rowId);
     } else {
       selectedItems[table]!.add(rowId);
+    }
+    notifyListeners();
+  }
+
+  void selectAllVisible() {
+    for (var entry in visibleItems.entries) {
+      selectedItems.putIfAbsent(entry.key, () => {});
+      selectedItems[entry.key]!.addAll(entry.value);
     }
     notifyListeners();
   }
