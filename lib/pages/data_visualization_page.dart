@@ -82,25 +82,31 @@ class DataAppBar extends StatelessWidget implements PreferredSizeWidget {
             tooltip: 'Delete selected',
             onPressed: () async {
               final count = selectionProvider.selectedCount;
-              if (count == 1) {
-                selectionProvider.selectedItems.forEach((dataView, ids) {
-                  errorWrapper(context, () async {
-                    // FIXME: singular should have a distinct confirmation alert, but not trigger
-                    //  when more tables are selected as well
-                    await dataView.deleteRows(context, ids);
-                  });
-                });
-              } else if (count > 1) {
-                // TODO: deletion message for multiple items
-                final bool confirmed = await showDeleteAlert(context, 'Delete $count items?');
-                if (confirmed) {
-                  selectionProvider.selectedItems.forEach((dataView, ids) {
-                    errorWrapper(context, () async {
-                      await dataView.deleteRows(context, ids);
-                    });
-                  });
-                }
+              if (count == 0) return;
+
+              String? msg;
+              // Show a different confirmation message for singe item deletions
+              final singleItem = selectionProvider.singleSelectedItem;
+              if (singleItem != null) {
+                final provider = singleItem.key, rowId = singleItem.value;
+                int referenceCount = await provider.referencedByCount(rowId);
+                msg = createDeleteMessage(id: singleItem.value, referenceCount: referenceCount);
+              } else {
+                msg = createDeleteMessage(itemCount: count);
               }
+
+              final confirmed = await showDeleteAlert(context, msg);
+              if (!confirmed) return;
+
+              for (final entry in selectionProvider.selectedItems.entries) {
+                final dataView = entry.key;
+                final ids = entry.value;
+                errorWrapper(context, () async {
+                  await dataView.deleteItems(ids.toList());
+                });
+              }
+              // Rebuild clothing in case its references were removed
+              await context.read<ClothingItemsProvider>().refresh();
               selectionProvider.clearSelection();
             },
           )
@@ -117,40 +123,22 @@ class DataAppBar extends StatelessWidget implements PreferredSizeWidget {
   }
 }
 
-Future<void> deleteRow(BuildContext context, ItemsProvider provider, int rowId) async {
-  if (kDebugMode) debugPrint('Delete $provider data: $rowId');
-  int referenceCount = await provider.referencedByCount(rowId);
-  String message = createDeleteMessage(rowId, referenceCount);
-  final bool confirmed = await showDeleteAlert(context, message);
-  if (confirmed) {
-    await provider.deleteItem(rowId);
-    // Also refresh clothing table due to references
-    if (referenceCount > 0 && provider.runtimeType != ClothingItemsProvider) {
-      await context.read<ClothingItemsProvider>().refresh();
-    }
+String createDeleteMessage({int? itemCount, int? id, int referenceCount = 0}) {
+  if ((itemCount == null || itemCount < 1) && id == null) {
+    throw ArgumentError('Either positive itemCount or id must be provided.');
+  } else if (itemCount != null && id != null) {
+    throw ArgumentError('Only itemCount or id must be provided.');
   }
-}
 
-Future<void> deleteRows(BuildContext context, ItemsProvider provider, int rowId) async {
-  if (kDebugMode) debugPrint('Delete $provider data: $rowId');
-  int referenceCount = await provider.referencedByCount(rowId);
-  String message = createDeleteMessage(rowId, referenceCount);
-  final bool confirmed = await showDeleteAlert(context, message);
-  if (confirmed) {
-    await provider.deleteItem(rowId);
-    // Also refresh clothing table due to references
-    if (referenceCount > 0 && provider.runtimeType != ClothingItemsProvider) {
-      await context.read<ClothingItemsProvider>().refresh();
+  String msg = 'You are about to delete ';
+  if (id != null) {
+    msg += 'the following data item:';
+    msg += '\n$id'; // TODO include whole data contents and not just id
+    if (referenceCount > 0) {
+      msg += '\nThe item affects $referenceCount clothing item(s).';
     }
-  }
-}
-
-String createDeleteMessage(int id, int referenceCount) {
-  // TODO include whole data contents and not just id
-  String msg = 'You are about to delete the following data item:';
-  msg += '\n$id';
-  if (referenceCount > 0) {
-    msg += '\nThe item affects $referenceCount clothing item(s).';
+  } else {
+    msg += '$itemCount items.';
   }
   msg += '\nAre you sure?';
   return msg;
@@ -231,12 +219,6 @@ abstract class DataView extends StatelessWidget {
 
   ItemsProvider _getProvider(BuildContext context, bool listen);
 
-  Future<void> deleteRows(BuildContext context, Iterable<int> rowIds) async {
-    if (rowIds.isEmpty) return;
-    final provider = _getProvider(context, false);
-    await provider.deleteItems(rowIds.toList());
-  }
-
   String _cardText(Map<String, dynamic> row) {
     return row.entries
         .map((e) {
@@ -246,51 +228,47 @@ abstract class DataView extends StatelessWidget {
   }
 
   Widget _buildDataRow(BuildContext context, Map<String, dynamic> row, ItemsProvider provider) {
+    final selection = Provider.of<SelectionProvider>(context);
     final rowId = row['id'] as int;
 
+    final isSelected = selection.isSelected(provider, rowId);
+
     // FIXME something closer to root causes unnecessary rebuilds
-    // FIXME Selector disables rebuild of checkmarks when isSelectionMode changes
-    // Use a selector to avoid rebuild when selection has not changed
-    return Selector<SelectionProvider, bool>(
-      selector: (_, selProvider) => selProvider.isSelected(this, rowId),
-      builder: (_, isSelected, _) {
-        final selection = context.read<SelectionProvider>();
-        return Card(
-          margin: const EdgeInsets.symmetric(vertical: 4),
-          child: ListTile(
-            title: Text('${row['name']}'),
-            subtitle: Text(_cardText(row)),
-            selected: isSelected,
-            onLongPress: () => selection.toggleSelection(this, rowId),
-            onTap: () {
-              if (selection.isSelectionMode) {
-                selection.toggleSelection(this, rowId);
-              } else {
-                errorWrapper(context, () async {
-                  await editRow(context, provider, row, tableName.toLowerCase());
-                });
-              }
-            },
-            trailing: AnimatedSwitcher(
-              duration: const Duration(milliseconds: 200),
-              child: selection.isSelectionMode
-                  ? Icon(
-                      isSelected ? Icons.check_circle : Icons.radio_button_unchecked,
-                      color: isSelected
-                          ? Theme.of(context).colorScheme.primary
-                          : Theme.of(context).colorScheme.outlineVariant,
-                    )
-                  : const SizedBox.shrink(),
-            ),
-          ),
-        );
-      },
+    return Card(
+      margin: const EdgeInsets.symmetric(vertical: 4),
+      child: ListTile(
+        title: Text('${row['name']}'),
+        subtitle: Text(_cardText(row)),
+        selected: isSelected,
+        onLongPress: () => selection.toggleSelection(provider, rowId),
+        onTap: () {
+          if (selection.isSelectionMode) {
+            selection.toggleSelection(provider, rowId);
+          } else {
+            errorWrapper(context, () async {
+              await editRow(context, provider, row, tableName.toLowerCase());
+            });
+          }
+        },
+        trailing: AnimatedSwitcher(
+          duration: const Duration(milliseconds: 200),
+          child: selection.isSelectionMode
+              ? Icon(
+                  isSelected ? Icons.check_circle : Icons.radio_button_unchecked,
+                  color: isSelected
+                      ? Theme.of(context).colorScheme.primary
+                      : Theme.of(context).colorScheme.outlineVariant,
+                )
+              : const SizedBox.shrink(),
+        ),
+      ),
     );
   }
 
   @override
   Widget build(BuildContext context) {
     final provider = _getProvider(context, true);
+    final providerKey = _getProvider(context, false);
     final selectionProvider = context.read<SelectionProvider>();
     final rows = provider.itemList;
     // TODO filter rows according to an optional query
@@ -298,7 +276,7 @@ abstract class DataView extends StatelessWidget {
     // Update provider (in the next frame) with currently visible rows for this table
     final visibleIds = rows.map((row) => row['id'] as int).toSet();
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      selectionProvider.updateVisibleItems(this, visibleIds);
+      selectionProvider.updateVisibleItems(providerKey, visibleIds);
     });
 
     return Column(
@@ -332,7 +310,7 @@ abstract class DataView extends StatelessWidget {
         else if (rows.isEmpty)
           Text('No data')
         else
-          ...rows.map((row) => _buildDataRow(context, row, provider)),
+          ...rows.map((row) => _buildDataRow(context, row, providerKey)),
         const Divider(height: 32),
       ],
     );
@@ -387,11 +365,11 @@ class ClothingDataView extends DataView {
 }
 
 class SelectionProvider extends ChangeNotifier {
-  // Key: table, value: set of row IDs
-  final Map<DataView, Set<int>> visibleItems = {};
-  final Map<DataView, Set<int>> selectedItems = {};
+  // Key: table provider, value: set of row IDs
+  final Map<ItemsProvider, Set<int>> visibleItems = {};
+  final Map<ItemsProvider, Set<int>> selectedItems = {};
 
-  bool isSelected(DataView table, int rowId) => selectedItems[table]?.contains(rowId) ?? false;
+  bool isSelected(ItemsProvider key, int rowId) => selectedItems[key]?.contains(rowId) ?? false;
 
   bool get isSelectionMode => selectedItems.values.any((set) => set.isNotEmpty);
 
@@ -401,26 +379,39 @@ class SelectionProvider extends ChangeNotifier {
   // Total visible rows across all tables
   int get visibleCount => visibleItems.values.fold(0, (sum, set) => sum + set.length);
 
+  // If only a single item is selected, return its key and value
+  MapEntry<ItemsProvider, int>? get singleSelectedItem {
+    // Filter out empty sets
+    final nonEmpty = selectedItems.entries.where((entry) => entry.value.isNotEmpty).toList();
+
+    if (nonEmpty.length == 1 && nonEmpty.first.value.length == 1) {
+      final entry = nonEmpty.first;
+      return MapEntry(entry.key, entry.value.first);
+    }
+
+    return null;
+  }
+
   bool get allSelected =>
       visibleCount > 0 &&
       visibleItems.entries.every(
         (entry) => selectedItems[entry.key]?.containsAll(entry.value) ?? false,
       );
 
-  void updateVisibleItems(DataView table, Set<int> ids) {
-    final oldIds = visibleItems[table] ?? {};
+  void updateVisibleItems(ItemsProvider key, Set<int> ids) {
+    final oldIds = visibleItems[key] ?? {};
     if (!setEquals(oldIds, ids)) {
-      visibleItems[table] = ids;
+      visibleItems[key] = ids;
       notifyListeners(); // Only trigger if changed
     }
   }
 
-  void toggleSelection(DataView table, int rowId) {
-    selectedItems.putIfAbsent(table, () => {});
-    if (selectedItems[table]!.contains(rowId)) {
-      selectedItems[table]!.remove(rowId);
+  void toggleSelection(ItemsProvider key, int rowId) {
+    selectedItems.putIfAbsent(key, () => {});
+    if (selectedItems[key]!.contains(rowId)) {
+      selectedItems[key]!.remove(rowId);
     } else {
-      selectedItems[table]!.add(rowId);
+      selectedItems[key]!.add(rowId);
     }
     notifyListeners();
   }
