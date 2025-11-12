@@ -146,14 +146,14 @@ abstract class DataView extends StatelessWidget {
     final selection = Provider.of<SelectionProvider>(context);
     final rowId = row['id'] as int;
 
-    final selected = selection.isSelected(tableName, rowId);
+    final isSelected = selection.isSelected(tableName, rowId);
 
     return Card(
       margin: const EdgeInsets.symmetric(vertical: 4),
       child: ListTile(
         title: Text('${row['name']}'),
         subtitle: Text(_cardText(row)),
-        selected: selected,
+        selected: isSelected,
         onLongPress: () => selection.toggleSelection(tableName, rowId),
         onTap: () {
           if (selection.isSelectionMode) {
@@ -164,6 +164,17 @@ abstract class DataView extends StatelessWidget {
             });
           }
         },
+        trailing: AnimatedSwitcher(
+          duration: const Duration(milliseconds: 200),
+          child: selection.isSelectionMode
+              ? Icon(
+                  isSelected ? Icons.check_circle : Icons.radio_button_unchecked,
+                  color: isSelected
+                      ? Theme.of(context).colorScheme.primary
+                      : Theme.of(context).colorScheme.outlineVariant,
+                )
+              : const SizedBox.shrink(),
+        ),
       ),
     );
   }
