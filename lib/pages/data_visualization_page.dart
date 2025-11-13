@@ -349,7 +349,7 @@ abstract class DataView extends StatelessWidget {
     return entry;
   }
 
-  /// OVerridable custom rules for children
+  /// Overridable custom rules for children to change details visually only
   MapEntry<String, dynamic>? rowEntryRules(MapEntry<String, dynamic> entry) => entry;
 
   List<Map<String, dynamic>> filterByAnyValue(
@@ -361,10 +361,10 @@ abstract class DataView extends StatelessWidget {
     final query = searchQuery.toLowerCase();
 
     return items.where((item) {
-      // Check if any value contains the query
       return item.values.any((value) {
-        if (value == null) return false;
-        return value.toString().toLowerCase().contains(query);
+        // Process empty null values as if they were null strings
+        final strValue = value?.toString() ?? 'null';
+        return strValue.toLowerCase().contains(query);
       });
     }).toList();
   }
@@ -445,7 +445,7 @@ abstract class DataView extends StatelessWidget {
             ),
           ],
         ),
-        Padding(padding: EdgeInsets.symmetric(vertical: 4)),
+        const SizedBox(width: 8),
         if (provider.isLoading)
           Center(child: CircularProgressIndicator())
         else if (rows.isEmpty)
@@ -478,6 +478,18 @@ class CategoryDataView extends DataView {
   @override
   ItemsProvider getProvider(BuildContext context, bool listen) =>
       Provider.of<CategoryItemsProvider>(context, listen: listen);
+
+  @override
+  MapEntry<String, dynamic>? rowEntryRules(MapEntry<String, dynamic> entry) {
+    String key = entry.key;
+    dynamic value = entry.value;
+    if ((key == 'norm_x' || key == 'norm_y') && value is num) {
+      value = value.toStringAsFixed(2);
+    } else {
+      return entry;
+    }
+    return MapEntry(key, value);
+  }
 }
 
 class ClothingDataView extends DataView {
@@ -495,18 +507,21 @@ class ClothingDataView extends DataView {
     String key = entry.key;
     dynamic value = entry.value;
     if (key == 'min_temp' && value == null) {
+      // Infinite temperatures are still considered null for search filters
       value = '-inf';
     } else if (key == 'max_temp' && value == null) {
       value = 'inf';
     } else if (key == 'activities') {
-      value = '${value?.join(', ')}';
+      value = value?.join(', ');
+    } else {
+      return entry;
     }
     return MapEntry(key, value);
   }
 }
 
 class SelectionProvider extends ChangeNotifier {
-  // Key: table provider, value: set of row IDs
+  // Key: table dataview, value: set of row IDs
   final Map<DataView, Set<int>> visibleItems = {};
   final Map<DataView, Set<int>> selectedItems = {};
 
