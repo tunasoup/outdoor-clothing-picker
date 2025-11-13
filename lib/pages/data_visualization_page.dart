@@ -36,88 +36,128 @@ class DataAppBar extends StatelessWidget implements PreferredSizeWidget {
   @override
   Size get preferredSize => const Size.fromHeight(kToolbarHeight);
 
+  Future<void> _startDuplication(BuildContext context) async {
+    final selectionProvider = context.read<SelectionProvider>();
+    final singleItem = selectionProvider.singleSelectedItem;
+    if (singleItem == null) throw Exception('Only one item should be provided for duplication');
+    final provider = singleItem.key, rowId = singleItem.value;
+    // TODO Currently would need table name and the initial data to call copyRow
+    throw Exception('Not yet implemented');
+  }
+
+  Future<void> _startDeletion(BuildContext context) async {
+    final selectionProvider = context.read<SelectionProvider>();
+    final count = selectionProvider.selectedCount;
+    if (count == 0) return;
+
+    String? msg;
+    // Show a different confirmation message for singe item deletions
+    final singleItem = selectionProvider.singleSelectedItem;
+    if (singleItem != null) {
+      final provider = singleItem.key, rowId = singleItem.value;
+      int referenceCount = await provider.referencedByCount(rowId);
+      msg = createDeleteMessage(id: singleItem.value, referenceCount: referenceCount);
+    } else {
+      msg = createDeleteMessage(itemCount: count);
+    }
+
+    final confirmed = await showDeleteAlert(context, msg);
+    if (!confirmed) return;
+
+    for (final entry in selectionProvider.selectedItems.entries) {
+      final dataView = entry.key;
+      final ids = entry.value;
+      errorWrapper(context, () async {
+        await dataView.deleteItems(ids.toList());
+      });
+    }
+    // Rebuild clothing in case its references were removed
+    await context.read<ClothingItemsProvider>().refresh();
+    selectionProvider.clearSelection();
+  }
+
   @override
   Widget build(BuildContext context) {
     final selectionProvider = context.watch<SelectionProvider>();
     final isSelectionMode = selectionProvider.isSelectionMode;
 
     return AppBar(
+      iconTheme: IconThemeData(size: 28),
+      backgroundColor: Theme.of(context).colorScheme.surfaceContainerHigh,
       title: isSelectionMode
           ? Row(
               children: [
                 Text(
-                  '${selectionProvider.selectedCount}',
+                  '${selectionProvider.selectedCount} Selected',
                   style: Theme.of(context).textTheme.titleLarge,
                 ),
               ],
             )
           : const Text('Data'),
       leading: isSelectionMode
-          ? Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                IconButton(
-                  icon: Icon(
+          ? TextButton(
+              style: TextButton.styleFrom(
+                padding: EdgeInsets.zero,
+                minimumSize: Size(50, 50),
+                tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+              ),
+              onPressed: () {
+                if (selectionProvider.allSelected) {
+                  selectionProvider.clearSelection();
+                } else {
+                  selectionProvider.selectAllVisible();
+                }
+              },
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Icon(
                     selectionProvider.allSelected
                         ? Icons.check_circle
                         : Icons.radio_button_unchecked,
+                    size: 28,
                   ),
-                  tooltip: selectionProvider.allSelected ? 'Cancel selection' : 'Select all',
-                  onPressed: () {
-                    if (selectionProvider.allSelected) {
-                      selectionProvider.clearSelection();
-                    } else {
-                      selectionProvider.selectAllVisible();
-                    }
-                  },
-                ),
-                // const Text('All', style: TextStyle(fontSize: 12)),
-              ],
+                  Text('All', style: TextStyle(fontSize: 10)),
+                ],
+              ),
             )
           : null,
       actions: [
-        if (isSelectionMode)
-          IconButton(
-            icon: Icon(Icons.delete, color: Theme.of(context).colorScheme.error),
-            tooltip: 'Delete selected',
-            onPressed: () async {
-              final count = selectionProvider.selectedCount;
-              if (count == 0) return;
-
-              String? msg;
-              // Show a different confirmation message for singe item deletions
-              final singleItem = selectionProvider.singleSelectedItem;
-              if (singleItem != null) {
-                final provider = singleItem.key, rowId = singleItem.value;
-                int referenceCount = await provider.referencedByCount(rowId);
-                msg = createDeleteMessage(id: singleItem.value, referenceCount: referenceCount);
-              } else {
-                msg = createDeleteMessage(itemCount: count);
-              }
-
-              final confirmed = await showDeleteAlert(context, msg);
-              if (!confirmed) return;
-
-              for (final entry in selectionProvider.selectedItems.entries) {
-                final dataView = entry.key;
-                final ids = entry.value;
-                errorWrapper(context, () async {
-                  await dataView.deleteItems(ids.toList());
-                });
-              }
-              // Rebuild clothing in case its references were removed
-              await context.read<ClothingItemsProvider>().refresh();
-              selectionProvider.clearSelection();
-            },
-          )
-        else
-          IconButton(
-            icon: const Icon(Icons.search),
-            tooltip: 'Search',
-            onPressed: () {
-              // TODO: implement search
-            },
-          ),
+        Padding(
+          padding: const EdgeInsets.only(right: 16.0),
+          child: isSelectionMode
+              ? Row(
+                  children: [
+                    IconButton(
+                      icon: Icon(Icons.delete, color: Theme.of(context).colorScheme.error),
+                      tooltip: 'Delete selected',
+                      onPressed: () {
+                        errorWrapper(context, () async {
+                          await _startDeletion(context);
+                        });
+                      },
+                    ),
+                    IconButton(
+                      icon: Icon(Icons.copy),
+                      tooltip: 'Copy selected',
+                      onPressed: selectionProvider.selectedCount != 1
+                          ? null
+                          : () {
+                              errorWrapper(context, () async {
+                                await _startDuplication(context);
+                              });
+                            },
+                    ),
+                  ],
+                )
+              : IconButton(
+                  icon: const Icon(Icons.search),
+                  tooltip: 'Search',
+                  onPressed: () {
+                    // TODO: implement search
+                  },
+                ),
+        ),
       ],
     );
   }
