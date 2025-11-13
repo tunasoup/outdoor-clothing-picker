@@ -117,8 +117,8 @@ class _DataAppBarState extends State<DataAppBar> {
     for (final entry in selectionProvider.selectedItems.entries) {
       final dataView = entry.key;
       final ids = entry.value;
-      errorWrapper(context, () async {
-        await dataView.deleteItems(ids.toList());
+      await errorWrapper(context, () async {
+        await dataView.getProvider(context, false).deleteItems(ids.toList());
       });
     }
     // Rebuild clothing in case its references were removed
@@ -189,8 +189,8 @@ class _DataAppBarState extends State<DataAppBar> {
                     IconButton(
                       icon: Icon(Icons.delete, color: Theme.of(context).colorScheme.error),
                       tooltip: 'Delete selected',
-                      onPressed: () {
-                        errorWrapper(context, () async {
+                      onPressed: () async {
+                        await errorWrapper(context, () async {
                           await _startDeletion(context);
                         });
                       },
@@ -200,8 +200,8 @@ class _DataAppBarState extends State<DataAppBar> {
                       tooltip: 'Copy selected',
                       onPressed: selectionProvider.selectedCount != 1
                           ? null
-                          : () {
-                              errorWrapper(context, () async {
+                          : () async {
+                              await errorWrapper(context, () async {
                                 await _startDuplication(context);
                               });
                             },
@@ -372,12 +372,12 @@ abstract class DataView extends StatelessWidget {
         title: Text('${row['name']}'),
         subtitle: Text(_cardText(row)),
         selected: isSelected,
-        onLongPress: () => selection.toggleSelection(provider, rowId),
-        onTap: () {
+        onLongPress: () => selection.toggleSelection(this, rowId),
+        onTap: () async {
           if (selection.isSelectionMode) {
             selection.toggleSelection(provider, rowId);
           } else {
-            errorWrapper(context, () async {
+            await errorWrapper(context, () async {
               await editRow(context, provider, row, tableName.toLowerCase());
             });
           }

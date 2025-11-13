@@ -91,7 +91,7 @@ class WeatherEditor extends StatelessWidget {
     WeatherViewModel viewModel,
     String? temperature,
   ) async {
-    errorWrapper(context, () async {
+    await errorWrapper(context, () async {
       Navigator.pop(context, true);
       await viewModel.setManualTemperature(temperature!);
     });
@@ -132,7 +132,7 @@ class GetWeatherButton extends StatelessWidget {
           ),
           onPressed: viewModel.isLoading
               ? null
-              : () => errorWrapper(context, viewModel.tryFetchWeather),
+              : () async => await errorWrapper(context, viewModel.tryFetchWeather),
           child: viewModel.isLoading
               ? const SizedBox(
                   width: 16,
