@@ -40,7 +40,7 @@ class _ClothingPageState extends State<ClothingPage> {
       body: SafeArea(
         child: RefreshIndicator(
           onRefresh: () async =>
-              errorWrapper(context, () => context.read<WeatherViewModel>().refresh()),
+              await errorWrapper(context, () => context.read<WeatherViewModel>().refresh()),
           child: SingleChildScrollView(
             // Required by refresh indicator for large screens
             physics: const AlwaysScrollableScrollPhysics(),

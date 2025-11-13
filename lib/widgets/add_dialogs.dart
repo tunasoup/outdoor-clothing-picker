@@ -37,7 +37,7 @@ class ActivityDialog extends StatelessWidget {
   }
 
   Future<void> _submitForm(BuildContext context, ActivityDialogController controller) async {
-    errorWrapper(context, () async {
+    await errorWrapper(context, () async {
       if (await controller.submitForm()) {
         Navigator.pop(context, true);
         await Provider.of<ActivityItemsProvider>(context, listen: false).refresh();
@@ -162,8 +162,8 @@ class CategoryDialog extends StatelessWidget {
                     child: Text('Cancel'),
                   ),
                   ElevatedButton(
-                    onPressed: () {
-                      errorWrapper(context, () async {
+                    onPressed: () async {
+                      await errorWrapper(context, () async {
                         if (await controller.submitForm()) {
                           Navigator.pop(context, true);
                           await Provider.of<CategoryItemsProvider>(
@@ -325,8 +325,8 @@ class ClothingDialog extends StatelessWidget {
                     child: Text('Cancel'),
                   ),
                   ElevatedButton(
-                    onPressed: () {
-                      errorWrapper(context, () async {
+                    onPressed: () async {
+                      await errorWrapper(context, () async {
                         if (await controller.submitForm()) {
                           Navigator.pop(context, true);
                           await Provider.of<ClothingItemsProvider>(
