@@ -66,23 +66,35 @@ clothingWithCategory: SELECT cl.* FROM clothing cl
 INNER JOIN categories ca on cl.category_id = ca.id
 WHERE ca.id == :category_id;
 
--- duplicateActivityClothing: INSERT INTO clothing (name, min_temp, max_temp, category, activity)
--- SELECT name, min_temp, max_temp, category, :new_activity
--- FROM clothing
--- WHERE activity = :old_activity;
+-- Duplicate clothing references from an old activity to a new one
+duplicateClothingActivity: INSERT INTO clothing_activities (clothing_id, activity_id)
+SELECT clothing_id, :new_activity_id
+FROM clothing_activities
+WHERE activity_id = :old_activity_id
+  AND clothing_id NOT IN (
+    SELECT clothing_id
+    FROM clothing_activities
+    WHERE activity_id = :new_activity_id
+  );
 
--- duplicateCategoryClothing: INSERT INTO clothing (name, min_temp, max_temp, category)
--- SELECT name, min_temp, max_temp, :new_category
--- FROM clothing
---  WHERE category = :old_category;
+duplicateCategoryClothing: INSERT INTO clothing (name, min_temp, max_temp, category_id)
+SELECT name, min_temp, max_temp, :new_category_id
+FROM clothing
+WHERE category_id = :old_category_id;
 
--- changeClothingActivity: UPDATE clothing
--- SET activity = :new_activity
--- WHERE activity = :old_activity;
+-- Change old activity id references to the new one while ignoring possible duplicates
+changeClothingActivity: UPDATE clothing_activities
+SET activity_id = :new_activity_id
+WHERE activity_id = :old_activity_id
+  AND clothing_id NOT IN (
+    SELECT clothing_id
+    FROM clothing_activities
+    WHERE activity_id = :new_activity_id
+  );
 
--- changeClothingCategory: UPDATE clothing
--- SET category = :new_category
--- WHERE category = :old_category;
+changeClothingCategory: UPDATE clothing
+SET category_id = :new_category_id
+WHERE category_id = :old_category_id;
 
 updateActivity: UPDATE activities
 SET name = :name

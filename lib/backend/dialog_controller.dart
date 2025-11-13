@@ -92,28 +92,23 @@ class ActivityDialogController extends DialogController {
   String getCheckboxLabel() => switch (mode) {
     DialogMode.add => '',
     DialogMode.edit => 'Merge with an existing activity?',
-    DialogMode.copy => 'Also duplicate referenced clothing?',
+    DialogMode.copy => 'Also add activity to referenced clothing?',
   };
 
   Future<void> _handleEdit() async {
     if (isBoxChecked) {
-      // TODO update
-      throw Exception('Not yet implemented');
-      // Find the case-sensitive version of the merge target (allows running and RunNIng inputs)
-      String? canonicalName = findCaseInsensitiveMatch(availableActivities, _name!);
-      // await db.changeClothingActivity(canonicalName!, initialName);
-      // await db.deleteActivity(_id!);
+      int targetId = (await db.activityFromName(_name!).getSingle()).id;
+      await db.changeClothingActivity(targetId, _id!);
+      await db.deleteActivities([_id]);
     } else {
       await db.updateActivity(_name!, _id!);
     }
   }
 
   Future<void> _handleCopy() async {
-    await db.insertActivity(_name!);
+    int actId = await db.insertActivity(_name!);
     if (isBoxChecked) {
-      // TODO update
-      throw Exception('Not yet implemented');
-      // await db.duplicateActivityClothing(_name!, initialName!);
+      await db.duplicateClothingActivity(actId, _id!);
     }
   }
 
@@ -208,13 +203,10 @@ class CategoryDialogController extends DialogController {
 
   Future<void> _handleEdit() async {
     if (isBoxChecked) {
-      // TODO update
-      throw Exception('Not yet implemented');
-      // Find the case-sensitive version of the merge target (allows torso and TorSO inputs)
-      String? canonicalName = findCaseInsensitiveMatch(availableCategories, _name!);
       // The data of _initialName is used, current form coordinates are ignored
-      // await db.changeClothingCategory(canonicalName!, initialName);
-      // await db.deleteCategory(_id!);
+      int targetId = (await db.categoryFromName(_name!).getSingle()).id;
+      await db.changeClothingCategory(targetId, _id!);
+      await db.deleteCategories([_id]);
     } else {
       await db.updateCategory(_name!, _normX!, _normY!, _id!);
     }
@@ -223,9 +215,8 @@ class CategoryDialogController extends DialogController {
   Future<void> _handleCopy() async {
     await db.insertCategory(_name!, _normX!, _normY!);
     if (isBoxChecked) {
-      // TODO update
-      throw Exception('Not yet implemented');
-      // await db.duplicateCategoryClothing(_name!, initialName!);
+      int targetId = (await db.categoryFromName(_name!).getSingle()).id;
+      await db.duplicateCategoryClothing(targetId, _id!);
     }
   }
 
