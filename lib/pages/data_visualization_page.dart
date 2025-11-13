@@ -320,13 +320,27 @@ abstract class DataView extends StatelessWidget {
   ItemsProvider _getProvider(BuildContext context, bool listen);
 
   String _cardText(Map<String, dynamic> row) {
-    // TODO hide id in release
     return row.entries
-        .map((e) {
-          return '${e.key}: ${e.value}';
-        })
+        .map(modifyRowEntry)
+        .where((e) => e != null) // Remove skipped pairs
+        .map((e) => '${e!.key}: ${e.value}')
         .join(', ');
   }
+
+  MapEntry<String, dynamic>? modifyRowEntry(MapEntry<String, dynamic> entry) {
+    final base = _applyBaseRules(entry);
+    if (base == null) return null;
+    return rowEntryRules(base);
+  }
+
+  MapEntry<String, dynamic>? _applyBaseRules(MapEntry<String, dynamic> entry) {
+    // Hide id in release
+    if (entry.key == 'id' && !kDebugMode) return null;
+    return entry;
+  }
+
+  /// OVerridable custom rules for children
+  MapEntry<String, dynamic>? rowEntryRules(MapEntry<String, dynamic> entry) => entry;
 
   List<Map<String, dynamic>> filterByAnyValue(
     List<Map<String, dynamic>> items,
@@ -468,17 +482,17 @@ class ClothingDataView extends DataView {
       Provider.of<ClothingItemsProvider>(context, listen: listen);
 
   @override
-  String _cardText(Map<String, dynamic> row) {
-    return row.entries
-        .map((e) {
-          final key = e.key;
-          final value = e.value;
-          if (key == 'min_temp' && value == null) return '$key: -inf';
-          if (key == 'max_temp' && value == null) return '$key: inf';
-          if (key == 'activities') return '$key: ${value?.join(', ')}';
-          return '$key: $value';
-        })
-        .join(', ');
+  MapEntry<String, dynamic>? rowEntryRules(MapEntry<String, dynamic> entry) {
+    String key = entry.key;
+    dynamic value = entry.value;
+    if (key == 'min_temp' && value == null) {
+      value = '-inf';
+    } else if (key == 'max_temp' && value == null) {
+      value = 'inf';
+    } else if (key == 'activities') {
+      value = '${value?.join(', ')}';
+    }
+    return MapEntry(key, value);
   }
 }
 
