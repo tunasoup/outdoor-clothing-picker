@@ -35,6 +35,14 @@ abstract class ItemsProvider extends ChangeNotifier {
     final ids = [id];
     await deleteItems(ids);
   }
+
+  Map<String, dynamic>? itemById(int id) {
+    try {
+      return itemList.firstWhere((item) => item['id'] == id);
+    } catch (_) {
+      return null;
+    }
+  }
 }
 
 class ActivityItemsProvider extends ItemsProvider {

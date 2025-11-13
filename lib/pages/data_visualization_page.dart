@@ -88,9 +88,15 @@ class _DataAppBarState extends State<DataAppBar> {
     final selectionProvider = context.read<SelectionProvider>();
     final singleItem = selectionProvider.singleSelectedItem;
     if (singleItem == null) throw Exception('Only one item should be provided for duplication');
-    final provider = singleItem.key, rowId = singleItem.value;
-    // TODO Currently would need table name and the initial data to call copyRow
-    throw Exception('Not yet implemented');
+    final dataView = singleItem.key, rowId = singleItem.value;
+    final provider = dataView.getProvider(context, false);
+    final tableName = dataView.tableName;
+    final item = provider.itemById(rowId);
+    if (item == null) throw Exception('Got null item during duplication');
+    await errorWrapper(context, () async {
+      final success = await copyRow(context, provider, item, tableName);
+      if (success) selectionProvider.clearSelection();
+    });
   }
 
   Future<void> _startDeletion(BuildContext context) async {
@@ -102,11 +108,11 @@ class _DataAppBarState extends State<DataAppBar> {
     // Show a different confirmation message for singe item deletions
     final singleItem = selectionProvider.singleSelectedItem;
     if (singleItem != null) {
-      final provider = singleItem.key, rowId = singleItem.value;
+      final dataView = singleItem.key, rowId = singleItem.value;
+      final provider = dataView.getProvider(context, false);
       int referenceCount = await provider.referencedByCount(rowId);
-      // TODO whole data could be obtained via provider itemList with id, but copyRow still
-      //  needs tablename, so wait for its solution
-      msg = createDeleteMessage(id: singleItem.value, referenceCount: referenceCount);
+      final item = provider.itemById(rowId);
+      msg = createDeleteMessage(singular: item, referenceCount: referenceCount);
     } else {
       msg = createDeleteMessage(itemCount: count);
     }
@@ -221,17 +227,21 @@ class _DataAppBarState extends State<DataAppBar> {
   }
 }
 
-String createDeleteMessage({int? itemCount, int? id, int referenceCount = 0}) {
-  if ((itemCount == null || itemCount < 1) && id == null) {
-    throw ArgumentError('Either positive itemCount or id must be provided.');
-  } else if (itemCount != null && id != null) {
-    throw ArgumentError('Only itemCount or id must be provided.');
+String createDeleteMessage({
+  int? itemCount,
+  Map<String, dynamic>? singular,
+  int referenceCount = 0,
+}) {
+  if ((itemCount == null || itemCount < 1) && singular == null) {
+    throw ArgumentError('Either positive itemCount or singular must be provided.');
+  } else if (itemCount != null && singular != null) {
+    throw ArgumentError('Only itemCount or singular must be provided.');
   }
 
   String msg = 'You are about to delete ';
-  if (id != null) {
+  if (singular != null) {
     msg += 'the following data item:';
-    msg += '\n$id'; // TODO include whole data contents and not just id
+    msg += '\n$singular';
     if (referenceCount > 0) {
       msg += '\nThe item affects $referenceCount clothing item(s).';
     }
@@ -280,14 +290,14 @@ Future<bool> showDeleteAlert(BuildContext context, String message) async {
       false;
 }
 
-Future<void> copyRow(
+Future<bool> copyRow(
   BuildContext context,
   ItemsProvider provider,
   Map<String, dynamic> data,
   String tableName,
 ) async {
   if (kDebugMode) debugPrint('Copy $provider data: $data');
-  await showRowDialog(
+  return await showRowDialog(
     context: context,
     tableName: tableName.toLowerCase(),
     mode: DialogMode.copy,
@@ -317,7 +327,7 @@ abstract class DataView extends StatelessWidget {
 
   String get tableName;
 
-  ItemsProvider _getProvider(BuildContext context, bool listen);
+  ItemsProvider getProvider(BuildContext context, bool listen);
 
   String _cardText(Map<String, dynamic> row) {
     return row.entries
@@ -363,7 +373,7 @@ abstract class DataView extends StatelessWidget {
     final selection = Provider.of<SelectionProvider>(context);
     final rowId = row['id'] as int;
 
-    final isSelected = selection.isSelected(provider, rowId);
+    final isSelected = selection.isSelected(this, rowId);
 
     // FIXME something closer to root causes unnecessary rebuilds
     return Card(
@@ -375,7 +385,7 @@ abstract class DataView extends StatelessWidget {
         onLongPress: () => selection.toggleSelection(this, rowId),
         onTap: () async {
           if (selection.isSelectionMode) {
-            selection.toggleSelection(provider, rowId);
+            selection.toggleSelection(this, rowId);
           } else {
             await errorWrapper(context, () async {
               await editRow(context, provider, row, tableName.toLowerCase());
@@ -399,8 +409,7 @@ abstract class DataView extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final provider = _getProvider(context, true);
-    final providerKey = _getProvider(context, false);
+    final provider = getProvider(context, true);
     final selectionProvider = context.read<SelectionProvider>();
     List<Map<String, dynamic>> rows = provider.itemList;
     rows = filterByAnyValue(rows, searchQuery);
@@ -408,7 +417,7 @@ abstract class DataView extends StatelessWidget {
     // Update provider (in the next frame) with currently visible rows for this table
     final visibleIds = rows.map((row) => row['id'] as int).toSet();
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      selectionProvider.updateVisibleItems(providerKey, visibleIds);
+      selectionProvider.updateVisibleItems(this, visibleIds);
     });
 
     return Column(
@@ -442,7 +451,7 @@ abstract class DataView extends StatelessWidget {
         else if (rows.isEmpty)
           Text('No data')
         else
-          ...rows.map((row) => _buildDataRow(context, row, providerKey)),
+          ...rows.map((row) => _buildDataRow(context, row, provider)),
         const Divider(height: 32),
       ],
     );
@@ -456,7 +465,7 @@ class ActivityDataView extends DataView {
   String get tableName => "Activities";
 
   @override
-  ItemsProvider _getProvider(BuildContext context, bool listen) =>
+  ItemsProvider getProvider(BuildContext context, bool listen) =>
       Provider.of<ActivityItemsProvider>(context, listen: listen);
 }
 
@@ -467,7 +476,7 @@ class CategoryDataView extends DataView {
   String get tableName => "Categories";
 
   @override
-  ItemsProvider _getProvider(BuildContext context, bool listen) =>
+  ItemsProvider getProvider(BuildContext context, bool listen) =>
       Provider.of<CategoryItemsProvider>(context, listen: listen);
 }
 
@@ -478,7 +487,7 @@ class ClothingDataView extends DataView {
   String get tableName => "Clothing";
 
   @override
-  ItemsProvider _getProvider(BuildContext context, bool listen) =>
+  ItemsProvider getProvider(BuildContext context, bool listen) =>
       Provider.of<ClothingItemsProvider>(context, listen: listen);
 
   @override
@@ -498,10 +507,10 @@ class ClothingDataView extends DataView {
 
 class SelectionProvider extends ChangeNotifier {
   // Key: table provider, value: set of row IDs
-  final Map<ItemsProvider, Set<int>> visibleItems = {};
-  final Map<ItemsProvider, Set<int>> selectedItems = {};
+  final Map<DataView, Set<int>> visibleItems = {};
+  final Map<DataView, Set<int>> selectedItems = {};
 
-  bool isSelected(ItemsProvider key, int rowId) => selectedItems[key]?.contains(rowId) ?? false;
+  bool isSelected(DataView key, int rowId) => selectedItems[key]?.contains(rowId) ?? false;
 
   bool get isSelectionMode => selectedItems.values.any((set) => set.isNotEmpty);
 
@@ -512,7 +521,7 @@ class SelectionProvider extends ChangeNotifier {
   int get visibleCount => visibleItems.values.fold(0, (sum, set) => sum + set.length);
 
   // If only a single item is selected, return its key and value
-  MapEntry<ItemsProvider, int>? get singleSelectedItem {
+  MapEntry<DataView, int>? get singleSelectedItem {
     // Filter out empty sets
     final nonEmpty = selectedItems.entries.where((entry) => entry.value.isNotEmpty).toList();
 
@@ -530,7 +539,7 @@ class SelectionProvider extends ChangeNotifier {
         (entry) => selectedItems[entry.key]?.containsAll(entry.value) ?? false,
       );
 
-  void updateVisibleItems(ItemsProvider key, Set<int> ids) {
+  void updateVisibleItems(DataView key, Set<int> ids) {
     final oldIds = visibleItems[key] ?? {};
     if (!setEquals(oldIds, ids)) {
       visibleItems[key] = ids;
@@ -538,7 +547,7 @@ class SelectionProvider extends ChangeNotifier {
     }
   }
 
-  void toggleSelection(ItemsProvider key, int rowId) {
+  void toggleSelection(DataView key, int rowId) {
     selectedItems.putIfAbsent(key, () => {});
     if (selectedItems[key]!.contains(rowId)) {
       selectedItems[key]!.remove(rowId);
