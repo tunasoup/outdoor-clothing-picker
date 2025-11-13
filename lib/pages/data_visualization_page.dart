@@ -15,26 +15,74 @@ class DataVisualizationPage extends StatefulWidget {
 }
 
 class _DataVisualizationPageState extends State<DataVisualizationPage> {
+  String? searchQuery;
+
+  void _searchCallback(String query) {
+    setState(() => searchQuery = query);
+  }
+
   @override
   Widget build(BuildContext context) {
     return ChangeNotifierProvider(
       create: (_) => SelectionProvider(),
       child: Scaffold(
-        appBar: DataAppBar(),
+        appBar: DataAppBar(searchCallback: _searchCallback),
         body: ListView(
           padding: const EdgeInsets.all(16),
-          children: [ActivityDataView(), CategoryDataView(), ClothingDataView()],
+          children: [
+            ActivityDataView(searchQuery: searchQuery),
+            CategoryDataView(searchQuery: searchQuery),
+            ClothingDataView(searchQuery: searchQuery),
+          ],
         ),
       ),
     );
   }
 }
 
-class DataAppBar extends StatelessWidget implements PreferredSizeWidget {
-  const DataAppBar({super.key});
+class DataAppBar extends StatefulWidget implements PreferredSizeWidget {
+  final ValueChanged<String> searchCallback;
+
+  const DataAppBar({super.key, required this.searchCallback});
+
+  @override
+  State<DataAppBar> createState() => _DataAppBarState();
 
   @override
   Size get preferredSize => const Size.fromHeight(kToolbarHeight);
+}
+
+class _DataAppBarState extends State<DataAppBar> {
+  bool _isSearching = false;
+  bool _shouldAutofocus = false;
+  final TextEditingController _searchController = TextEditingController();
+
+  void _startSearch() {
+    setState(() {
+      _isSearching = true;
+      _shouldAutofocus = true;
+    });
+  }
+
+  void _stopSearch() {
+    setState(() {
+      _isSearching = false;
+      _shouldAutofocus = false;
+      _searchController.clear();
+      widget.searchCallback('');
+    });
+  }
+
+  void _onSubmitted(String query) {
+    _shouldAutofocus = false;
+    widget.searchCallback(query);
+  }
+
+  @override
+  void dispose() {
+    _searchController.dispose();
+    super.dispose();
+  }
 
   Future<void> _startDuplication(BuildContext context) async {
     final selectionProvider = context.read<SelectionProvider>();
@@ -56,6 +104,8 @@ class DataAppBar extends StatelessWidget implements PreferredSizeWidget {
     if (singleItem != null) {
       final provider = singleItem.key, rowId = singleItem.value;
       int referenceCount = await provider.referencedByCount(rowId);
+      // TODO whole data could be obtained via provider itemList with id, but copyRow still
+      //  needs tablename, so wait for its solution
       msg = createDeleteMessage(id: singleItem.value, referenceCount: referenceCount);
     } else {
       msg = createDeleteMessage(itemCount: count);
@@ -92,6 +142,14 @@ class DataAppBar extends StatelessWidget implements PreferredSizeWidget {
                   style: Theme.of(context).textTheme.titleLarge,
                 ),
               ],
+            )
+          : _isSearching
+          ? TextField(
+              controller: _searchController,
+              autofocus: _shouldAutofocus,
+              decoration: const InputDecoration(hintText: 'Search...', border: InputBorder.none),
+              textInputAction: TextInputAction.search,
+              onChanged: _onSubmitted,
             )
           : const Text('Data'),
       leading: isSelectionMode
@@ -150,12 +208,12 @@ class DataAppBar extends StatelessWidget implements PreferredSizeWidget {
                     ),
                   ],
                 )
+              : _isSearching
+              ? IconButton(icon: const Icon(Icons.close), onPressed: _stopSearch)
               : IconButton(
                   icon: const Icon(Icons.search),
                   tooltip: 'Search',
-                  onPressed: () {
-                    // TODO: implement search
-                  },
+                  onPressed: _startSearch,
                 ),
         ),
       ],
@@ -253,18 +311,38 @@ Future<void> editRow(
 }
 
 abstract class DataView extends StatelessWidget {
-  const DataView({super.key});
+  final String? searchQuery;
+
+  const DataView({super.key, this.searchQuery});
 
   String get tableName;
 
   ItemsProvider _getProvider(BuildContext context, bool listen);
 
   String _cardText(Map<String, dynamic> row) {
+    // TODO hide id in release
     return row.entries
         .map((e) {
           return '${e.key}: ${e.value}';
         })
         .join(', ');
+  }
+
+  List<Map<String, dynamic>> filterByAnyValue(
+    List<Map<String, dynamic>> items,
+    String? searchQuery,
+  ) {
+    if (searchQuery == null || searchQuery.isEmpty) return items;
+
+    final query = searchQuery.toLowerCase();
+
+    return items.where((item) {
+      // Check if any value contains the query
+      return item.values.any((value) {
+        if (value == null) return false;
+        return value.toString().toLowerCase().contains(query);
+      });
+    }).toList();
   }
 
   Widget _buildDataRow(BuildContext context, Map<String, dynamic> row, ItemsProvider provider) {
@@ -310,8 +388,8 @@ abstract class DataView extends StatelessWidget {
     final provider = _getProvider(context, true);
     final providerKey = _getProvider(context, false);
     final selectionProvider = context.read<SelectionProvider>();
-    final rows = provider.itemList;
-    // TODO filter rows according to an optional query
+    List<Map<String, dynamic>> rows = provider.itemList;
+    rows = filterByAnyValue(rows, searchQuery);
 
     // Update provider (in the next frame) with currently visible rows for this table
     final visibleIds = rows.map((row) => row['id'] as int).toSet();
@@ -358,7 +436,7 @@ abstract class DataView extends StatelessWidget {
 }
 
 class ActivityDataView extends DataView {
-  const ActivityDataView({super.key});
+  const ActivityDataView({super.key, super.searchQuery});
 
   @override
   String get tableName => "Activities";
@@ -369,7 +447,7 @@ class ActivityDataView extends DataView {
 }
 
 class CategoryDataView extends DataView {
-  const CategoryDataView({super.key});
+  const CategoryDataView({super.key, super.searchQuery});
 
   @override
   String get tableName => "Categories";
@@ -380,7 +458,7 @@ class CategoryDataView extends DataView {
 }
 
 class ClothingDataView extends DataView {
-  const ClothingDataView({super.key});
+  const ClothingDataView({super.key, super.searchQuery});
 
   @override
   String get tableName => "Clothing";
