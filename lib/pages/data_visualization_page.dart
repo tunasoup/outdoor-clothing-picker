@@ -181,7 +181,7 @@ class _DataAppBarState extends State<DataAppBar> {
                         : Icons.radio_button_unchecked,
                     size: 28,
                   ),
-                  Text('All', style: TextStyle(fontSize: 10)),
+                  const Text('All', style: TextStyle(fontSize: 10)),
                 ],
               ),
             )
@@ -369,91 +369,104 @@ abstract class DataView extends StatelessWidget {
     }).toList();
   }
 
-  Widget _buildDataRow(BuildContext context, Map<String, dynamic> row, ItemsProvider provider) {
-    final selection = Provider.of<SelectionProvider>(context);
-    final rowId = row['id'] as int;
-
-    final isSelected = selection.isSelected(this, rowId);
-
-    // FIXME something closer to root causes unnecessary rebuilds
-    return Card(
-      margin: const EdgeInsets.symmetric(vertical: 4),
-      child: ListTile(
-        title: Text('${row['name']}'),
-        subtitle: Text(_cardText(row)),
-        selected: isSelected,
-        onLongPress: () => selection.toggleSelection(this, rowId),
-        onTap: () async {
-          if (selection.isSelectionMode) {
-            selection.toggleSelection(this, rowId);
-          } else {
-            await errorWrapper(context, () async {
-              await editRow(context, provider, row, tableName.toLowerCase());
-            });
-          }
-        },
-        trailing: AnimatedSwitcher(
-          duration: const Duration(milliseconds: 200),
-          child: selection.isSelectionMode
-              ? Icon(
-                  isSelected ? Icons.check_circle : Icons.radio_button_unchecked,
-                  color: isSelected
-                      ? Theme.of(context).colorScheme.primary
-                      : Theme.of(context).colorScheme.outlineVariant,
-                )
-              : const SizedBox.shrink(),
+  Widget _buildHeader(BuildContext context, ItemsProvider provider) {
+    return Row(
+      children: [
+        Text(tableName.toUpperCase(), style: Theme.of(context).textTheme.titleLarge),
+        const SizedBox(width: 8),
+        ElevatedButton(
+          onPressed: provider.isLoading
+              ? null
+              : () async {
+                  await showRowDialog(
+                    context: context,
+                    tableName: tableName.toLowerCase(),
+                    mode: DialogMode.add,
+                  );
+                },
+          style: ElevatedButton.styleFrom(
+            backgroundColor: Theme.of(context).colorScheme.primaryContainer,
+            foregroundColor: Theme.of(context).colorScheme.onPrimaryContainer,
+          ),
+          child: const Text('Add New'),
         ),
-      ),
+      ],
+    );
+  }
+
+  Widget _buildDataRow(BuildContext context, Map<String, dynamic> row, ItemsProvider provider) {
+    final rowId = row['id'] as int;
+    return Selector<SelectionProvider, bool>(
+      selector: (_, p) => p.isSelected(this, rowId),
+      builder: (_, isSelected, _) {
+        final selectionProvider = context.read<SelectionProvider>();
+        final isSelectionMode = selectionProvider.isSelectionMode;
+
+        return Card(
+          margin: const EdgeInsets.symmetric(vertical: 4),
+          child: ListTile(
+            title: Text('${row['name']}'),
+            subtitle: Text(_cardText(row)),
+            selected: isSelected,
+            onLongPress: () => selectionProvider.toggleSelection(this, rowId),
+            onTap: () async {
+              if (isSelectionMode) {
+                selectionProvider.toggleSelection(this, rowId);
+              } else {
+                await errorWrapper(context, () async {
+                  await editRow(context, provider, row, tableName.toLowerCase());
+                });
+              }
+            },
+            trailing: AnimatedSwitcher(
+              duration: const Duration(milliseconds: 200),
+              child: isSelectionMode
+                  ? Icon(
+                      isSelected ? Icons.check_circle : Icons.radio_button_unchecked,
+                      color: isSelected
+                          ? Theme.of(context).colorScheme.primary
+                          : Theme.of(context).colorScheme.outlineVariant,
+                    )
+                  : const SizedBox.shrink(),
+            ),
+          ),
+        );
+      },
     );
   }
 
   @override
   Widget build(BuildContext context) {
     final provider = getProvider(context, true);
-    final selectionProvider = context.read<SelectionProvider>();
-    List<Map<String, dynamic>> rows = provider.itemList;
-    rows = filterByAnyValue(rows, searchQuery);
+    return Selector<SelectionProvider, bool>(
+      selector: (_, p) => p.isSelectionMode,
+      builder: (_, isSelectionMode, _) {
+        List<Map<String, dynamic>> rows = provider.itemList;
+        rows = filterByAnyValue(rows, searchQuery);
 
-    // Update provider (in the next frame) with currently visible rows for this table
-    final visibleIds = rows.map((row) => row['id'] as int).toSet();
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      selectionProvider.updateVisibleItems(this, visibleIds);
-    });
+        // Update provider (in the next frame) with currently visible rows for this table
+        final visibleIds = rows.map((row) => row['id'] as int).toSet();
+        final selectionProvider = context.read<SelectionProvider>();
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          selectionProvider.updateVisibleItems(this, visibleIds);
+        });
 
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Row(
+        // TODO: using a listview builder would be more efficient for large lists
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text(tableName.toUpperCase(), style: Theme.of(context).textTheme.titleLarge),
+            _buildHeader(context, provider),
             const SizedBox(width: 8),
-            ElevatedButton(
-              onPressed: provider.isLoading
-                  ? null
-                  : () async {
-                      await showRowDialog(
-                        context: context,
-                        tableName: tableName.toLowerCase(),
-                        mode: DialogMode.add,
-                      );
-                    },
-              style: ElevatedButton.styleFrom(
-                backgroundColor: Theme.of(context).colorScheme.primaryContainer,
-                foregroundColor: Theme.of(context).colorScheme.onPrimaryContainer,
-              ),
-              child: const Text('Add New'),
-            ),
+            if (provider.isLoading)
+              Center(child: CircularProgressIndicator())
+            else if (rows.isEmpty)
+              const Text('No data')
+            else
+              ...rows.map((row) => _buildDataRow(context, row, provider)),
+            const Divider(height: 32),
           ],
-        ),
-        const SizedBox(width: 8),
-        if (provider.isLoading)
-          Center(child: CircularProgressIndicator())
-        else if (rows.isEmpty)
-          Text('No data')
-        else
-          ...rows.map((row) => _buildDataRow(context, row, provider)),
-        const Divider(height: 32),
-      ],
+        );
+      },
     );
   }
 }
