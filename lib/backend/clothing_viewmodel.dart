@@ -1,3 +1,4 @@
+import 'package:collection/collection.dart';
 import 'package:flutter/foundation.dart';
 import 'package:outdoor_clothing_picker/backend/utils.dart';
 import 'package:outdoor_clothing_picker/database/database.dart';
@@ -61,21 +62,14 @@ class ClothingViewModel extends ChangeNotifier {
       return;
     }
 
-    List<category> categories = await _db.allCategories().get();
     _valid = await _db.validClothing(_temperature!, _activity!).get();
-    Map<String, ValidClothingResult?> outfit = {};
-    for (var category in categories) {
-      final categoryItems = _valid.where((item) => item.categoryName == category.name).toList();
-      if (categoryItems.isNotEmpty) {
-        // If there are multiple items, choose the first
-        // TODO: Choose the first chosen based on temperature range
-        // TODO: Store all valid items, make interactable (tap for list or arrows)
-        outfit[category.name] = categoryItems.first;
-      } else {
-        outfit[category.name] = null;
-      }
-    }
-    _filtered = outfit.values.whereType<ValidClothingResult>().toList();
+    final validCategoryClothing = groupBy(_valid, (ValidClothingResult v) => v.categoryName);
+
+    // Choose the first item for each available category
+    // TODO: sort based on temperature range first
+    _filtered = validCategoryClothing.entries.map((e) => e.value.first).toList();
+    // TODO: Make interactable, allowing switching between valid items
+
     notifyListeners();
   }
 }
