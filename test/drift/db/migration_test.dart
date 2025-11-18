@@ -80,7 +80,9 @@ void main() {
     ),
   ];
 
-  final v3ClothingActivitiesData = [v3.ClothingActivitiesData(clothingId: 1, activityId: 1)];
+  final v3ClothingActivitiesData = [
+    v3.ClothingActivitiesData(clothingId: 1, activityId: 1),
+  ];
 
   // The following template shows how to write tests ensuring your migrations
   // preserve existing data.
@@ -125,7 +127,10 @@ void main() {
         expect(v3CategoriesData, await newDb.select(newDb.categories).get());
         expect(v3ActivitiesData, await newDb.select(newDb.activities).get());
         expect(v3ClothingData, await newDb.select(newDb.clothing).get());
-        expect(v3ClothingActivitiesData, await newDb.select(newDb.clothingActivities).get());
+        expect(
+          v3ClothingActivitiesData,
+          await newDb.select(newDb.clothingActivities).get(),
+        );
       },
     );
   });
