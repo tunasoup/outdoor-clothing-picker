@@ -41,6 +41,7 @@ dependencies:
   geolocator: ^14.0.2
   geocoding: ^4.0.0
   shared_preferences: ^2.5.3
+  weather_icons: ^3.0.0
 
 dev_dependencies:
   flutter_test:

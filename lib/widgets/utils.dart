@@ -1,4 +1,6 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:weather_icons/weather_icons.dart';
 
 /// Wrapper for showing a snackbar of a possible error when running [action].
 Future<void> errorWrapper(BuildContext context, Future<void> Function() action) async {
@@ -13,5 +15,29 @@ Future<void> errorWrapper(BuildContext context, Future<void> Function() action) 
         duration: Duration(seconds: 5),
       ),
     );
+  }
+}
+
+IconData? iconFromCondition(String? condition) {
+  // OWM main conditions
+  switch (condition?.toLowerCase()) {
+    case 'thunderstorm':
+      return WeatherIcons.storm_showers;
+    case 'drizzle':
+    case 'rain':
+      return WeatherIcons.rain_wind;
+    case 'snow':
+      return WeatherIcons.snow;
+    case 'clear':
+      return WeatherIcons.day_sunny;
+    case 'clouds':
+      return WeatherIcons.cloudy;
+    case 'atmosphere':
+      return WeatherIcons.fog;
+    case null:
+      return Icons.error_outline;
+    default:
+      if (kDebugMode) debugPrint('Unknown weather condition: $condition');
+      return Icons.error_outline;
   }
 }

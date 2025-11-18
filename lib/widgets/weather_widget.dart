@@ -41,10 +41,14 @@ class _WeatherWidgetState extends State<WeatherWidget> {
                   mainAxisAlignment: MainAxisAlignment.center,
                   crossAxisAlignment: CrossAxisAlignment.center,
                   children: [
-                    Icon(Icons.ac_unit, size: 48, color: colorScheme.onPrimaryContainer),
+                    Icon(
+                      iconFromCondition(viewModel.mainCondition),
+                      size: 48,
+                      color: colorScheme.onPrimaryContainer,
+                    ),
                     const SizedBox(width: 16),
                     Text(
-                      '${viewModel.temperature?.round() ?? -100}°C',
+                      '${viewModel.temperature?.round() ?? '-'}°C',
                       style: TextStyle(
                         fontSize: 48,
                         fontWeight: FontWeight.bold,
