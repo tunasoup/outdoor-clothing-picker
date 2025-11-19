@@ -229,6 +229,7 @@ class CategoryDialogViewModel extends DialogViewModel {
     if (isBoxChecked) {
       int targetId = (await db.categoryFromName(_name!).getSingle()).id;
       await db.duplicateCategoryClothing(targetId, _id!);
+      // TODO: also need to add new activity links
     }
     await clothingProvider.refresh();
   }

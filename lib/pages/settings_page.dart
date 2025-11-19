@@ -91,11 +91,11 @@ class ThemeSelectorTile extends StatelessWidget {
       trailing: Switch.adaptive(
         value: isDarkMode,
         onChanged: (_) async {
-          await Provider.of<ThemeProvider>(context, listen: false).toggleTheme();
+          await themeProvider.toggleTheme();
         },
       ),
       onTap: () async {
-        await Provider.of<ThemeProvider>(context, listen: false).toggleTheme();
+        await themeProvider.toggleTheme();
       },
     );
   }

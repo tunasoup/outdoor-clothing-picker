@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+/// Define pages for navigation widgets.
 const List<NavigationDestination> destinations = <NavigationDestination>[
   NavigationDestination(
     icon: Icon(Icons.man),
@@ -18,6 +19,7 @@ const List<NavigationDestination> destinations = <NavigationDestination>[
   ),
 ];
 
+/// Convert navigation destinations for use in Navigation Rail.
 List<NavigationRailDestination> navigationRailDestinations = destinations
     .map(
       (d) => NavigationRailDestination(

@@ -4,6 +4,7 @@ import 'package:outdoor_clothing_picker/backend/weather_model.dart';
 import 'package:outdoor_clothing_picker/backend/weather_service.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
+/// Manages and provides weather information obtained manually or via [_weatherService].
 class WeatherViewModel extends ChangeNotifier {
   final WeatherService _weatherService;
 
@@ -66,8 +67,8 @@ class WeatherViewModel extends ChangeNotifier {
 
   double? get temperature => isUsingManual ? _manualTemperature : _apiTemperature;
 
-  /// Override the current temperature with the given [value] in string format, or reset if null
-  /// is provided.
+  /// Override the current temperature with the provided [value] in string format, or reset if
+  /// null.
   Future<void> setManualTemperature(String? value) async {
     final prefs = await SharedPreferences.getInstance();
     if (value == null) {
@@ -81,6 +82,7 @@ class WeatherViewModel extends ChangeNotifier {
     notifyListeners();
   }
 
+  /// Override the current weather information with the provided [weather], or reset if null.
   Future<void> setApiWeather(Weather? weather) async {
     _cityName = weather?.cityName;
     _apiTemperature = weather?.temperature;
@@ -95,6 +97,7 @@ class WeatherViewModel extends ChangeNotifier {
     }
   }
 
+  /// Try to fetch weather without waiting for it.
   Future<void> refresh() {
     return tryFetchWeather();
   }

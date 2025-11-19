@@ -1,3 +1,5 @@
+/// Keys for shared_preferences package, used for saving/loading user settings
+/// and small data.
 class PrefKeys {
   static const String activity = 'clothing_selected_activity';
   static const String darkMode = 'settings_dark_mode_bool';
