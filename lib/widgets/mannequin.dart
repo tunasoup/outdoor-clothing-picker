@@ -130,10 +130,11 @@ class _MannequinState extends State<Mannequin> with WidgetsBindingObserver {
                             backgroundColor: circleColor,
                           )
                         : ClothingPainter(
-                            viewModel.filteredClothing,
-                            overlayColor,
-                            circleColor,
-                            figureRect!,
+                            constraints: constraints,
+                            clothing: viewModel.filteredClothing,
+                            foregroundColor: overlayColor,
+                            backgroundColor: circleColor,
+                            figureRect: figureRect!,
                           ),
                     size: Size(constraints.maxWidth, constraints.maxHeight),
                   ),
@@ -146,14 +147,21 @@ class _MannequinState extends State<Mannequin> with WidgetsBindingObserver {
   }
 }
 
-/// Draw the selected clothing labels on top of the figure.
+/// Draw the selected [clothing] labels on top of the [figureRect].
 class ClothingPainter extends CustomPainter {
+  final BoxConstraints constraints;
   final List<ValidClothingResult> clothing;
   final Color foregroundColor;
   final Color backgroundColor;
   final Rect figureRect;
 
-  ClothingPainter(this.clothing, this.foregroundColor, this.backgroundColor, this.figureRect);
+  ClothingPainter({
+    required this.constraints,
+    required this.clothing,
+    required this.foregroundColor,
+    required this.backgroundColor,
+    required this.figureRect,
+  });
 
   @override
   void paint(Canvas canvas, Size size) {
@@ -161,27 +169,28 @@ class ClothingPainter extends CustomPainter {
 
     final innerLinePaint = Paint()
       ..color = foregroundColor
-      ..strokeWidth = 1;
+      ..strokeWidth = 2;
 
     final outerLinePaint = Paint()
       ..color = backgroundColor
-      ..strokeWidth = 2;
+      ..strokeWidth = 4;
 
     // TODO: convert to interactable widget which allows cycling through valid category clothing
     for (var item in clothing) {
       final startX = figureRect.left + item.normX * figureRect.width;
       final y = figureRect.top + item.normY * figureRect.height;
 
-      // Place label at 70% or 30% width with a slight gap to the line
+      // Place label at around 70% or 30% width with a slight gap to the line
       final bool isLeft = item.normX < 0.5;
       final double startMult = isLeft ? 0.3 : 0.7;
-      final int labelGap = isLeft ? -10 : 10;
-      final labelX = size.width * startMult;
+      final lineEndX = size.width * startMult;
+      final double labelGap = 4.0; // Distance between line and text
 
       // Draw horizontal line from figure to label
-      canvas.drawLine(Offset(startX, y), Offset(labelX + labelGap, y), outerLinePaint);
-      canvas.drawLine(Offset(startX, y), Offset(labelX + labelGap, y), innerLinePaint);
-      // TODO: draw diagonal starting lines if too close to other visible categories
+      canvas.drawLine(Offset(startX, y), Offset(lineEndX, y), outerLinePaint);
+      canvas.drawLine(Offset(startX, y), Offset(lineEndX, y), innerLinePaint);
+      // TODO: draw diagonal starting lines if too close to other visible categories, also
+      //  automate the decision for left or right side
 
       // Draw label text
       final textPainter = TextPainter(
@@ -190,10 +199,26 @@ class ClothingPainter extends CustomPainter {
           style: TextStyle(color: foregroundColor, fontSize: 16),
         ),
         textDirection: TextDirection.ltr,
+        maxLines: 2,
+        ellipsis: '..',
       );
-      textPainter.layout();
-      final textWidth = isLeft ? textPainter.width : 0;
-      textPainter.paint(canvas, Offset(labelX - textWidth + labelGap, y - textPainter.height / 2));
+
+      // Calculate the start position and maximum allowed space for the label so that it fits the
+      // screen on both sides
+      double maxWidth;
+      double labelStartX;
+      if (isLeft) {
+        final labelEndX = (lineEndX - labelGap);
+        maxWidth = labelEndX - constraints.minWidth;
+        textPainter.layout(maxWidth: maxWidth);
+        labelStartX = labelEndX - textPainter.width;
+      } else {
+        labelStartX = lineEndX + labelGap;
+        maxWidth = constraints.maxWidth - labelStartX;
+        textPainter.layout(maxWidth: maxWidth);
+      }
+
+      textPainter.paint(canvas, Offset(labelStartX, y - textPainter.height / 2));
     }
   }
 
