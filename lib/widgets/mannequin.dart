@@ -161,10 +161,15 @@ class ClothingPainter extends CustomPainter {
     for (var item in clothing) {
       final startX = figureRect.left + item.normX * figureRect.width;
       final y = figureRect.top + item.normY * figureRect.height;
-      final labelX = size.width * 0.7; // Place label at 70% width
+
+      // Place label at 70% or 30% width with a slight gap to the line
+      final bool isLeft = item.normX < 0.5;
+      final double startMult = isLeft ? 0.3 : 0.7;
+      final int labelGap = isLeft ? -10 : 10;
+      final labelX = size.width * startMult;
 
       // Draw horizontal line from figure to label
-      canvas.drawLine(Offset(startX, y), Offset(labelX - 10, y), linePaint);
+      canvas.drawLine(Offset(startX, y), Offset(labelX + labelGap, y), linePaint);
 
       // Draw label text
       final textPainter = TextPainter(
@@ -175,7 +180,8 @@ class ClothingPainter extends CustomPainter {
         textDirection: TextDirection.ltr,
       );
       textPainter.layout();
-      textPainter.paint(canvas, Offset(labelX, y - textPainter.height / 2));
+      final textWidth = isLeft ? textPainter.width : 0;
+      textPainter.paint(canvas, Offset(labelX - textWidth + labelGap, y - textPainter.height / 2));
     }
   }
 
