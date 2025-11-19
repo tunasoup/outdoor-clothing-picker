@@ -68,7 +68,7 @@ class _ClothingPageState extends State<ClothingPage> {
   }
 }
 
-/// Menu for starting the creation of items to the [db].
+/// Menu for starting the creation of items to the database.
 Future<void> showAddMenu({required BuildContext context, required GlobalKey anchorKey}) async {
   // Get the position of the button to anchor the menu
   final RenderBox renderBox = anchorKey.currentContext!.findRenderObject() as RenderBox;
@@ -91,7 +91,7 @@ Future<void> showAddMenu({required BuildContext context, required GlobalKey anch
     ],
   );
 
-  // If user selected an item
+  // Open user selected dialog
   if (selected != null) {
     bool success = await showRowDialog(
       context: context,
@@ -106,6 +106,7 @@ Future<void> showAddMenu({required BuildContext context, required GlobalKey anch
   }
 }
 
+/// Dropdown for the user to choose the selected activity for clothing filtering.
 class ActivityDropdown extends StatelessWidget {
   final String? initialValue;
   final void Function(String?) onChanged;
@@ -125,9 +126,15 @@ class ActivityDropdown extends StatelessWidget {
         return DropdownButtonFormField<String>(
           initialValue: initialValue,
           items: provider.names
-              .map((item) => DropdownMenuItem(value: item, child: Text(item)))
+              .map(
+                (item) => DropdownMenuItem(
+                  value: item,
+                  child: Text(item, overflow: TextOverflow.clip),
+                ),
+              )
               .toList(),
           onChanged: onChanged,
+          isExpanded: true,
           decoration: InputDecoration(labelText: text),
         );
       },

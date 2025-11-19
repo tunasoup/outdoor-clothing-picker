@@ -63,6 +63,8 @@ class _WeatherWidgetState extends State<WeatherWidget> {
                     Text(
                       viewModel.cityName ?? 'Unknown City',
                       textAlign: TextAlign.center,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
                       style: TextStyle(fontSize: 16, color: colorScheme.onPrimaryContainer),
                     ),
                     Text(
