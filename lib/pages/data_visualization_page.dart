@@ -6,6 +6,27 @@ import 'package:outdoor_clothing_picker/widgets/add_dialogs.dart';
 import 'package:outdoor_clothing_picker/widgets/utils.dart';
 import 'package:provider/provider.dart';
 
+// TODO: finish conversion to listview builder and delete obsolete code
+// FIXME: select all does not rebuild cards
+abstract class DataListItem {}
+
+class DataHeaderItem extends DataListItem {
+  final String tableName;
+  final ItemsProvider provider;
+  final VoidCallback onAdd;
+
+  DataHeaderItem(this.tableName, this.provider, this.onAdd);
+}
+
+class DataRowItem extends DataListItem {
+  final DataView dataView;
+  final Map<String, dynamic> row;
+
+  DataRowItem(this.dataView, this.row);
+}
+
+class DataDividerItem extends DataListItem {}
+
 /// The Data visualization page shows the contents of the local data and allows modifying it.
 class DataVisualizationPage extends StatefulWidget {
   const DataVisualizationPage({super.key});
@@ -25,19 +46,131 @@ class _DataVisualizationPageState extends State<DataVisualizationPage> {
   Widget build(BuildContext context) {
     return ChangeNotifierProvider(
       create: (_) => SelectionProvider(),
-      child: Scaffold(
-        appBar: DataAppBar(searchCallback: _searchCallback),
-        body: ListView(
-          padding: const EdgeInsets.all(16),
-          children: [
-            ActivityDataView(searchQuery: searchQuery),
-            CategoryDataView(searchQuery: searchQuery),
-            ClothingDataView(searchQuery: searchQuery),
-          ],
-        ),
-      ),
+      child: _DataVisualizationContent(searchQuery: searchQuery, searchCallback: _searchCallback),
     );
   }
+}
+
+class _DataVisualizationContent extends StatelessWidget {
+  final String? searchQuery;
+  final ValueChanged<String> searchCallback;
+
+  const _DataVisualizationContent({required this.searchQuery, required this.searchCallback});
+
+  @override
+  Widget build(BuildContext context) {
+    final activityProvider = Provider.of<ActivityItemsProvider>(context);
+    final categoryProvider = Provider.of<CategoryItemsProvider>(context);
+    final clothingProvider = Provider.of<ClothingItemsProvider>(context);
+
+    // Filter items by searchQuery
+    final activityRows = const ActivityDataView().filterByAnyValue(
+      activityProvider.itemList,
+      searchQuery,
+    );
+    final categoryRows = const CategoryDataView().filterByAnyValue(
+      categoryProvider.itemList,
+      searchQuery,
+    );
+    final clothingRows = const ClothingDataView().filterByAnyValue(
+      clothingProvider.itemList,
+      searchQuery,
+    );
+
+    // Update visible items for selection
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      final selectionProvider = context.read<SelectionProvider>();
+      selectionProvider.updateVisibleItems(
+        const ActivityDataView(),
+        activityRows.map((row) => row['id'] as int).toSet(),
+      );
+      selectionProvider.updateVisibleItems(
+        const CategoryDataView(),
+        categoryRows.map((row) => row['id'] as int).toSet(),
+      );
+      selectionProvider.updateVisibleItems(
+        const ClothingDataView(),
+        clothingRows.map((row) => row['id'] as int).toSet(),
+      );
+    });
+
+    // Build the flattened list
+    final List<DataListItem> items = [
+      DataHeaderItem('Activities', activityProvider, () {
+        showRowDialog(context: context, tableName: 'activities', mode: DialogMode.add);
+      }),
+      ...activityRows.map((row) => DataRowItem(const ActivityDataView(), row)),
+      DataDividerItem(),
+      DataHeaderItem('Categories', categoryProvider, () {
+        showRowDialog(context: context, tableName: 'categories', mode: DialogMode.add);
+      }),
+      ...categoryRows.map((row) => DataRowItem(const CategoryDataView(), row)),
+      DataDividerItem(),
+      DataHeaderItem('Clothing', clothingProvider, () {
+        showRowDialog(context: context, tableName: 'clothing', mode: DialogMode.add);
+      }),
+      ...clothingRows.map((row) => DataRowItem(const ClothingDataView(), row)),
+      DataDividerItem(),
+    ];
+
+    return Selector<SelectionProvider, bool>(
+      selector: (_, p) => p.isSelectionMode,
+      builder: (_, isSelectionMode, _) {
+        return Scaffold(
+          appBar: DataAppBar(searchCallback: searchCallback),
+          body: ListView.builder(
+            padding: const EdgeInsets.all(16),
+            itemCount: items.length,
+            itemBuilder: (context, index) {
+              final item = items[index];
+              if (item is DataHeaderItem) {
+                return Row(
+                  children: [
+                    Text(
+                      item.tableName.toUpperCase(),
+                      style: Theme.of(context).textTheme.titleLarge,
+                    ),
+                    const SizedBox(width: 8),
+                    ElevatedButton(
+                      onPressed: item.provider.isLoading ? null : item.onAdd,
+                      child: const Text('Add New'),
+                    ),
+                  ],
+                );
+              } else if (item is DataRowItem) {
+                return item.dataView._buildDataRow(
+                  context,
+                  item.row,
+                  item.dataView.getProvider(context, false),
+                );
+              } else if (item is DataDividerItem) {
+                return const Divider(height: 32);
+              }
+              return const SizedBox.shrink();
+            },
+          ),
+        );
+      },
+    );
+  }
+
+  // @override
+  // Widget build2(BuildContext context) {
+  //   return ChangeNotifierProvider(
+  //     create: (_) => SelectionProvider(),
+  //     child: Scaffold(
+  //       appBar: DataAppBar(searchCallback: _searchCallback),
+  //       body: ListView(
+  //         padding: const EdgeInsets.all(16),
+  //         children: [
+  //           ActivityDataView(searchQuery: searchQuery),
+  //           CategoryDataView(searchQuery: searchQuery),
+  //           ClothingDataView(searchQuery: searchQuery),
+  //         ],
+  //       ),
+  //     ),
+  //   );
+  // }
 }
 
 class DataAppBar extends StatefulWidget implements PreferredSizeWidget {
@@ -330,6 +463,7 @@ abstract class DataView extends StatelessWidget {
   ItemsProvider getProvider(BuildContext context, bool listen);
 
   String _cardText(Map<String, dynamic> row) {
+    debugPrint('card text build');
     return row.entries
         .map(modifyRowEntry)
         .where((e) => e != null) // Remove skipped pairs
@@ -451,7 +585,6 @@ abstract class DataView extends StatelessWidget {
           selectionProvider.updateVisibleItems(this, visibleIds);
         });
 
-        // TODO: using a listview builder would be more efficient for large lists
         return Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
