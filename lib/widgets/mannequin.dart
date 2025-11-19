@@ -90,6 +90,7 @@ class _MannequinState extends State<Mannequin> with WidgetsBindingObserver {
     final viewModel = context.watch<ClothingViewModel>();
     final overlayColor = Theme.of(context).colorScheme.onPrimaryContainer;
     final circleColor = Theme.of(context).colorScheme.primaryContainer;
+    final figureColor = Theme.of(context).colorScheme.onSurfaceVariant;
 
     return LayoutBuilder(
       builder: (context, constraints) {
@@ -117,10 +118,7 @@ class _MannequinState extends State<Mannequin> with WidgetsBindingObserver {
           child: Stack(
             key: _stackKey,
             children: [
-              Center(
-                // child: _addIcon(context, constraints, _figureKey)
-                child: _addSvg(context, constraints, _figureKey),
-              ),
+              Center(child: _addSvg(constraints, figureColor, _figureKey)),
               if (figureRect != null)
                 RepaintBoundary(
                   child: CustomPaint(
@@ -131,7 +129,12 @@ class _MannequinState extends State<Mannequin> with WidgetsBindingObserver {
                             foregroundColor: overlayColor,
                             backgroundColor: circleColor,
                           )
-                        : ClothingPainter(viewModel.filteredClothing, overlayColor, figureRect!),
+                        : ClothingPainter(
+                            viewModel.filteredClothing,
+                            overlayColor,
+                            circleColor,
+                            figureRect!,
+                          ),
                     size: Size(constraints.maxWidth, constraints.maxHeight),
                   ),
                 ),
@@ -146,18 +149,25 @@ class _MannequinState extends State<Mannequin> with WidgetsBindingObserver {
 /// Draw the selected clothing labels on top of the figure.
 class ClothingPainter extends CustomPainter {
   final List<ValidClothingResult> clothing;
-  final Color color;
+  final Color foregroundColor;
+  final Color backgroundColor;
   final Rect figureRect;
 
-  ClothingPainter(this.clothing, this.color, this.figureRect);
+  ClothingPainter(this.clothing, this.foregroundColor, this.backgroundColor, this.figureRect);
 
   @override
   void paint(Canvas canvas, Size size) {
-    final linePaint = Paint()
-      ..color = color
-      ..strokeWidth = 2;
     if (kDebugMode) print('Painting');
 
+    final innerLinePaint = Paint()
+      ..color = foregroundColor
+      ..strokeWidth = 1;
+
+    final outerLinePaint = Paint()
+      ..color = backgroundColor
+      ..strokeWidth = 2;
+
+    // TODO: convert to interactable widget which allows cycling through valid category clothing
     for (var item in clothing) {
       final startX = figureRect.left + item.normX * figureRect.width;
       final y = figureRect.top + item.normY * figureRect.height;
@@ -169,13 +179,15 @@ class ClothingPainter extends CustomPainter {
       final labelX = size.width * startMult;
 
       // Draw horizontal line from figure to label
-      canvas.drawLine(Offset(startX, y), Offset(labelX + labelGap, y), linePaint);
+      canvas.drawLine(Offset(startX, y), Offset(labelX + labelGap, y), outerLinePaint);
+      canvas.drawLine(Offset(startX, y), Offset(labelX + labelGap, y), innerLinePaint);
+      // TODO: draw diagonal starting lines if too close to other visible categories
 
       // Draw label text
       final textPainter = TextPainter(
         text: TextSpan(
           text: item.name,
-          style: TextStyle(color: color, fontSize: 16),
+          style: TextStyle(color: foregroundColor, fontSize: 16),
         ),
         textDirection: TextDirection.ltr,
       );
@@ -189,7 +201,7 @@ class ClothingPainter extends CustomPainter {
   bool shouldRepaint(covariant ClothingPainter oldDelegate) {
     // Note that theme change causes an animation with more than just the initial and final color
     return !listEquals(oldDelegate.clothing, clothing) ||
-        oldDelegate.color != color ||
+        oldDelegate.foregroundColor != foregroundColor ||
         oldDelegate.figureRect != figureRect;
   }
 }
@@ -243,8 +255,8 @@ class CirclePainter extends CustomPainter {
 }
 
 Widget _addIcon(
-  BuildContext context,
   BoxConstraints constraints,
+  Color color,
   GlobalKey key, {
   IconData icon = Icons.man,
 }) {
@@ -254,14 +266,14 @@ Widget _addIcon(
     size: constraints.maxWidth < constraints.maxHeight
         ? constraints.maxWidth
         : constraints.maxHeight,
-    color: Theme.of(context).colorScheme.onSurfaceVariant,
+    color: color,
     blendMode: BlendMode.srcIn,
   );
 }
 
 Widget _addSvg(
-  BuildContext context,
   BoxConstraints constraints,
+  Color color,
   GlobalKey key, {
   String assetName = 'assets/images/silhouette.svg',
 }) {
@@ -275,6 +287,6 @@ Widget _addSvg(
         ? constraints.maxWidth
         : constraints.maxHeight,
     fit: BoxFit.contain,
-    colorFilter: ColorFilter.mode(Theme.of(context).colorScheme.onSurfaceVariant, BlendMode.srcIn),
+    colorFilter: ColorFilter.mode(color, BlendMode.srcIn),
   );
 }
