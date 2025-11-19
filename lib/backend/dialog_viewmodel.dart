@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:outdoor_clothing_picker/backend/items_provider.dart';
 import 'package:outdoor_clothing_picker/database/database.dart';
 
 enum DialogMode { add, edit, copy }
@@ -43,14 +44,17 @@ abstract class DialogViewModel {
 }
 
 class ActivityDialogViewModel extends DialogViewModel {
-  final List<String> availableActivities;
+  final ActivityItemsProvider activityProvider;
+  final ClothingItemsProvider clothingProvider;
+  late final List<String> availableActivities;
 
   ActivityDialogViewModel({
     required super.db,
     required super.mode,
     super.initialData,
-    required this.availableActivities,
-  });
+    required this.activityProvider,
+    required this.clothingProvider,
+  }) : availableActivities = activityProvider.names;
 
   String? _name;
 
@@ -103,12 +107,14 @@ class ActivityDialogViewModel extends DialogViewModel {
     } else {
       await db.updateActivity(_name!, _id!);
     }
+    await clothingProvider.refresh();
   }
 
   Future<void> _handleCopy() async {
     int actId = await db.insertActivity(_name!);
     if (isBoxChecked) {
       await db.duplicateClothingActivity(actId, _id!);
+      await clothingProvider.refresh();
     }
   }
 
@@ -121,6 +127,7 @@ class ActivityDialogViewModel extends DialogViewModel {
         DialogMode.edit => _handleEdit(),
         DialogMode.copy => _handleCopy(),
       };
+      await activityProvider.refresh();
       return true;
     }
     return false;
@@ -128,7 +135,9 @@ class ActivityDialogViewModel extends DialogViewModel {
 }
 
 class CategoryDialogViewModel extends DialogViewModel {
-  final List<String> availableCategories;
+  final CategoryItemsProvider categoryProvider;
+  final ClothingItemsProvider clothingProvider;
+  late final List<String> availableCategories;
   late final double? _initialNormX;
   late final double? _initialNormY;
 
@@ -136,8 +145,10 @@ class CategoryDialogViewModel extends DialogViewModel {
     required super.db,
     required super.mode,
     super.initialData,
-    required this.availableCategories,
-  }) : _initialNormX = initialData?['norm_x'],
+    required this.categoryProvider,
+    required this.clothingProvider,
+  }) : availableCategories = categoryProvider.names,
+       _initialNormX = initialData?['norm_x'],
        _initialNormY = initialData?['norm_y'];
 
   String? _name;
@@ -210,6 +221,7 @@ class CategoryDialogViewModel extends DialogViewModel {
     } else {
       await db.updateCategory(_name!, _normX!, _normY!, _id!);
     }
+    await clothingProvider.refresh();
   }
 
   Future<void> _handleCopy() async {
@@ -218,6 +230,7 @@ class CategoryDialogViewModel extends DialogViewModel {
       int targetId = (await db.categoryFromName(_name!).getSingle()).id;
       await db.duplicateCategoryClothing(targetId, _id!);
     }
+    await clothingProvider.refresh();
   }
 
   @override
@@ -229,6 +242,7 @@ class CategoryDialogViewModel extends DialogViewModel {
         DialogMode.edit => _handleEdit(),
         DialogMode.copy => _handleCopy(),
       };
+      await categoryProvider.refresh();
       return true;
     }
     return false;
@@ -236,16 +250,21 @@ class CategoryDialogViewModel extends DialogViewModel {
 }
 
 class ClothingDialogViewModel extends DialogViewModel {
+  final ClothingItemsProvider clothingProvider;
   late final int? initialMinTemp;
   late final int? initialMaxTemp;
   late final List<String>? initialActivities;
   late final String? initialCategory;
 
-  ClothingDialogViewModel({required super.db, required super.mode, super.initialData})
-    : initialMinTemp = initialData?['min_temp'],
-      initialMaxTemp = initialData?['max_temp'],
-      initialActivities = initialData?['activities'],
-      initialCategory = initialData?['category'];
+  ClothingDialogViewModel({
+    required super.db,
+    required super.mode,
+    super.initialData,
+    required this.clothingProvider,
+  }) : initialMinTemp = initialData?['min_temp'],
+       initialMaxTemp = initialData?['max_temp'],
+       initialActivities = initialData?['activities'],
+       initialCategory = initialData?['category'];
 
   String? _name;
   int? _minTemp;
@@ -336,6 +355,7 @@ class ClothingDialogViewModel extends DialogViewModel {
           await changeClothingActivities(db, _id!, _activities, initialActivities);
           break;
       }
+      await clothingProvider.refresh();
       return true;
     }
     return false;

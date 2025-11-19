@@ -21,12 +21,14 @@ class ActivityDialog extends StatelessWidget {
       builder: (context) {
         return Provider(
           create: (context) {
-            final itemsProvider = context.read<ActivityItemsProvider>();
+            final activityProvider = context.read<ActivityItemsProvider>();
+            final clothingProvider = context.read<ClothingItemsProvider>();
             return ActivityDialogViewModel(
               db: db,
               mode: mode,
               initialData: initialData,
-              availableActivities: itemsProvider.names,
+              activityProvider: activityProvider,
+              clothingProvider: clothingProvider,
             );
           },
           child: ActivityDialog(mode: mode, initialData: initialData),
@@ -40,11 +42,6 @@ class ActivityDialog extends StatelessWidget {
     await errorWrapper(context, () async {
       if (await vm.submitForm()) {
         Navigator.pop(context, true);
-        await Provider.of<ActivityItemsProvider>(context, listen: false).refresh();
-        if (vm.mode != DialogMode.add) {
-          // Refresh clothing in case references changed
-          await Provider.of<ClothingItemsProvider>(context, listen: false).refresh();
-        }
       }
     });
   }
@@ -112,12 +109,14 @@ class CategoryDialog extends StatelessWidget {
       builder: (context) {
         return Provider(
           create: (context) {
-            final itemsProvider = context.read<CategoryItemsProvider>();
+            final categoryProvider = context.read<CategoryItemsProvider>();
+            final clothingProvider = context.read<ClothingItemsProvider>();
             return CategoryDialogViewModel(
               db: db,
               mode: mode,
               initialData: initialData,
-              availableCategories: itemsProvider.names,
+              categoryProvider: categoryProvider,
+              clothingProvider: clothingProvider,
             );
           },
           child: CategoryDialog(mode: mode, initialData: initialData),
@@ -162,17 +161,6 @@ class CategoryDialog extends StatelessWidget {
                       await errorWrapper(context, () async {
                         if (await vm.submitForm()) {
                           Navigator.pop(context, true);
-                          await Provider.of<CategoryItemsProvider>(
-                            context,
-                            listen: false,
-                          ).refresh();
-                          if (vm.mode != DialogMode.add) {
-                            // Refresh clothing in case references changed
-                            await Provider.of<ClothingItemsProvider>(
-                              context,
-                              listen: false,
-                            ).refresh();
-                          }
                         }
                       });
                     },
@@ -247,12 +235,17 @@ class ClothingDialog extends StatelessWidget {
 
   Future<bool> show(BuildContext context) async {
     final AppDb db = context.read<AppDb>();
-    // TODO: disable or add a warning if there are no categories or activities
     final success = await showDialog<bool>(
       context: context,
       builder: (context) {
+        final clothingProvider = context.read<ClothingItemsProvider>();
         return Provider(
-          create: (_) => ClothingDialogViewModel(db: db, mode: mode, initialData: initialData),
+          create: (_) => ClothingDialogViewModel(
+            db: db,
+            mode: mode,
+            initialData: initialData,
+            clothingProvider: clothingProvider,
+          ),
           child: ClothingDialog(mode: mode),
         );
       },
@@ -325,10 +318,6 @@ class ClothingDialog extends StatelessWidget {
                       await errorWrapper(context, () async {
                         if (await vm.submitForm()) {
                           Navigator.pop(context, true);
-                          await Provider.of<ClothingItemsProvider>(
-                            context,
-                            listen: false,
-                          ).refresh();
                         }
                       });
                     },
