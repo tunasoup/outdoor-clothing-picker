@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:outdoor_clothing_picker/backend/dialog_controller.dart';
+import 'package:outdoor_clothing_picker/backend/dialog_viewmodel.dart';
 import 'package:outdoor_clothing_picker/backend/items_provider.dart';
 import 'package:outdoor_clothing_picker/database/database.dart';
 import 'package:outdoor_clothing_picker/widgets/mannequin.dart';
@@ -22,7 +22,7 @@ class ActivityDialog extends StatelessWidget {
         return Provider(
           create: (context) {
             final itemsProvider = context.read<ActivityItemsProvider>();
-            return ActivityDialogController(
+            return ActivityDialogViewModel(
               db: db,
               mode: mode,
               initialData: initialData,
@@ -36,12 +36,12 @@ class ActivityDialog extends StatelessWidget {
     return success ?? false;
   }
 
-  Future<void> _submitForm(BuildContext context, ActivityDialogController controller) async {
+  Future<void> _submitForm(BuildContext context, ActivityDialogViewModel vm) async {
     await errorWrapper(context, () async {
-      if (await controller.submitForm()) {
+      if (await vm.submitForm()) {
         Navigator.pop(context, true);
         await Provider.of<ActivityItemsProvider>(context, listen: false).refresh();
-        if (controller.mode != DialogMode.add) {
+        if (vm.mode != DialogMode.add) {
           // Refresh clothing in case references changed
           await Provider.of<ClothingItemsProvider>(context, listen: false).refresh();
         }
@@ -51,29 +51,29 @@ class ActivityDialog extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final controller = context.read<ActivityDialogController>();
+    final vm = context.read<ActivityDialogViewModel>();
 
     return AlertDialog(
-      title: Text(controller.getTitle()),
+      title: Text(vm.getTitle()),
       content: Form(
-        key: controller.formKey,
+        key: vm.formKey,
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
             TextFormField(
-              initialValue: controller.initialName,
+              initialValue: vm.initialName,
               decoration: InputDecoration(labelText: 'Activity Name'),
-              validator: controller.validateName,
-              onSaved: controller.saveName,
-              autofocus: controller.mode == DialogMode.add,
+              validator: vm.validateName,
+              onSaved: vm.saveName,
+              autofocus: vm.mode == DialogMode.add,
               onFieldSubmitted: (_) async {
-                if (controller.mode == DialogMode.add) {
-                  await _submitForm(context, controller);
+                if (vm.mode == DialogMode.add) {
+                  await _submitForm(context, vm);
                 }
               },
             ),
-            if (controller.mode case DialogMode.copy || DialogMode.edit)
-              CheckboxFormField(context: context, controller: controller),
+            if (vm.mode case DialogMode.copy || DialogMode.edit)
+              CheckboxFormField(context: context, vm: vm),
             Padding(padding: EdgeInsets.all(16.0)),
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -81,7 +81,7 @@ class ActivityDialog extends StatelessWidget {
                 TextButton(onPressed: () => Navigator.pop(context, false), child: Text('Cancel')),
                 ElevatedButton(
                   onPressed: () async {
-                    await _submitForm(context, controller);
+                    await _submitForm(context, vm);
                   },
                   child: Text('Save'),
                 ),
@@ -113,7 +113,7 @@ class CategoryDialog extends StatelessWidget {
         return Provider(
           create: (context) {
             final itemsProvider = context.read<CategoryItemsProvider>();
-            return CategoryDialogController(
+            return CategoryDialogViewModel(
               db: db,
               mode: mode,
               initialData: initialData,
@@ -129,30 +129,26 @@ class CategoryDialog extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final controller = context.read<CategoryDialogController>();
+    final vm = context.read<CategoryDialogViewModel>();
 
     return AlertDialog(
-      title: Text(controller.getTitle()),
+      title: Text(vm.getTitle()),
       content: Form(
-        key: controller.formKey,
+        key: vm.formKey,
         child: SingleChildScrollView(
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
               TextFormField(
-                initialValue: controller.initialName,
+                initialValue: vm.initialName,
                 decoration: InputDecoration(labelText: 'Category Name'),
-                validator: controller.validateName,
-                onSaved: controller.saveName,
+                validator: vm.validateName,
+                onSaved: vm.saveName,
                 autofocus: false,
               ),
-              InteractiveFigureFormField(
-                context: context,
-                size: mannequinSize,
-                controller: controller,
-              ),
-              if (controller.mode case DialogMode.copy || DialogMode.edit)
-                CheckboxFormField(context: context, controller: controller),
+              InteractiveFigureFormField(context: context, size: mannequinSize, vm: vm),
+              if (vm.mode case DialogMode.copy || DialogMode.edit)
+                CheckboxFormField(context: context, vm: vm),
               Padding(padding: EdgeInsets.all(16.0)),
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -164,13 +160,13 @@ class CategoryDialog extends StatelessWidget {
                   ElevatedButton(
                     onPressed: () async {
                       await errorWrapper(context, () async {
-                        if (await controller.submitForm()) {
+                        if (await vm.submitForm()) {
                           Navigator.pop(context, true);
                           await Provider.of<CategoryItemsProvider>(
                             context,
                             listen: false,
                           ).refresh();
-                          if (controller.mode != DialogMode.add) {
+                          if (vm.mode != DialogMode.add) {
                             // Refresh clothing in case references changed
                             await Provider.of<ClothingItemsProvider>(
                               context,
@@ -198,12 +194,12 @@ class InteractiveFigureFormField extends FormField<Offset> {
     super.key,
     required this.context,
     required this.size,
-    required this.controller,
+    required this.vm,
     AutovalidateMode super.autovalidateMode = AutovalidateMode.disabled,
   }) : super(
-         initialValue: controller.getInitialCoords(),
-         validator: (value) => controller.validateCoords(value?.dx, value?.dy),
-         onSaved: (value) => controller.saveCoords(value?.dx, value?.dy),
+         initialValue: vm.getInitialCoords(),
+         validator: (value) => vm.validateCoords(value?.dx, value?.dy),
+         onSaved: (value) => vm.saveCoords(value?.dx, value?.dy),
          builder: (FormFieldState<Offset> field) {
            final double? normX = field.value?.dx;
            final double? normY = field.value?.dy;
@@ -228,7 +224,7 @@ class InteractiveFigureFormField extends FormField<Offset> {
                  child: Mannequin(
                    onTap: (normalizedOffset) => field.didChange(normalizedOffset),
                    isInteractiveMode: true,
-                   initialCirclePosition: controller.getInitialCoords(),
+                   initialCirclePosition: vm.getInitialCoords(),
                  ),
                ),
                buildErrorText(context, field.errorText),
@@ -239,7 +235,7 @@ class InteractiveFigureFormField extends FormField<Offset> {
 
   final BuildContext context;
   final Size size;
-  final CategoryDialogController controller;
+  final CategoryDialogViewModel vm;
 }
 
 /// Dialog where a new Clothing item can be created or provided [initialData] modified.
@@ -256,7 +252,7 @@ class ClothingDialog extends StatelessWidget {
       context: context,
       builder: (context) {
         return Provider(
-          create: (_) => ClothingDialogController(db: db, mode: mode, initialData: initialData),
+          create: (_) => ClothingDialogViewModel(db: db, mode: mode, initialData: initialData),
           child: ClothingDialog(mode: mode),
         );
       },
@@ -266,55 +262,55 @@ class ClothingDialog extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final controller = context.read<ClothingDialogController>();
+    final vm = context.read<ClothingDialogViewModel>();
 
     return AlertDialog(
-      title: Text(controller.getTitle()),
+      title: Text(vm.getTitle()),
       content: SingleChildScrollView(
         child: Form(
-          key: controller.formKey,
+          key: vm.formKey,
           child: Column(
             children: [
               TextFormField(
-                initialValue: controller.initialName,
+                initialValue: vm.initialName,
                 decoration: InputDecoration(labelText: 'Name'),
-                validator: controller.validateName,
-                onSaved: controller.saveName,
+                validator: vm.validateName,
+                onSaved: vm.saveName,
               ),
               TextFormField(
-                initialValue: controller.initialMinTemp?.toString(),
+                initialValue: vm.initialMinTemp?.toString(),
                 decoration: InputDecoration(labelText: 'Min Temperature'),
-                validator: controller.validateMinTemp,
-                onSaved: controller.saveMinTemp,
+                validator: vm.validateMinTemp,
+                onSaved: vm.saveMinTemp,
                 keyboardType: TextInputType.numberWithOptions(signed: true),
                 inputFormatters: [FilteringTextInputFormatter.allow(RegExp(r'^-?[0-9]*'))],
               ),
               TextFormField(
-                initialValue: controller.initialMaxTemp?.toString(),
+                initialValue: vm.initialMaxTemp?.toString(),
                 decoration: InputDecoration(labelText: 'Max Temperature'),
-                validator: controller.validateMaxTemp,
-                onSaved: controller.saveMaxTemp,
+                validator: vm.validateMaxTemp,
+                onSaved: vm.saveMaxTemp,
                 keyboardType: TextInputType.numberWithOptions(signed: true),
                 inputFormatters: [FilteringTextInputFormatter.allow(RegExp(r'^-?[0-9]*'))],
               ),
               Consumer<CategoryItemsProvider>(
                 builder: (context, provider, _) {
                   return DropdownButtonFormField<String>(
-                    initialValue: controller.initialCategory,
+                    initialValue: vm.initialCategory,
                     decoration: InputDecoration(labelText: 'Category'),
-                    validator: controller.validateDropdown,
+                    validator: vm.validateDropdown,
                     items: provider.names
                         .map((cat) => DropdownMenuItem(value: cat, child: Text(cat)))
                         .toList(),
-                    onSaved: controller.saveCategory,
+                    onSaved: vm.saveCategory,
                     onChanged: (_) {},
                   );
                 },
               ),
               MultiSelectActivitiesFormField(
-                initialValue: controller.initialActivities,
-                validator: controller.validateMultiselect,
-                onSaved: controller.saveActivities,
+                initialValue: vm.initialActivities,
+                validator: vm.validateMultiselect,
+                onSaved: vm.saveActivities,
               ),
               Padding(padding: EdgeInsets.all(16.0)),
               Row(
@@ -327,7 +323,7 @@ class ClothingDialog extends StatelessWidget {
                   ElevatedButton(
                     onPressed: () async {
                       await errorWrapper(context, () async {
-                        if (await controller.submitForm()) {
+                        if (await vm.submitForm()) {
                           Navigator.pop(context, true);
                           await Provider.of<ClothingItemsProvider>(
                             context,
@@ -348,24 +344,24 @@ class ClothingDialog extends StatelessWidget {
   }
 }
 
-/// Custom Form Field with a checkbox, controlled by a [controller], limited to one.
+/// Custom Form Field with a checkbox, controlled by a [vm], limited to one.
 class CheckboxFormField extends FormField<bool> {
   CheckboxFormField({
     super.key,
     required this.context,
-    required this.controller,
+    required this.vm,
     AutovalidateMode super.autovalidateMode = AutovalidateMode.disabled,
   }) : super(
-         initialValue: controller.isBoxChecked,
-         validator: controller.validateCheckbox,
-         onSaved: controller.saveCheckbox,
+         initialValue: vm.isBoxChecked,
+         validator: vm.validateCheckbox,
+         onSaved: vm.saveCheckbox,
          builder: (FormFieldState<bool> state) {
            return Column(
              crossAxisAlignment: CrossAxisAlignment.start,
              children: [
                CheckboxListTile(
                  title: Text(
-                   controller.getCheckboxLabel(),
+                   vm.getCheckboxLabel(),
                    style: TextStyle(
                      color: state.hasError
                          ? Theme.of(context).colorScheme.error
@@ -374,10 +370,10 @@ class CheckboxFormField extends FormField<bool> {
                  ),
 
                  contentPadding: EdgeInsets.symmetric(horizontal: 0),
-                 value: controller.isBoxChecked,
+                 value: vm.isBoxChecked,
                  onChanged: (v) {
                    state.didChange(v);
-                   controller.checkboxChanged(v);
+                   vm.checkboxChanged(v);
                  },
                ),
                buildErrorText(context, state.errorText),
@@ -387,7 +383,7 @@ class CheckboxFormField extends FormField<bool> {
        );
 
   final BuildContext context;
-  final DialogController controller;
+  final DialogViewModel vm;
 }
 
 class MultiSelectActivitiesFormField extends FormField<List<String>> {

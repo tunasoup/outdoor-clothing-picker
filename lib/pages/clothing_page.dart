@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:outdoor_clothing_picker/backend/clothing_viewmodel.dart';
-import 'package:outdoor_clothing_picker/backend/dialog_controller.dart';
+import 'package:outdoor_clothing_picker/backend/dialog_viewmodel.dart';
 import 'package:outdoor_clothing_picker/backend/items_provider.dart';
 import 'package:outdoor_clothing_picker/backend/weather_viewmodel.dart';
 import 'package:outdoor_clothing_picker/widgets/add_dialogs.dart';

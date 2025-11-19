@@ -5,7 +5,7 @@ enum DialogMode { add, edit, copy }
 
 /// Responsible for modifying [db] via a dialog, and filling and validating the contents
 /// of a form inside it.
-abstract class DialogController {
+abstract class DialogViewModel {
   final AppDb db;
   final DialogMode mode;
   final Map<String, dynamic>? initialData;
@@ -14,7 +14,7 @@ abstract class DialogController {
   late final int? _id;
   late final String? initialName;
 
-  DialogController({required this.db, required this.mode, this.initialData}) {
+  DialogViewModel({required this.db, required this.mode, this.initialData}) {
     _id = initialData?['id'];
     if (mode != DialogMode.add && _id == null) {
       throw Exception(
@@ -42,10 +42,10 @@ abstract class DialogController {
   void saveCheckbox(bool? value) => {};
 }
 
-class ActivityDialogController extends DialogController {
+class ActivityDialogViewModel extends DialogViewModel {
   final List<String> availableActivities;
 
-  ActivityDialogController({
+  ActivityDialogViewModel({
     required super.db,
     required super.mode,
     super.initialData,
@@ -127,12 +127,12 @@ class ActivityDialogController extends DialogController {
   }
 }
 
-class CategoryDialogController extends DialogController {
+class CategoryDialogViewModel extends DialogViewModel {
   final List<String> availableCategories;
   late final double? _initialNormX;
   late final double? _initialNormY;
 
-  CategoryDialogController({
+  CategoryDialogViewModel({
     required super.db,
     required super.mode,
     super.initialData,
@@ -235,13 +235,13 @@ class CategoryDialogController extends DialogController {
   }
 }
 
-class ClothingDialogController extends DialogController {
+class ClothingDialogViewModel extends DialogViewModel {
   late final int? initialMinTemp;
   late final int? initialMaxTemp;
   late final List<String>? initialActivities;
   late final String? initialCategory;
 
-  ClothingDialogController({required super.db, required super.mode, super.initialData})
+  ClothingDialogViewModel({required super.db, required super.mode, super.initialData})
     : initialMinTemp = initialData?['min_temp'],
       initialMaxTemp = initialData?['max_temp'],
       initialActivities = initialData?['activities'],
@@ -340,14 +340,6 @@ class ClothingDialogController extends DialogController {
     }
     return false;
   }
-}
-
-String? findCaseInsensitiveMatch(List<String> list, String input) {
-  final lowerInput = input.toLowerCase();
-  for (final item in list) {
-    if (item.toLowerCase() == lowerInput) return item;
-  }
-  return null;
 }
 
 Future<int?> getCategoryID(AppDb db, String? category) async {
