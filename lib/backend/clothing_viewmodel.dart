@@ -1,13 +1,25 @@
 import 'package:collection/collection.dart';
 import 'package:flutter/foundation.dart';
+import 'package:outdoor_clothing_picker/backend/items_provider.dart';
 import 'package:outdoor_clothing_picker/backend/utils.dart';
+import 'package:outdoor_clothing_picker/backend/weather_viewmodel.dart';
 import 'package:outdoor_clothing_picker/database/database.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 class ClothingViewModel extends ChangeNotifier {
   final AppDb _db;
+  final WeatherViewModel weatherVM;
+  final ActivityItemsProvider providerAct;
+  final CategoryItemsProvider providerCat;
+  final ClothingItemsProvider providerClo;
 
-  ClothingViewModel(this._db) {
+  ClothingViewModel(
+    this._db,
+    this.weatherVM,
+    this.providerAct,
+    this.providerCat,
+    this.providerClo,
+  ) {
     _initialize();
   }
 
@@ -18,9 +30,20 @@ class ClothingViewModel extends ChangeNotifier {
   List<ValidClothingResult> _filtered = [];
 
   Future<void> _initialize() async {
+    // Load previous activity
     final prefs = await SharedPreferences.getInstance();
     final savedActivity = prefs.getString(PrefKeys.activity);
     await setActivity(activity: savedActivity);
+
+    // Subscribe to changes
+    weatherVM.addListener(() {
+      setTemperature(temp: weatherVM.temperature);
+    });
+    providerAct.addListener(() {
+      setDefaultActivity(providerAct.names);
+    });
+    providerCat.addListener(_loadClothing);
+    providerClo.addListener(_loadClothing);
   }
 
   String? get activity => _activity;
