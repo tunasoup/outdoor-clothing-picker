@@ -82,6 +82,21 @@ SELECT name, min_temp, max_temp, :new_category_id
 FROM clothing
 WHERE category_id = :old_category_id;
 
+-- Duplicate clothing activities by finding matching clothing that have the old category,
+-- meant to be called after duplicateCategoryClothing
+duplicateCategoryClothingActivities:
+INSERT INTO clothing_activities (clothing_id, activity_id)
+SELECT new_cl.id, ca.activity_id
+FROM clothing as old_cl
+INNER JOIN clothing as new_cl
+  ON new_cl.name = old_cl.name
+  AND new_cl.min_temp = old_cl.min_temp
+  AND new_cl.max_temp = old_cl.max_temp
+  AND new_cl.category_id = :new_category_id
+INNER JOIN clothing_activities as ca
+  ON old_cl.id = ca.clothing_id
+WHERE old_cl.category_id = :old_category_id;
+
 -- Change old activity id references to the new one while ignoring possible duplicates
 changeClothingActivity: UPDATE clothing_activities
 SET activity_id = :new_activity_id

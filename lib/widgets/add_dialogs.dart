@@ -289,7 +289,7 @@ class ClothingDialog extends StatelessWidget {
               Consumer<CategoryItemsProvider>(
                 builder: (context, provider, _) {
                   return DropdownButtonFormField<String>(
-                    initialValue: vm.initialCategory,
+                    initialValue: vm.initialCategoryName,
                     decoration: InputDecoration(labelText: 'Category'),
                     validator: vm.validateDropdown,
                     items: provider.names

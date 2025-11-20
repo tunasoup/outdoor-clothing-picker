@@ -229,7 +229,7 @@ class CategoryDialogViewModel extends DialogViewModel {
     if (isBoxChecked) {
       int targetId = (await db.categoryFromName(_name!).getSingle()).id;
       await db.duplicateCategoryClothing(targetId, _id!);
-      // TODO: also need to add new activity links
+      await db.duplicateCategoryClothingActivities(targetId, _id);
     }
     await clothingProvider.refresh();
   }
@@ -255,7 +255,7 @@ class ClothingDialogViewModel extends DialogViewModel {
   late final int? initialMinTemp;
   late final int? initialMaxTemp;
   late final List<String>? initialActivities;
-  late final String? initialCategory;
+  late final String? initialCategoryName;
 
   ClothingDialogViewModel({
     required super.db,
@@ -265,13 +265,13 @@ class ClothingDialogViewModel extends DialogViewModel {
   }) : initialMinTemp = initialData?['min_temp'],
        initialMaxTemp = initialData?['max_temp'],
        initialActivities = initialData?['activities'],
-       initialCategory = initialData?['category'];
+       initialCategoryName = initialData?['category'];
 
   String? _name;
   int? _minTemp;
   int? _minTempVal;
   int? _maxTemp;
-  String? _category;
+  String? _categoryName;
   List<String>? _activities;
 
   @override
@@ -306,10 +306,12 @@ class ClothingDialogViewModel extends DialogViewModel {
   }
 
   String? validateDropdown(String? value) {
+    // Category can be null, UI assumed to only include existing options
     return null;
   }
 
   String? validateMultiselect(List<String>? values) {
+    // Activities can be null, UI assumed to only include existing options
     return null;
   }
 
@@ -331,29 +333,41 @@ class ClothingDialogViewModel extends DialogViewModel {
   }
 
   void saveCategory(String? value) {
-    _category = value;
+    _categoryName = value;
+  }
+
+  Future<void> _handleNew(int? categoryID) async {
+    final clothingID = await db.insertClothing(_name!, _minTemp, _maxTemp, categoryID);
+    if (_activities != initialActivities) {
+      await changeClothingActivities(db, clothingID, _activities, initialActivities);
+    }
+  }
+
+  Future<void> _handleEdit(int? categoryID) async {
+    final hasChanged =
+        (_name != initialName ||
+        _minTemp != initialMinTemp ||
+        _maxTemp != initialMaxTemp ||
+        _categoryName != initialCategoryName);
+    if (hasChanged) await db.updateClothing(_name!, _minTemp, _maxTemp, categoryID, _id!);
+    if (_activities != initialActivities) {
+      await changeClothingActivities(db, _id!, _activities, initialActivities);
+    }
   }
 
   @override
   Future<bool> submitForm() async {
     if (formKey.currentState?.validate() ?? false) {
       formKey.currentState?.save();
-      final int? categoryID = await getCategoryID(db, _category);
+      final int? categoryID = await getCategoryID(db, _categoryName);
 
       switch (mode) {
         case DialogMode.add:
         case DialogMode.copy:
-          final clothingID = await db.insertClothing(_name!, _minTemp, _maxTemp, categoryID);
-          await changeClothingActivities(db, clothingID, _activities, initialActivities);
+          await _handleNew(categoryID);
           break;
         case DialogMode.edit:
-          final hasChanged =
-              (_name != initialName ||
-              _minTemp != initialMinTemp ||
-              _maxTemp != initialMaxTemp ||
-              _category != initialCategory);
-          if (hasChanged) await db.updateClothing(_name!, _minTemp, _maxTemp, categoryID, _id!);
-          await changeClothingActivities(db, _id!, _activities, initialActivities);
+          await _handleEdit(categoryID);
           break;
       }
       await clothingProvider.refresh();
@@ -363,10 +377,14 @@ class ClothingDialogViewModel extends DialogViewModel {
   }
 }
 
-Future<int?> getCategoryID(AppDb db, String? category) async {
-  return category == null ? null : (await db.categoryFromName(category).getSingleOrNull())?.id;
+Future<int?> getCategoryID(AppDb db, String? categoryName) async {
+  return categoryName == null
+      ? null
+      : (await db.categoryFromName(categoryName).getSingleOrNull())?.id;
 }
 
+/// Change the clothing activity references for [clothingID], adding those activities which are
+/// in [newActivities] but not in [oldActivities], and removing in the opposite case.
 Future<void> changeClothingActivities(
   AppDb db,
   int clothingID,
