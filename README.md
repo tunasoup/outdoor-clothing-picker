@@ -14,7 +14,13 @@ filtered according to the weather and selected activity to show a fitting item f
 available category. The categories are defined by the user, and given a location on a human
 figure for visual purposes, and could be for example "Head", "Legs" or "Hands".
 
-Currently, the only supported temperature metric is Celsius.
+Clothing can be created without a referenced category or activities, but then they will be
+filtered out. The clothing items can be edited in a separate screen after creation.
+
+An empty temperature field is regarded as (negative) infinity. E.g., a "Jacket" with an empty 
+minimum temperature and maximum temperature of 10 could be visualized with an active temperature 
+anywhere between 10°C and -infinity (-273°C). Currently, the only supported temperature metric 
+is Celsius.
 
 ## Installation
 
