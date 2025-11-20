@@ -27,17 +27,15 @@ class WeatherViewModel extends ChangeNotifier {
     if (savedApiWeather != null) {
       // If API was active last, try to fetch new weather if the saved one is old
       final weather = Weather.fromJsonString(savedApiWeather);
+      // When available, always start with the old API (shows even while new one is fetching)
+      await setApiWeather(weather);
       if (isOlderThan(weather.updateDate, Duration(minutes: 30))) {
         try {
           if (kDebugMode) debugPrint('Fetching newer weather...');
           await fetchWeather();
         } catch (_) {
-          if (kDebugMode) debugPrint('New weather unavailable, using old');
-          await setApiWeather(weather);
+          if (kDebugMode) debugPrint('New weather unavailable');
         }
-      } else {
-        if (kDebugMode) debugPrint('Loading old weather as it is recent');
-        await setApiWeather(weather);
       }
     } else {
       if (kDebugMode) debugPrint('Starting with earlier manual weather');
