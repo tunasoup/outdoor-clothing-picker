@@ -125,14 +125,15 @@ class ActivityDropdown extends StatelessWidget {
       builder: (context, ActivityItemsProvider provider, _) {
         return DropdownButtonFormField<String>(
           initialValue: initialValue,
-          items: provider.names
-              .map(
-                (item) => DropdownMenuItem(
-                  value: item,
-                  child: Text(item, overflow: TextOverflow.clip),
-                ),
-              )
-              .toList(),
+          items:
+              (provider.names.toList()..sort((a, b) => a.toLowerCase().compareTo(b.toLowerCase())))
+                  .map(
+                    (item) => DropdownMenuItem(
+                      value: item,
+                      child: Text(item, overflow: TextOverflow.clip),
+                    ),
+                  )
+                  .toList(),
           onChanged: onChanged,
           isExpanded: true,
           decoration: InputDecoration(labelText: text),
