@@ -5,6 +5,7 @@ class PrefKeys {
   static const String darkMode = 'settings_dark_mode_bool';
   static const String apiKeyOWM = 'weather_api_key_owm';
   static const String apiWeather = 'weather_api_weather';
+  static const String forecastCards = 'weather_forecast_cards';
   static const String manualTemp = 'weather_manual_temperature';
 }
 
