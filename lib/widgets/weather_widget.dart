@@ -2,6 +2,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:outdoor_clothing_picker/backend/weather_viewmodel.dart';
+import 'package:outdoor_clothing_picker/pages/weather_config_page.dart';
 import 'package:outdoor_clothing_picker/widgets/utils.dart';
 import 'package:provider/provider.dart';
 
@@ -22,11 +23,17 @@ class _WeatherWidgetState extends State<WeatherWidget> {
     return Column(
       children: [
         GestureDetector(
-          onTap: () {
-            showDialog(
-              context: context,
-              builder: (context) => WeatherEditor(viewModel: viewModel),
+          onTap: () async {
+            final result = await Navigator.push(
+              context,
+              MaterialPageRoute(builder: (context) => WeatherConfigPage()),
             );
+            debugPrint('result is $result');
+            // TODO: tapping could be expected to show more detailed weather informations as well
+            // showDialog(
+            //   context: context,
+            //   builder: (context) => WeatherEditor(viewModel: viewModel),
+            // );
           },
           child: Container(
             padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
