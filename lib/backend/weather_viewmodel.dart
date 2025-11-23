@@ -16,7 +16,7 @@ class WeatherViewModel extends ChangeNotifier {
   }
 
   Weather? _currentWeather;
-  List<Weather> _currentWeathers = [];
+  List<WeatherView> _currentWeatherViews = [WeatherView.createEmpty()];
   bool _isLoading = false;
 
   Future<void> _initialize() async {
@@ -46,6 +46,7 @@ class WeatherViewModel extends ChangeNotifier {
   String? get mainCondition => _currentWeather?.mainCondition;
 
   String? get updateInfo {
+    // TODO: show update time only if any API weather is included
     if (_currentWeather == null) return null;
     return _currentWeather!.isManual
         ? 'Using Manual Temperature'
@@ -55,6 +56,8 @@ class WeatherViewModel extends ChangeNotifier {
   bool get isLoading => _isLoading;
 
   double? get temperature => _currentWeather?.temperature;
+
+  List<WeatherView> get weathers => _currentWeatherViews;
 
   /// Create a manual weather from a [temperature] and set it active.
   Future<void> setManualWeather({String? temperature}) async {
@@ -77,11 +80,12 @@ class WeatherViewModel extends ChangeNotifier {
 
   /// Set the current weather information with the provided [weathers], or reset if null.
   Future<void> setWeathers(List<Weather>? weathers) async {
-    _currentWeathers = weathers ?? [];
     final prefs = await SharedPreferences.getInstance();
     if (weathers == null || weathers.isEmpty) {
+      _currentWeatherViews = [WeatherView.createEmpty()];
       await prefs.remove(PrefKeys.latestWeather);
     } else {
+      _currentWeatherViews = weathers.map(WeatherView.fromWeather).toList();
       final jsonString = jsonEncode(weathers.map((w) => w.toJson()).toList());
       await prefs.setString(PrefKeys.latestWeather, jsonString);
     }
@@ -111,15 +115,16 @@ class WeatherViewModel extends ChangeNotifier {
     List<Weather> currentWeathers = [];
 
     // Add manual weathers
-    currentWeathers += manual.map((e) => Weather.fromTemperature(e.manualTemperature!
-        .toDouble())).toList();
+    currentWeathers += manual
+        .map((e) => Weather.fromTemperature(e.manualTemperature!.toDouble()))
+        .toList();
 
     // Add API weathers
     currentWeathers += await _weatherService.getWeathers(automatic);
 
     // Temporarily re-enable manual input
     await setWeather(currentWeathers.firstOrNull);
-    // TODO: convert viewmodel to use lists of weathers instead of singular values
+    // TODO: convert the rest of the class to use lists/weatherview
 
     await setWeathers(currentWeathers);
     _isLoading = false;
@@ -158,5 +163,41 @@ class WeatherViewModel extends ChangeNotifier {
       _isLoading = false;
       notifyListeners();
     }
+  }
+}
+
+class WeatherView {
+  final String cityName;
+  final String temperature;
+  final String? mainCondition;
+  final DateTime updateDate;
+  final bool isManual;
+
+  WeatherView({
+    required this.cityName,
+    required this.temperature,
+    required this.mainCondition,
+    required this.updateDate,
+    required this.isManual,
+  });
+
+  factory WeatherView.fromWeather(Weather weather) {
+    return WeatherView(
+      cityName: weather.cityName,
+      temperature: '${weather.temperature.round()}°C',
+      mainCondition: weather.mainCondition,
+      updateDate: weather.updateDate,
+      isManual: weather.isManual,
+    );
+  }
+
+  factory WeatherView.createEmpty() {
+    return WeatherView(
+      cityName: '',
+      temperature: '-°C',
+      mainCondition: null,
+      updateDate: DateTime.timestamp(),
+      isManual: true,
+    );
   }
 }

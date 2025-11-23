@@ -5,8 +5,7 @@ import 'package:outdoor_clothing_picker/pages/weather_config_page.dart';
 import 'package:outdoor_clothing_picker/widgets/utils.dart';
 import 'package:provider/provider.dart';
 
-// TODO: update weather widget to show the results for multiple weathers
-/// Widget for interacting with a weather API or manual user input.
+/// Widget for displaying weather info and opening the weather config page.
 class WeatherWidget extends StatefulWidget {
   const WeatherWidget({super.key});
 
@@ -22,70 +21,95 @@ class _WeatherWidgetState extends State<WeatherWidget> {
 
     return Column(
       children: [
-        GestureDetector(
-          onTap: () async {
-            final result = await Navigator.push(
-              context,
-              MaterialPageRoute(builder: (context) => WeatherConfigPage()),
-            );
-            await viewModel.applyForecastConfigs(result);
-            // TODO: tapping could be expected to show more detailed weather informations as well
-          },
-          child: Container(
-            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-            decoration: BoxDecoration(
-              color: colorScheme.primaryContainer,
-              borderRadius: BorderRadius.circular(12),
-            ),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  crossAxisAlignment: CrossAxisAlignment.center,
-                  children: [
-                    Icon(
-                      iconFromCondition(viewModel.mainCondition),
-                      size: 48,
-                      color: colorScheme.onPrimaryContainer,
+        SizedBox(
+          width: double.infinity,
+          child: GestureDetector(
+            onTap: () async {
+              final result = await Navigator.push(
+                context,
+                MaterialPageRoute(builder: (context) => WeatherConfigPage()),
+              );
+              await viewModel.applyForecastConfigs(result);
+              // TODO: tapping could be expected to show more detailed weather informations as well
+            },
+            child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+              decoration: BoxDecoration(
+                color: colorScheme.primaryContainer,
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: Stack(
+                children: [
+                  // TODO: should not show refresh indicator and this at the same time
+                  if (viewModel.isLoading)
+                    Center(child: CircularProgressIndicator(strokeWidth: 3)),
+                  Center(
+                    child: Column(
+                      children: [
+                        SingleChildScrollView(
+                          scrollDirection: Axis.horizontal,
+                          child: Row(
+                            spacing: 16,
+                            children: viewModel.weathers
+                                .map((e) => _buildWeatherDisplay(e, colorScheme))
+                                .toList(),
+                          ),
+                        ),
+                        _buildUpdateInfo(viewModel, colorScheme),
+                      ],
                     ),
-                    const SizedBox(width: 16),
-                    Text(
-                      '${viewModel.temperature?.round() ?? '-'}°C',
-                      style: TextStyle(
-                        fontSize: 48,
-                        fontWeight: FontWeight.bold,
-                        color: colorScheme.onPrimaryContainer,
-                      ),
-                    ),
-                  ],
-                ),
-                Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Text(
-                      viewModel.cityName ?? 'Unknown City',
-                      textAlign: TextAlign.center,
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: TextStyle(fontSize: 16, color: colorScheme.onPrimaryContainer),
-                    ),
-                    Text(
-                      viewModel.updateInfo ??
-                          'Pull down to fetch current weather or tap for input',
-                      textAlign: TextAlign.center,
-                      style: TextStyle(color: colorScheme.onPrimaryContainer),
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                  ],
-                ),
-              ],
+                  ),
+                ],
+              ),
             ),
           ),
         ),
         if (kIsWeb) GetWeatherButton(viewModel: viewModel),
       ],
+    );
+  }
+
+  Widget _buildWeatherDisplay(WeatherView weather, ColorScheme colorScheme) {
+    return Column(
+      children: [
+        Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          crossAxisAlignment: CrossAxisAlignment.center,
+          children: [
+            Icon(
+              iconFromCondition(weather.mainCondition),
+              size: 48,
+              color: colorScheme.onPrimaryContainer,
+            ),
+            const SizedBox(width: 16),
+            Text(
+              weather.temperature,
+              style: TextStyle(
+                fontSize: 48,
+                fontWeight: FontWeight.bold,
+                color: colorScheme.onPrimaryContainer,
+              ),
+            ),
+          ],
+        ),
+        Text(
+          weather.cityName,
+          textAlign: TextAlign.left,
+          maxLines: 1,
+          overflow: TextOverflow.ellipsis,
+          style: TextStyle(fontSize: 16, color: colorScheme.onPrimaryContainer),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildUpdateInfo(WeatherViewModel viewModel, ColorScheme colorScheme) {
+    return Text(
+      viewModel.updateInfo ?? 'Pull down to fetch current weather or tap for input',
+      textAlign: TextAlign.center,
+      style: TextStyle(color: colorScheme.onPrimaryContainer),
+      maxLines: 1,
+      overflow: TextOverflow.ellipsis,
     );
   }
 }
@@ -108,7 +132,7 @@ class GetWeatherButton extends StatelessWidget {
           ),
           onPressed: viewModel.isLoading
               ? null
-              : () async => await errorWrapper(context, viewModel.tryFetchWeather),
+              : () async => await errorWrapper(context, viewModel.tryFetchCurrentWeather),
           child: viewModel.isLoading
               ? const SizedBox(
                   width: 16,
