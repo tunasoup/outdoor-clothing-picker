@@ -69,6 +69,7 @@ class ClothingViewModel extends ChangeNotifier {
     if (load) await _loadClothing();
   }
 
+  // TODO: add support (_loadClothing too) for multiple Weathers
   void setTemperature({required double? temp, bool load = true}) {
     final int? value = temp?.round();
     bool changed = _temperature != value;
