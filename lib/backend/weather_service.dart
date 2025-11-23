@@ -7,12 +7,30 @@ import 'package:http/http.dart' as http;
 import 'package:outdoor_clothing_picker/backend/utils.dart';
 import 'package:outdoor_clothing_picker/backend/weather_model.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:outdoor_clothing_picker/backend/forecast_config.dart';
 
 class WeatherService {
   WeatherService();
 
   static const baseUrl = 'https://api.openweathermap.org/data/2.5/weather';
   final String units = 'metric';
+
+  Future<List<Weather>> getWeathers(List<ForecastConfig> configs) async {
+    List<Weather> results = [];
+    // TODO: implement config combination, forecasts, location, and multiple api calls
+    await Future.delayed(Duration(seconds: 2));
+    // combine if close enough in time or location to avoid unnecessary API calls
+
+    // debugPrint('${await getLocationFromCityName(configs.first.location)}');
+
+    // current weather(s)
+
+    // forecasts
+    // var results = await Future.wait(inputs.map((i) => apicall(i)));
+    // results += await Future.wait(
+
+    return results;
+  }
 
   Future<Weather> getWeatherByCity(String cityName) async {
     Location location = await getLocationFromCityName(cityName);
@@ -48,17 +66,13 @@ class WeatherService {
   }
 
   Future<Location> getCurrentLocation() async {
-    // FIXME occasionally gets stuck somewhere here
-    if (kDebugMode) debugPrint('In get current location');
     LocationPermission permission = await Geolocator.checkPermission();
-    if (kDebugMode) debugPrint('checked permission');
     if (permission == LocationPermission.denied) {
       permission = await Geolocator.requestPermission();
+    } else if (permission == LocationPermission.deniedForever) {
+      throw Exception('Location permission denied, re-enable from app settings.');
     }
-
-    if (kDebugMode) debugPrint('getting position');
     Position position = await Geolocator.getCurrentPosition();
-    if (kDebugMode) debugPrint('got position');
     return Location(
       latitude: position.latitude,
       longitude: position.longitude,
@@ -82,6 +96,8 @@ Future<Location> getLocationFromCityName(String cityName) async {
     if (kDebugMode) debugPrint('$e');
     rethrow;
   }
+
+  if (kDebugMode) debugPrint('Found locations: $locations');
 
   if (locations.isNotEmpty) {
     return locations.first;

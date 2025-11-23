@@ -1,3 +1,5 @@
+import 'dart:convert';
+
 import 'package:flutter/foundation.dart';
 import 'package:outdoor_clothing_picker/backend/forecast_config.dart';
 import 'package:outdoor_clothing_picker/backend/utils.dart';
@@ -14,6 +16,7 @@ class WeatherViewModel extends ChangeNotifier {
   }
 
   Weather? _currentWeather;
+  List<Weather> _currentWeathers = [];
   bool _isLoading = false;
 
   Future<void> _initialize() async {
@@ -31,7 +34,7 @@ class WeatherViewModel extends ChangeNotifier {
     if (!weather.isManual && isOlderThan(weather.updateDate, Duration(minutes: 30))) {
       try {
         if (kDebugMode) debugPrint('Fetching newer weather...');
-        await fetchWeather();
+        await fetchCurrentWeather();
       } catch (_) {
         if (kDebugMode) debugPrint('New weather unavailable');
       }
@@ -46,8 +49,7 @@ class WeatherViewModel extends ChangeNotifier {
     if (_currentWeather == null) return null;
     return _currentWeather!.isManual
         ? 'Using Manual Temperature'
-        : 'Updated '
-              '${formatTime(time: _currentWeather!.updateDate, showConditionalDay: true)}';
+        : 'Updated ${formatTime(time: _currentWeather!.updateDate, showConditionalDay: true)}';
   }
 
   bool get isLoading => _isLoading;
@@ -61,7 +63,7 @@ class WeatherViewModel extends ChangeNotifier {
     await setWeather(Weather.fromTemperature(temp));
   }
 
-  /// Override the current weather information with the provided [weather], or reset if null.
+  /// Set the current weather information with the provided [weather], or reset if null.
   Future<void> setWeather(Weather? weather) async {
     _currentWeather = weather;
     if (weather == null) {
@@ -73,7 +75,23 @@ class WeatherViewModel extends ChangeNotifier {
     notifyListeners();
   }
 
-  Future<void> applyForecastConfigs(List<ForecastConfig> configs) async {
+  /// Set the current weather information with the provided [weathers], or reset if null.
+  Future<void> setWeathers(List<Weather>? weathers) async {
+    _currentWeathers = weathers ?? [];
+    final prefs = await SharedPreferences.getInstance();
+    if (weathers == null || weathers.isEmpty) {
+      await prefs.remove(PrefKeys.latestWeather);
+    } else {
+      final jsonString = jsonEncode(weathers.map((w) => w.toJson()).toList());
+      await prefs.setString(PrefKeys.latestWeather, jsonString);
+    }
+    // notifyListeners();
+  }
+
+  Future<void> applyForecastConfigs(List<ForecastConfig>? configs) async {
+    if (configs == null) return;
+    _isLoading = true;
+    notifyListeners();
     configs = cleanForecastConfigs(configs);
 
     if (configs.isEmpty) {
@@ -90,17 +108,22 @@ class WeatherViewModel extends ChangeNotifier {
       (c.isManual ? manual : automatic).add(c);
     }
 
+    List<Weather> currentWeathers = [];
+
+    // Add manual weathers
+    currentWeathers += manual.map((e) => Weather.fromTemperature(e.manualTemperature!
+        .toDouble())).toList();
+
+    // Add API weathers
+    currentWeathers += await _weatherService.getWeathers(automatic);
+
     // Temporarily re-enable manual input
-    if (manual.isNotEmpty) {
-      await setManualWeather(temperature: manual.first.manualTemperature.toString());
-    }
-    // TODO: depending on the results, create a list with:
-    // Fetch current weather at provided and/or current locations
-    // Fetch forecasts at provided and/or current locations, api service filters via time
-    // resolution
-    // Manual weather(s)
+    await setWeather(currentWeathers.firstOrNull);
     // TODO: convert viewmodel to use lists of weathers instead of singular values
-    // notifyListeners();
+
+    await setWeathers(currentWeathers);
+    _isLoading = false;
+    notifyListeners();
   }
 
   List<ForecastConfig> cleanForecastConfigs(List<ForecastConfig> configs) {
@@ -111,23 +134,23 @@ class WeatherViewModel extends ChangeNotifier {
     return configs;
   }
 
-  /// Try to fetch weather without waiting for it.
+  /// Try to fetch the current weather without waiting for it.
   Future<void> refresh() {
-    return tryFetchWeather();
+    return tryFetchCurrentWeather();
   }
 
-  Future<void> fetchWeather() async {
+  Future<void> fetchCurrentWeather() async {
     final Weather weather = await _weatherService.getWeatherByCurrentLocation();
     if (kDebugMode) debugPrint('start to set weather');
     await setWeather(weather);
   }
 
-  Future<void> tryFetchWeather() async {
+  Future<void> tryFetchCurrentWeather() async {
     _isLoading = true;
     notifyListeners();
 
     try {
-      await fetchWeather();
+      await fetchCurrentWeather();
     } catch (e) {
       await setWeather(null);
       rethrow;
