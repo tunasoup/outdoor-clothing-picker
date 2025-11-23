@@ -3,6 +3,7 @@ import 'package:outdoor_clothing_picker/backend/utils.dart';
 import 'package:outdoor_clothing_picker/backend/weather_model.dart';
 import 'package:outdoor_clothing_picker/backend/weather_service.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:outdoor_clothing_picker/backend/forecast_config.dart';
 
 /// Manages and provides weather information obtained manually or via [_weatherService].
 class WeatherViewModel extends ChangeNotifier {
@@ -93,6 +94,45 @@ class WeatherViewModel extends ChangeNotifier {
       await weather.save();
       await setManualTemperature(null);
     }
+  }
+
+  Future<void> applyForecastConfigs(List<ForecastConfig> configs) async {
+    configs = cleanForecastConfigs(configs);
+
+    if (configs.isEmpty) {
+      // TODO: decide what to do, either reset weather, do not act (maybe snackbar), or run
+      //  current. Realistically only empty if an empty manual temperature is provided, which
+      //  could be prevented in the UI by disabling apply.
+      return;
+    }
+
+    var manual = <ForecastConfig>[];
+    var automatic = <ForecastConfig>[];
+
+    for (final c in configs) {
+      (c.isManual ? manual : automatic).add(c);
+    }
+
+    // Temporarily re-enable manual input
+    if (manual.isNotEmpty) {
+      await setManualTemperature(manual.first.manualTemperature.toString());
+    }
+    // TODO: depending on the results, create a list with:
+    // Fetch current weather at provided and/or current locations
+    // Fetch forecasts at provided and/or current locations, api service filters via time
+    // resolution
+    // Manual weather(s)
+    // TODO: change manual temperature to be a Weather, keep temperature string creation?
+    // TODO: convert viewmodel to use lists of weathers instead of singular values
+    // notifyListeners();
+  }
+
+  List<ForecastConfig> cleanForecastConfigs(List<ForecastConfig> configs) {
+    if (kDebugMode) debugPrint('Configs: $configs');
+    configs.removeWhere((c) => c.isEmpty);
+    configs = configs.toSet().toList(); // Remove duplicates
+    if (kDebugMode) debugPrint('Cleaned configs: $configs');
+    return configs;
   }
 
   /// Try to fetch weather without waiting for it.

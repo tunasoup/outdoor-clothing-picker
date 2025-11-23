@@ -1,11 +1,11 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:outdoor_clothing_picker/backend/weather_viewmodel.dart';
 import 'package:outdoor_clothing_picker/pages/weather_config_page.dart';
 import 'package:outdoor_clothing_picker/widgets/utils.dart';
 import 'package:provider/provider.dart';
 
+// TODO: update weather widget to show the results for multiple weathers
 /// Widget for interacting with a weather API or manual user input.
 class WeatherWidget extends StatefulWidget {
   const WeatherWidget({super.key});
@@ -28,12 +28,8 @@ class _WeatherWidgetState extends State<WeatherWidget> {
               context,
               MaterialPageRoute(builder: (context) => WeatherConfigPage()),
             );
-            debugPrint('result is $result');
+            await viewModel.applyForecastConfigs(result);
             // TODO: tapping could be expected to show more detailed weather informations as well
-            // showDialog(
-            //   context: context,
-            //   builder: (context) => WeatherEditor(viewModel: viewModel),
-            // );
           },
           child: Container(
             padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
@@ -90,39 +86,6 @@ class _WeatherWidgetState extends State<WeatherWidget> {
         ),
         if (kIsWeb) GetWeatherButton(viewModel: viewModel),
       ],
-    );
-  }
-}
-
-class WeatherEditor extends StatelessWidget {
-  final WeatherViewModel viewModel;
-
-  const WeatherEditor({super.key, required this.viewModel});
-
-  Future<void> _submitForm(
-    BuildContext context,
-    WeatherViewModel viewModel,
-    String? temperature,
-  ) async {
-    await errorWrapper(context, () async {
-      Navigator.pop(context, true);
-      await viewModel.setManualTemperature(temperature!);
-    });
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return AlertDialog(
-      title: const Text('Weather Editor'),
-      content: TextFormField(
-        decoration: const InputDecoration(labelText: 'Manual Temperature Override'),
-        keyboardType: const TextInputType.numberWithOptions(signed: true),
-        inputFormatters: [FilteringTextInputFormatter.allow(RegExp(r'^-?[0-9]*'))],
-        autofocus: true,
-        onFieldSubmitted: (value) async {
-          await _submitForm(context, viewModel, value);
-        },
-      ),
     );
   }
 }
