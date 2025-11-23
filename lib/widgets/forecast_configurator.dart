@@ -1,11 +1,64 @@
 import 'package:flutter/material.dart';
 import 'package:outdoor_clothing_picker/backend/forecast_config.dart';
 
-class ForecastConfigurator extends StatelessWidget {
+class ForecastConfigurator extends StatefulWidget {
   final ForecastConfig config;
-  final ValueChanged<ForecastConfig> onChanged;
 
-  const ForecastConfigurator({required this.config, required this.onChanged, super.key});
+  const ForecastConfigurator({required this.config, super.key});
+
+  @override
+  State<ForecastConfigurator> createState() => _ForecastConfiguratorState();
+}
+
+class _ForecastConfiguratorState extends State<ForecastConfigurator> {
+  late final TextEditingController _locationController;
+  late final TextEditingController _tempController;
+
+  @override
+  void initState() {
+    super.initState();
+    _locationController = TextEditingController(text: widget.config.location);
+    _tempController = TextEditingController(
+      text: widget.config.manualTemperature?.toString() ?? '',
+    );
+
+    _locationController.addListener(_onLocationChanged);
+    _tempController.addListener(_onTempChanged);
+  }
+
+  @override
+  void didUpdateWidget(covariant ForecastConfigurator oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    // If a new config instance was provided, update controller texts to match
+    if (oldWidget.config != widget.config) {
+      if (_locationController.text != widget.config.location) {
+        _locationController.text = widget.config.location;
+      }
+      final tempText = widget.config.manualTemperature?.toString() ?? '';
+      if (_tempController.text != tempText) {
+        _tempController.text = tempText;
+      }
+    }
+  }
+
+  void _onLocationChanged() {
+    widget.config.location = _locationController.text;
+  }
+
+  void _onTempChanged() {
+    final value = _tempController.text.trim();
+    final temp = int.tryParse(value);
+    widget.config.manualTemperature = temp;
+  }
+
+  @override
+  void dispose() {
+    _locationController.removeListener(_onLocationChanged);
+    _tempController.removeListener(_onTempChanged);
+    _locationController.dispose();
+    _tempController.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -21,18 +74,12 @@ class ForecastConfigurator extends StatelessWidget {
                 const Text("Mode: "),
                 const SizedBox(width: 4),
                 ToggleButtons(
-                  isSelected: [!config.isManual, config.isManual],
+                  isSelected: [!widget.config.isManual, widget.config.isManual],
                   onPressed: (index) {
                     bool manual = index == 1;
-
-                    onChanged(
-                      ForecastConfig(
-                        isManual: manual,
-                        location: config.location,
-                        forecastTime: config.forecastTime,
-                        manualTemperature: config.manualTemperature,
-                      ),
-                    );
+                    setState(() {
+                      widget.config.isManual = manual;
+                    });
                   },
                   borderRadius: BorderRadius.circular(8),
                   children: const [
@@ -50,21 +97,10 @@ class ForecastConfigurator extends StatelessWidget {
             ),
             const SizedBox(height: 12),
 
-            if (!config.isManual) ...[
+            if (!widget.config.isManual) ...[
               TextFormField(
-                // FIXME: keyboard toggles on type
-                initialValue: config.location,
+                controller: _locationController,
                 decoration: const InputDecoration(labelText: "Location"),
-                onChanged: (value) {
-                  onChanged(
-                    ForecastConfig(
-                      isManual: config.isManual,
-                      location: value,
-                      forecastTime: config.forecastTime,
-                      manualTemperature: config.manualTemperature,
-                    ),
-                  );
-                },
               ),
 
               const SizedBox(height: 16),
@@ -73,7 +109,9 @@ class ForecastConfigurator extends StatelessWidget {
                 children: [
                   Expanded(
                     child: Text(
-                      config.forecastTime == null ? "Time: Now" : "Time: ${config.forecastTime}",
+                      widget.config.forecastTime == null
+                          ? "Time: Now"
+                          : "Time: ${widget.config.forecastTime}",
                     ),
                   ),
                   TextButton(
@@ -103,35 +141,20 @@ class ForecastConfigurator extends StatelessWidget {
                         time.minute,
                       );
 
-                      onChanged(
-                        ForecastConfig(
-                          isManual: false,
-                          location: config.location,
-                          forecastTime: combined,
-                        ),
-                      );
+                      setState(() {
+                        widget.config.forecastTime = combined;
+                      });
                     },
                   ),
                 ],
               ),
             ],
 
-            if (config.isManual)
+            if (widget.config.isManual)
               TextFormField(
-                initialValue: config.manualTemperature?.toString() ?? '',
+                controller: _tempController,
                 decoration: const InputDecoration(labelText: "Temperature (°C)"),
                 keyboardType: TextInputType.number,
-                onChanged: (value) {
-                  final temp = int.tryParse(value);
-                  onChanged(
-                    ForecastConfig(
-                      isManual: true,
-                      location: config.location,
-                      forecastTime: config.forecastTime,
-                      manualTemperature: temp,
-                    ),
-                  );
-                },
               ),
           ],
         ),

@@ -1,11 +1,10 @@
 import 'dart:convert';
 
 import 'package:flutter/material.dart';
-import 'package:outdoor_clothing_picker/backend/utils.dart';
-import 'package:shared_preferences/shared_preferences.dart';
-
-import 'package:outdoor_clothing_picker/widgets/forecast_configurator.dart';
 import 'package:outdoor_clothing_picker/backend/forecast_config.dart';
+import 'package:outdoor_clothing_picker/backend/utils.dart';
+import 'package:outdoor_clothing_picker/widgets/forecast_configurator.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 // TODO: use the output values to query forecasts
 // TODO: Change date to offset from today
@@ -33,10 +32,6 @@ class _WeatherConfigPageState extends State<WeatherConfigPage> {
     if (configs.length < 4) {
       setState(() => configs.add(ForecastConfig(location: lastLocation)));
     }
-  }
-
-  void _updateConfig(int index, ForecastConfig updated) {
-    setState(() => configs[index] = updated);
   }
 
   void _removeConfig(int index) {
@@ -115,10 +110,7 @@ class _WeatherConfigPageState extends State<WeatherConfigPage> {
                   child: const Icon(Icons.delete, color: Colors.white, size: 28),
                 ),
                 onDismissed: (_) => _onDismissConfig(index),
-                child: ForecastConfigurator(
-                  config: configs[index],
-                  onChanged: (value) => _updateConfig(index, value),
-                ),
+                child: ForecastConfigurator(config: configs[index]),
               ),
 
               if (isLast && configs.length < 4)
