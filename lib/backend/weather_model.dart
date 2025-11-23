@@ -8,12 +8,14 @@ class Weather {
   final double temperature;
   final String mainCondition;
   final DateTime updateDate;
+  final bool isManual;
 
   Weather({
     required this.cityName,
     required this.temperature,
     required this.mainCondition,
     required this.updateDate,
+    required this.isManual,
   });
 
   /// Create from a decoded Open Weather Map JSON response.
@@ -23,6 +25,7 @@ class Weather {
       temperature: json['main']['temp'].toDouble(),
       mainCondition: json['weather'][0]['main'],
       updateDate: DateTime.timestamp(),
+      isManual: false,
     );
   }
 
@@ -34,6 +37,17 @@ class Weather {
       temperature: json['temperature'],
       mainCondition: json['mainCondition'],
       updateDate: DateTime.parse(json['updateDate']),
+      isManual: json['isManual'],
+    );
+  }
+
+  factory Weather.fromTemperature(double temperature) {
+    return Weather(
+      cityName: '',
+      temperature: temperature,
+      mainCondition: '',
+      updateDate: DateTime.timestamp(),
+      isManual: true,
     );
   }
 
@@ -42,12 +56,13 @@ class Weather {
     'temperature': temperature,
     'mainCondition': mainCondition,
     'updateDate': updateDate.toString(),
+    'isManual': isManual,
   };
 
   /// Save the Weather arguments locally in an encoded JSON string.
   Future<void> save() async {
     final prefs = await SharedPreferences.getInstance();
     final jsonString = jsonEncode(toJson());
-    await prefs.setString(PrefKeys.apiWeather, jsonString);
+    await prefs.setString(PrefKeys.latestWeather, jsonString);
   }
 }
