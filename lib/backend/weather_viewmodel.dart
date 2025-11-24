@@ -166,6 +166,7 @@ class WeatherView {
   final String cityName;
   final String temperature;
   final String? mainCondition;
+  final DateTime localTime;
   final DateTime updateDate;
   final bool isManual;
   final bool isEmpty;
@@ -174,27 +175,37 @@ class WeatherView {
     required this.cityName,
     required this.temperature,
     required this.mainCondition,
+    required this.localTime,
     required this.updateDate,
     required this.isManual,
     this.isEmpty = false,
   });
+
+  String get description {
+    String msg = '$cityName\n';
+    msg += isManual ? '' : formatTime(time: localTime, showConditionalDay: true);
+    return msg;
+  }
 
   factory WeatherView.fromWeather(Weather weather) {
     return WeatherView(
       cityName: weather.cityName,
       temperature: '${weather.temperature.round()}°C',
       mainCondition: weather.mainCondition,
+      localTime: weather.localTime,
       updateDate: weather.updateDate,
       isManual: weather.isManual,
     );
   }
 
   factory WeatherView.createEmpty() {
+    final now = DateTime.timestamp();
     return WeatherView(
       cityName: '',
       temperature: '-°C',
       mainCondition: null,
-      updateDate: DateTime.timestamp(),
+      localTime: now.toLocal(),
+      updateDate: now,
       isManual: true,
       isEmpty: true,
     );

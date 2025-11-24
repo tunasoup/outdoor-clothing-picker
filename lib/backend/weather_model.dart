@@ -4,6 +4,7 @@ class Weather {
   final String cityName;
   final double temperature;
   final String mainCondition;
+  final DateTime localTime;
   final DateTime updateDate;
   final bool isManual;
 
@@ -11,6 +12,7 @@ class Weather {
     required this.cityName,
     required this.temperature,
     required this.mainCondition,
+    required this.localTime,
     required this.updateDate,
     required this.isManual,
   });
@@ -21,6 +23,7 @@ class Weather {
       cityName: json['name'],
       temperature: json['main']['temp'].toDouble(),
       mainCondition: json['weather'][0]['main'],
+      localTime: DateTime.fromMillisecondsSinceEpoch(json['dt'] * 1_000, isUtc: false),
       updateDate: DateTime.timestamp(),
       isManual: false,
     );
@@ -38,17 +41,20 @@ class Weather {
       cityName: input['cityName'],
       temperature: input['temperature'],
       mainCondition: input['mainCondition'],
+      localTime: DateTime.parse(input['localTime']),
       updateDate: DateTime.parse(input['updateDate']),
       isManual: input['isManual'],
     );
   }
 
   factory Weather.fromTemperature(double temperature) {
+    final now = DateTime.timestamp();
     return Weather(
       cityName: '',
       temperature: temperature,
       mainCondition: '',
-      updateDate: DateTime.timestamp(),
+      localTime: now.toLocal(),
+      updateDate: now,
       isManual: true,
     );
   }
@@ -57,6 +63,7 @@ class Weather {
     'cityName': cityName,
     'temperature': temperature,
     'mainCondition': mainCondition,
+    'localTime': localTime.toString(),
     'updateDate': updateDate.toString(),
     'isManual': isManual,
   };

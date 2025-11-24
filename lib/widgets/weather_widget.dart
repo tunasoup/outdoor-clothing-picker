@@ -88,16 +88,17 @@ class _WeatherWidgetState extends State<WeatherWidget> {
                 fontSize: 48,
                 fontWeight: FontWeight.bold,
                 color: colorScheme.onPrimaryContainer,
+                height: 1,
               ),
             ),
           ],
         ),
         Text(
-          weather.cityName,
-          textAlign: TextAlign.left,
-          maxLines: 1,
+          weather.description,
+          textAlign: TextAlign.center,
+          maxLines: 2,
           overflow: TextOverflow.ellipsis,
-          style: TextStyle(fontSize: 16, color: colorScheme.onPrimaryContainer),
+          style: TextStyle(fontSize: 14, color: colorScheme.onPrimaryContainer),
         ),
       ],
     );
@@ -107,7 +108,7 @@ class _WeatherWidgetState extends State<WeatherWidget> {
     return Text(
       viewModel.updateInfo,
       textAlign: TextAlign.center,
-      style: TextStyle(color: colorScheme.onPrimaryContainer),
+      style: TextStyle(fontSize: 14, color: colorScheme.onPrimaryContainer),
       maxLines: 1,
       overflow: TextOverflow.ellipsis,
     );
