@@ -55,7 +55,9 @@ class WeatherViewModel extends ChangeNotifier {
       final updateDate = _currentWeatherViews.first.updateDate;
       return 'Updated ${formatTime(time: updateDate, showConditionalDay: true)}';
     } else {
-      return 'Using Manual Temperature';
+      String msg = 'Using Manual Temperature';
+      msg += _currentWeatherViews.length > 1 ? 's' : '';
+      return msg;
     }
   }
 
@@ -182,9 +184,11 @@ class WeatherView {
   });
 
   String get description {
-    String msg = '$cityName\n';
-    msg += isManual ? '' : formatTime(time: localTime, showConditionalDay: true);
-    return msg;
+    if (isManual) {
+      return 'manual\n';
+    } else {
+      return '$cityName\n${formatTime(time: localTime, showConditionalDay: true)}';
+    }
   }
 
   factory WeatherView.fromWeather(Weather weather) {
