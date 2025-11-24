@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:convert';
 
 import 'package:flutter/foundation.dart';
@@ -15,25 +16,30 @@ class WeatherViewModel extends ChangeNotifier {
     _initialize();
   }
 
-  Weather? _currentWeather;
   List<WeatherView> _currentWeatherViews = [WeatherView.createEmpty()];
   bool _isLoading = false;
 
+  bool get isLoading => _isLoading;
+
+  List<WeatherView> get weathers => _currentWeatherViews;
+
   Future<void> _initialize() async {
-    // Load a possible saved Weather from previous use
+    // Load a possible saved Weathers from previous use
     final prefs = await SharedPreferences.getInstance();
-    final String? savedWeather = prefs.getString(PrefKeys.latestWeather);
-    if (savedWeather == null) {
-      if (kDebugMode) debugPrint('No saved Weather found, starting fresh.');
+    final String? savedWeathers = prefs.getString(PrefKeys.latestWeathers);
+    if (savedWeathers == null) {
+      if (kDebugMode) debugPrint('No saved Weathers found, starting fresh.');
       return;
     }
-    if (kDebugMode) debugPrint('Setting old weather...');
-    final weather = Weather.fromJsonString(savedWeather);
-    await setWeather(weather);
-    // If the saved weather was an API call, and not recent, start refreshing it
-    if (!weather.isManual && isOlderThan(weather.updateDate, Duration(minutes: 30))) {
+    if (kDebugMode) debugPrint('Setting old weathers...');
+    final weathers = loadWeathersFromJson(savedWeathers);
+    unawaited(setWeathers(weathers));
+    // If the saved weathers has an API call, and not recent, start refreshing it
+    if (_currentWeatherViews.any((e) => !e.isManual) &&
+        isOlderThan(weathers.first.updateDate, Duration(minutes: 30))) {
       try {
         if (kDebugMode) debugPrint('Fetching newer weather...');
+        // TODO: use saved forecastConfigs which should match the old weathers
         await fetchCurrentWeather();
       } catch (_) {
         if (kDebugMode) debugPrint('New weather unavailable');
@@ -41,23 +47,23 @@ class WeatherViewModel extends ChangeNotifier {
     }
   }
 
-  String? get cityName => _currentWeather?.cityName;
-
-  String? get mainCondition => _currentWeather?.mainCondition;
-
-  String? get updateInfo {
-    // TODO: show update time only if any API weather is included
-    if (_currentWeather == null) return null;
-    return _currentWeather!.isManual
-        ? 'Using Manual Temperature'
-        : 'Updated ${formatTime(time: _currentWeather!.updateDate, showConditionalDay: true)}';
+  String get updateInfo {
+    if (_currentWeatherViews.isEmpty || _currentWeatherViews.first.isEmpty) {
+      return 'Pull down to fetch current weather or tap for input';
+    } else if (_currentWeatherViews.any((e) => !e.isManual)) {
+      // Each current weather should have the same time they were updated
+      final updateDate = _currentWeatherViews.first.updateDate;
+      return 'Updated ${formatTime(time: updateDate, showConditionalDay: true)}';
+    } else {
+      return 'Using Manual Temperature';
+    }
   }
 
-  bool get isLoading => _isLoading;
-
-  double? get temperature => _currentWeather?.temperature;
-
-  List<WeatherView> get weathers => _currentWeatherViews;
+  List<Weather> loadWeathersFromJson(String jsonString) {
+    final List<dynamic> weatherStrings = jsonDecode(jsonString);
+    final weathers = weatherStrings.map((e) => Weather.fromMap(e)).toList();
+    return weathers;
+  }
 
   /// Create a manual weather from a [temperature] and set it active.
   Future<void> setManualWeather({String? temperature}) async {
@@ -68,14 +74,8 @@ class WeatherViewModel extends ChangeNotifier {
 
   /// Set the current weather information with the provided [weather], or reset if null.
   Future<void> setWeather(Weather? weather) async {
-    _currentWeather = weather;
-    if (weather == null) {
-      final prefs = await SharedPreferences.getInstance();
-      await prefs.remove(PrefKeys.latestWeather);
-    } else {
-      await weather.save();
-    }
-    notifyListeners();
+    final weathers = weather == null ? null : [weather];
+    await setWeathers(weathers);
   }
 
   /// Set the current weather information with the provided [weathers], or reset if null.
@@ -83,13 +83,13 @@ class WeatherViewModel extends ChangeNotifier {
     final prefs = await SharedPreferences.getInstance();
     if (weathers == null || weathers.isEmpty) {
       _currentWeatherViews = [WeatherView.createEmpty()];
-      await prefs.remove(PrefKeys.latestWeather);
+      await prefs.remove(PrefKeys.latestWeathers);
     } else {
       _currentWeatherViews = weathers.map(WeatherView.fromWeather).toList();
       final jsonString = jsonEncode(weathers.map((w) => w.toJson()).toList());
-      await prefs.setString(PrefKeys.latestWeather, jsonString);
+      await prefs.setString(PrefKeys.latestWeathers, jsonString);
     }
-    // notifyListeners();
+    notifyListeners(); // FIXME: called unnecessary often
   }
 
   Future<void> applyForecastConfigs(List<ForecastConfig>? configs) async {
@@ -121,10 +121,6 @@ class WeatherViewModel extends ChangeNotifier {
 
     // Add API weathers
     currentWeathers += await _weatherService.getWeathers(automatic);
-
-    // Temporarily re-enable manual input
-    await setWeather(currentWeathers.firstOrNull);
-    // TODO: convert the rest of the class to use lists/weatherview
 
     await setWeathers(currentWeathers);
     _isLoading = false;
@@ -172,6 +168,7 @@ class WeatherView {
   final String? mainCondition;
   final DateTime updateDate;
   final bool isManual;
+  final bool isEmpty;
 
   WeatherView({
     required this.cityName,
@@ -179,6 +176,7 @@ class WeatherView {
     required this.mainCondition,
     required this.updateDate,
     required this.isManual,
+    this.isEmpty = false,
   });
 
   factory WeatherView.fromWeather(Weather weather) {
@@ -198,6 +196,7 @@ class WeatherView {
       mainCondition: null,
       updateDate: DateTime.timestamp(),
       isManual: true,
+      isEmpty: true,
     );
   }
 }

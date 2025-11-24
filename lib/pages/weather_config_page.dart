@@ -23,7 +23,7 @@ class _WeatherConfigPageState extends State<WeatherConfigPage> {
   void initState() {
     super.initState();
     configs = [];
-    _loadForecasts();
+    _loadForecastConfigs();
   }
 
   void _addConfig() {
@@ -71,7 +71,7 @@ class _WeatherConfigPageState extends State<WeatherConfigPage> {
     await prefs.setStringList(PrefKeys.forecastConfigs, jsonList);
   }
 
-  Future<void> _loadForecasts() async {
+  Future<void> _loadForecastConfigs() async {
     final prefs = await SharedPreferences.getInstance();
     final savedList = prefs.getStringList(PrefKeys.forecastConfigs);
     setState(() {

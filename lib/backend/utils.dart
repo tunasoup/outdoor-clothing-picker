@@ -4,7 +4,7 @@ class PrefKeys {
   static const String activity = 'clothing_selected_activity';
   static const String darkMode = 'settings_dark_mode_bool';
   static const String apiKeyOWM = 'weather_api_key_owm';
-  static const String latestWeather = 'weather_latest_weather';
+  static const String latestWeathers = 'weather_latest_weathers';
   static const String forecastConfigs = 'weather_forecast_configs';
 }
 

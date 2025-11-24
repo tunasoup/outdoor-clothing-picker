@@ -105,7 +105,7 @@ class _WeatherWidgetState extends State<WeatherWidget> {
 
   Widget _buildUpdateInfo(WeatherViewModel viewModel, ColorScheme colorScheme) {
     return Text(
-      viewModel.updateInfo ?? 'Pull down to fetch current weather or tap for input',
+      viewModel.updateInfo,
       textAlign: TextAlign.center,
       style: TextStyle(color: colorScheme.onPrimaryContainer),
       maxLines: 1,
