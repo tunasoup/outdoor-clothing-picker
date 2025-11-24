@@ -1,8 +1,5 @@
 import 'dart:convert';
 
-import 'package:outdoor_clothing_picker/backend/utils.dart';
-import 'package:shared_preferences/shared_preferences.dart';
-
 class Weather {
   final String cityName;
   final double temperature;
@@ -32,12 +29,17 @@ class Weather {
   /// Create from an earlier Weather instance that used toJson.
   factory Weather.fromJsonString(String jsonString) {
     final json = jsonDecode(jsonString);
+    return Weather.fromMap(json);
+  }
+
+  /// Create from an earlier Weather instance that used toJson, followed by decode.
+  factory Weather.fromMap(Map<String, dynamic> input) {
     return Weather(
-      cityName: json['cityName'],
-      temperature: json['temperature'],
-      mainCondition: json['mainCondition'],
-      updateDate: DateTime.parse(json['updateDate']),
-      isManual: json['isManual'],
+      cityName: input['cityName'],
+      temperature: input['temperature'],
+      mainCondition: input['mainCondition'],
+      updateDate: DateTime.parse(input['updateDate']),
+      isManual: input['isManual'],
     );
   }
 
@@ -58,11 +60,4 @@ class Weather {
     'updateDate': updateDate.toString(),
     'isManual': isManual,
   };
-
-  /// Save the Weather arguments locally in an encoded JSON string.
-  Future<void> save() async {
-    final prefs = await SharedPreferences.getInstance();
-    final jsonString = jsonEncode(toJson());
-    await prefs.setString(PrefKeys.latestWeather, jsonString);
-  }
 }

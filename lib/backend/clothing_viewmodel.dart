@@ -37,7 +37,7 @@ class ClothingViewModel extends ChangeNotifier {
 
     // Subscribe to changes
     weatherVM.addListener(() {
-      setTemperature(temp: weatherVM.temperature);
+      setTemperature(temp: double.tryParse(weatherVM.weathers.first.temperature));
     });
     providerAct.addListener(() {
       setDefaultActivity(providerAct.names);
