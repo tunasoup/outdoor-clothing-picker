@@ -32,10 +32,16 @@ IconData? iconFromCondition(String? condition) {
       return WeatherIcons.day_sunny;
     case 'clouds':
       return WeatherIcons.cloudy;
-    case 'atmosphere':
+    case 'fog':
+    case 'mist':
       return WeatherIcons.fog;
+    case 'tornado':
+      return WeatherIcons.tornado;
+    case 'haze':
+      return WeatherIcons.day_haze;
     case null:
-      return Icons.error_outline;
+    case '':
+      return null;
     default:
       if (kDebugMode) debugPrint('Unknown weather condition: $condition');
       return Icons.error_outline;

@@ -70,18 +70,21 @@ class _WeatherWidgetState extends State<WeatherWidget> {
   }
 
   Widget _buildWeatherDisplay(WeatherView weather, ColorScheme colorScheme) {
+    final icon = iconFromCondition(weather.mainCondition);
     return Column(
       children: [
         Row(
           mainAxisAlignment: MainAxisAlignment.center,
           crossAxisAlignment: CrossAxisAlignment.center,
           children: [
+            if (icon != null) ...[
             Icon(
-              iconFromCondition(weather.mainCondition),
+              icon,
               size: 48,
               color: colorScheme.onPrimaryContainer,
             ),
             const SizedBox(width: 16),
+            ],
             Text(
               weather.temperature,
               style: TextStyle(
