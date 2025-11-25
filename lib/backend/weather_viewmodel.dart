@@ -16,15 +16,16 @@ class WeatherViewModel extends ChangeNotifier {
     _initialize();
   }
 
-  List<WeatherView> _currentWeatherViews = [WeatherView.createEmpty()];
+  List<WeatherPresenter> _currentWeatherViews = [WeatherPresenter.createEmpty()];
   bool _isLoading = false;
 
   bool get isLoading => _isLoading;
 
-  List<WeatherView> get weathers => _currentWeatherViews;
+  List<WeatherPresenter> get weathers => _currentWeatherViews;
 
   Future<void> _initialize() async {
     // Load a possible saved Weathers from previous use
+    _isLoading = true;
     final prefs = await SharedPreferences.getInstance();
     final String? savedWeathers = prefs.getString(PrefKeys.latestWeathers);
     if (savedWeathers == null) {
@@ -45,6 +46,7 @@ class WeatherViewModel extends ChangeNotifier {
         if (kDebugMode) debugPrint('New weather unavailable');
       }
     }
+    _isLoading = false;
   }
 
   String get updateInfo {
@@ -84,10 +86,10 @@ class WeatherViewModel extends ChangeNotifier {
   Future<void> setWeathers(List<Weather>? weathers) async {
     final prefs = await SharedPreferences.getInstance();
     if (weathers == null || weathers.isEmpty) {
-      _currentWeatherViews = [WeatherView.createEmpty()];
+      _currentWeatherViews = [WeatherPresenter.createEmpty()];
       await prefs.remove(PrefKeys.latestWeathers);
     } else {
-      _currentWeatherViews = weathers.map(WeatherView.fromWeather).toList();
+      _currentWeatherViews = weathers.map(WeatherPresenter.fromWeather).toList();
       final jsonString = jsonEncode(weathers.map((w) => w.toJson()).toList());
       await prefs.setString(PrefKeys.latestWeathers, jsonString);
     }
@@ -164,16 +166,16 @@ class WeatherViewModel extends ChangeNotifier {
   }
 }
 
-class WeatherView {
+class WeatherPresenter {
   final String cityName;
-  final String temperature;
+  final num? temperature;
   final String? mainCondition;
   final DateTime localTime;
   final DateTime updateDate;
   final bool isManual;
   final bool isEmpty;
 
-  WeatherView({
+  WeatherPresenter({
     required this.cityName,
     required this.temperature,
     required this.mainCondition,
@@ -183,6 +185,8 @@ class WeatherView {
     this.isEmpty = false,
   });
 
+  String get temperatureDisplay => '${temperature?.round() ?? '-'}°C';
+
   String get description {
     if (isManual) {
       return 'manual\n';
@@ -191,10 +195,10 @@ class WeatherView {
     }
   }
 
-  factory WeatherView.fromWeather(Weather weather) {
-    return WeatherView(
+  factory WeatherPresenter.fromWeather(Weather weather) {
+    return WeatherPresenter(
       cityName: weather.cityName,
-      temperature: '${weather.temperature.round()}°C',
+      temperature: weather.temperature,
       mainCondition: weather.mainCondition,
       localTime: weather.localTime,
       updateDate: weather.updateDate,
@@ -202,11 +206,11 @@ class WeatherView {
     );
   }
 
-  factory WeatherView.createEmpty() {
+  factory WeatherPresenter.createEmpty() {
     final now = DateTime.timestamp();
-    return WeatherView(
+    return WeatherPresenter(
       cityName: '',
-      temperature: '-°C',
+      temperature: null,
       mainCondition: null,
       localTime: now.toLocal(),
       updateDate: now,
