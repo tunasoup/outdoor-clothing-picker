@@ -69,7 +69,7 @@ class _WeatherWidgetState extends State<WeatherWidget> {
     );
   }
 
-  Widget _buildWeatherDisplay(WeatherView weather, ColorScheme colorScheme) {
+  Widget _buildWeatherDisplay(WeatherPresenter weather, ColorScheme colorScheme) {
     final icon = iconFromCondition(weather.mainCondition);
     return Column(
       children: [
@@ -78,15 +78,11 @@ class _WeatherWidgetState extends State<WeatherWidget> {
           crossAxisAlignment: CrossAxisAlignment.center,
           children: [
             if (icon != null) ...[
-            Icon(
-              icon,
-              size: 48,
-              color: colorScheme.onPrimaryContainer,
-            ),
-            const SizedBox(width: 16),
+              Icon(icon, size: 48, color: colorScheme.onPrimaryContainer),
+              const SizedBox(width: 16),
             ],
             Text(
-              weather.temperature,
+              weather.temperatureDisplay,
               style: TextStyle(
                 fontSize: 48,
                 fontWeight: FontWeight.bold,
