@@ -25,7 +25,6 @@ class WeatherService {
     city is given in "city" and other info is under list[cnt_ind].
      */
     final hourInterval = 3;
-    // TODO: Change UI to allow only the 3-hour interval values
     // TODO: Add another weather API with 1-hour intervals
 
     // Combine if close enough in time or location to avoid unnecessary API calls

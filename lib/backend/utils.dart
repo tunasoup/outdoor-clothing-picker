@@ -63,3 +63,12 @@ bool isToday(DateTime date) {
 bool isOlderThan(DateTime date, Duration duration) {
   return DateTime.now().difference(date) > duration;
 }
+
+int computeDateOffset({required DateTime dt, DateTime? comparable}) {
+  comparable ??= DateTime.now();
+  return DateTime(
+    dt.year,
+    dt.month,
+    dt.day,
+  ).difference(DateTime(comparable.year, comparable.month, comparable.day)).inDays;
+}
