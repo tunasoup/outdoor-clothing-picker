@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:outdoor_clothing_picker/backend/utils.dart';
 
 /// Configuration for obtaining a weather model. In [isManual] mode the manual temperature is
 /// used. Otherwise, [location], [time] and [dateOffset] are used for API weather calls. Empty
@@ -26,7 +27,7 @@ class ForecastConfig {
     final selectedDate = now.add(Duration(days: dateOffset));
 
     if (time == null) {
-      return now;
+      return selectedDate;
     }
 
     return DateTime(
@@ -48,7 +49,7 @@ class ForecastConfig {
       resetDateTime();
       return;
     }
-    dateOffset = dt.difference(DateTime.now()).inDays;
+    dateOffset = computeDateOffset(dt: dt);
     time = TimeOfDay(hour: dt.hour, minute: dt.minute);
   }
 

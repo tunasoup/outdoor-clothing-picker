@@ -15,6 +15,12 @@ class _ForecastConfiguratorState extends State<ForecastConfigurator> {
   late final TextEditingController _locationController;
   late final TextEditingController _tempController;
 
+  // 3-hour interval times as dictated by OWM
+  final List<TimeOfDay> timeOptions = List.generate(
+    8,
+    (index) => TimeOfDay(hour: index * 3, minute: 0),
+  );
+
   @override
   void initState() {
     super.initState();
@@ -61,6 +67,57 @@ class _ForecastConfiguratorState extends State<ForecastConfigurator> {
     super.dispose();
   }
 
+  Future<void> pickDate() async {
+    final now = DateTime.now();
+    final picked = await showDatePicker(
+      context: context,
+      initialDate: widget.config.dateTime,
+      firstDate: now,
+      lastDate: now.add(const Duration(days: 3)),
+    );
+    if (picked != null) {
+      final offset = computeDateOffset(dt: picked);
+      setState(() {
+        widget.config.dateOffset = offset;
+      });
+    }
+  }
+
+  Future<void> pickTime() async {
+    final picked = await showModalBottomSheet<dynamic>(
+      context: context,
+      builder: (_) => SizedBox(
+        child: ListView(
+          children: [
+            ListTile(
+              title: const Center(child: Text('Clear')),
+              onTap: () => Navigator.pop(context, 'clear'),
+            ),
+            ...List.generate(timeOptions.length, (index) {
+              final time = timeOptions[index];
+              return ListTile(
+                title: Center(child: Text(time.format(context))),
+                onTap: () => Navigator.pop(context, time),
+              );
+            }),
+          ],
+        ),
+      ),
+    );
+
+    if (picked == null) {
+      return;
+    } else if (picked == 'clear') {
+      setState(() {
+        widget.config.time = null;
+      });
+    } else {
+      setState(() {
+        widget.config.time = picked;
+      });
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Card(
@@ -101,7 +158,11 @@ class _ForecastConfiguratorState extends State<ForecastConfigurator> {
             if (!widget.config.isManual) ...[
               TextFormField(
                 controller: _locationController,
-                decoration: const InputDecoration(labelText: "Location"),
+                decoration: const InputDecoration(
+                  labelText: 'City',
+                  hintText: 'Using location if left empty',
+                ),
+                textCapitalization: TextCapitalization.sentences,
               ),
 
               const SizedBox(height: 16),
@@ -109,43 +170,24 @@ class _ForecastConfiguratorState extends State<ForecastConfigurator> {
               Row(
                 children: [
                   Expanded(
-                    child: Text(
-                      widget.config.isForecast
-                          ? 'Time: ${formatTime(time: widget.config.dateTime, showConditionalDay: true)}'
-                          : 'Time: Now',
+                    child: TextButton(
+                      onPressed: pickDate,
+                      child: Text(
+                        widget.config.dateOffset == 0
+                            ? 'Day: Today'
+                            : 'Day: +${widget.config.dateOffset}',
+                      ),
                     ),
                   ),
-                  TextButton(
-                    // TODO: separate time and date pickers
-                    child: const Text("Pick time"),
-                    onPressed: () async {
-                      final now = DateTime.now();
-                      final date = await showDatePicker(
-                        context: context,
-                        initialDate: now,
-                        firstDate: now,
-                        lastDate: DateTime(now.year + 2),
-                      );
-                      if (date == null) return;
-
-                      final time = await showTimePicker(
-                        context: context,
-                        initialTime: TimeOfDay.now(),
-                      );
-                      if (time == null) return;
-
-                      final combined = DateTime(
-                        date.year,
-                        date.month,
-                        date.day,
-                        time.hour,
-                        time.minute,
-                      );
-
-                      setState(() {
-                        widget.config.setDateTime(combined);
-                      });
-                    },
+                  Expanded(
+                    child: TextButton(
+                      onPressed: pickTime,
+                      child: Text(
+                        widget.config.time == null
+                            ? 'Time: Now'
+                            : 'Time: ${widget.config.time!.format(context)}',
+                      ),
+                    ),
                   ),
                 ],
               ),
