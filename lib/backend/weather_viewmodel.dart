@@ -30,23 +30,24 @@ class WeatherViewModel extends ChangeNotifier {
     final String? savedWeathers = prefs.getString(PrefKeys.latestWeathers);
     if (savedWeathers == null) {
       if (kDebugMode) debugPrint('No saved Weathers found, starting fresh.');
-      return;
-    }
-    if (kDebugMode) debugPrint('Setting old weathers...');
-    final weathers = loadWeathersFromJson(savedWeathers);
-    unawaited(setWeathers(weathers));
-    // If the saved weathers has an API call, and not recent, start refreshing it
-    if (_currentWeatherViews.any((e) => !e.isManual) &&
-        isOlderThan(weathers.first.updateDate, Duration(minutes: 30))) {
-      try {
-        if (kDebugMode) debugPrint('Fetching newer weather...');
-        // TODO: use saved forecastConfigs which should match the old weathers
-        await fetchCurrentWeather();
-      } catch (_) {
-        if (kDebugMode) debugPrint('New weather unavailable');
+    } else {
+      if (kDebugMode) debugPrint('Setting old weathers...');
+      final weathers = loadWeathersFromJson(savedWeathers);
+      await setWeathers(weathers);
+      // If the saved weathers has an API call, and not recent, start refreshing it
+      if (_currentWeatherViews.any((e) => !e.isManual) &&
+          isOlderThan(weathers.first.updateDate, Duration(minutes: 30))) {
+        try {
+          if (kDebugMode) debugPrint('Fetching newer weather...');
+          // TODO: use saved forecastConfigs which should match the old weathers
+          await fetchCurrentWeather();
+        } catch (_) {
+          if (kDebugMode) debugPrint('New weather unavailable');
+        }
       }
     }
     _isLoading = false;
+    notifyListeners();
   }
 
   String get updateInfo {
@@ -116,19 +117,23 @@ class WeatherViewModel extends ChangeNotifier {
       (c.isManual ? manual : automatic).add(c);
     }
 
-    List<Weather> currentWeathers = [];
+    List<Weather> weathers = [];
 
     // Add manual weathers
-    currentWeathers += manual
+    weathers += manual
         .map((e) => Weather.fromTemperature(e.manualTemperature!.toDouble()))
         .toList();
 
     // Add API weathers
-    currentWeathers += await _weatherService.getWeathers(automatic);
-
-    await setWeathers(currentWeathers);
-    _isLoading = false;
-    notifyListeners();
+    try {
+      weathers += await _weatherService.fetchWeathers(automatic);
+      await setWeathers(weathers);
+    } catch (e) {
+      rethrow;
+    } finally {
+      _isLoading = false;
+      notifyListeners();
+    }
   }
 
   List<ForecastConfig> cleanForecastConfigs(List<ForecastConfig> configs) {
@@ -141,11 +146,12 @@ class WeatherViewModel extends ChangeNotifier {
 
   /// Try to fetch the current weather without waiting for it.
   Future<void> refresh() {
+    // TODO: refresh according to the current config, get current if no configs
     return tryFetchCurrentWeather();
   }
 
   Future<void> fetchCurrentWeather() async {
-    final Weather weather = await _weatherService.getWeatherByCurrentLocation();
+    final Weather weather = await _weatherService.fetchWeather();
     if (kDebugMode) debugPrint('start to set weather');
     await setWeather(weather);
   }

@@ -29,6 +29,22 @@ class Weather {
     );
   }
 
+  static List<Weather> fromOWMForecastJson(Map<String, dynamic> json, List<int> indices) {
+    final updateDate = DateTime.timestamp();
+    final cityName = json['city']['name'];
+    return indices.map((idx) {
+      final jsonList = json['list'][idx];
+      return Weather(
+        cityName: cityName,
+        temperature: jsonList['main']['temp'].toDouble(),
+        mainCondition: jsonList['weather'][0]['main'],
+        localTime: DateTime.fromMillisecondsSinceEpoch(jsonList['dt'] * 1_000, isUtc: false),
+        updateDate: updateDate,
+        isManual: false,
+      );
+    }).toList();
+  }
+
   /// Create from an earlier Weather instance that used toJson.
   factory Weather.fromJsonString(String jsonString) {
     final json = jsonDecode(jsonString);

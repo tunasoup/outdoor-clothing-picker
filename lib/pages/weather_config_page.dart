@@ -6,7 +6,6 @@ import 'package:outdoor_clothing_picker/backend/utils.dart';
 import 'package:outdoor_clothing_picker/widgets/forecast_configurator.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
-// TODO: use the output values to query forecasts
 // TODO: Change date to offset from today
 // TODO: Add favorites
 class WeatherConfigPage extends StatefulWidget {
