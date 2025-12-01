@@ -29,7 +29,9 @@ class _WeatherWidgetState extends State<WeatherWidget> {
                 context,
                 MaterialPageRoute(builder: (context) => WeatherConfigPage()),
               );
-              await viewModel.applyForecastConfigs(result);
+              await errorWrapper(context, () async {
+                await viewModel.applyForecastConfigs(result);
+              });
               // TODO: tapping could be expected to show more detailed weather informations as well
             },
             child: Container(
