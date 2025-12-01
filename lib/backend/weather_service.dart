@@ -40,7 +40,7 @@ class WeatherService {
     Set<ForecastConfig> currents = {};
     Set<ForecastConfig> forecasts = {};
     for (var e in configs) {
-      (e.forecastTime == null ? currents : forecasts).add(e);
+      (e.isForecast ? forecasts : currents).add(e);
     }
 
     // Split forecasts according to locations
@@ -48,7 +48,7 @@ class WeatherService {
     for (var e in forecasts) {
       final location = e.location.trim();
       forecastMap.putIfAbsent(location, () => {});
-      forecastMap[location]!.add(e.forecastTime!);
+      forecastMap[location]!.add(e.dateTime);
     }
 
     // Convert currents to locations
@@ -77,8 +77,8 @@ class WeatherService {
   /// Round the time of [config] to the [hourInterval] starting from 0:00. If the rounded time
   /// is before [earliest], the time is set to null to represent current time.
   void roundForecastTime(ForecastConfig config, DateTime earliest, int hourInterval) {
-    final dt = config.forecastTime;
-    if (dt == null) return;
+    if (!config.isForecast) return;
+    final dt = config.dateTime;
 
     final totalHours = dt.hour + dt.minute / 60.0;
 
@@ -93,8 +93,7 @@ class WeatherService {
     if (!earliest.isBefore(dtRounded)) {
       dtRounded = null;
     }
-
-    config.forecastTime = dtRounded;
+    config.setDateTime(dtRounded);
   }
 
   /// Return current location if [cityName] is empty, otherwise find matching location

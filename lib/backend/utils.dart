@@ -49,7 +49,7 @@ String formatTime({
       formatted = '${time.hour.toString()}:$minute';
   }
   if (showConditionalDay && !isToday(time)) {
-    formatted = '${time.day.toString().padLeft(2, '0')}/${time.shortMonth} $formatted';
+    formatted = '${time.day} ${time.shortMonth} $formatted';
   }
   return formatted;
 }

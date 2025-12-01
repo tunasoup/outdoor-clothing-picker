@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:outdoor_clothing_picker/backend/forecast_config.dart';
+import 'package:outdoor_clothing_picker/backend/utils.dart';
 
 class ForecastConfigurator extends StatefulWidget {
   final ForecastConfig config;
@@ -109,9 +110,9 @@ class _ForecastConfiguratorState extends State<ForecastConfigurator> {
                 children: [
                   Expanded(
                     child: Text(
-                      widget.config.forecastTime == null
-                          ? "Time: Now"
-                          : "Time: ${widget.config.forecastTime}",
+                      widget.config.isForecast
+                          ? 'Time: ${formatTime(time: widget.config.dateTime, showConditionalDay: true)}'
+                          : 'Time: Now',
                     ),
                   ),
                   TextButton(
@@ -142,7 +143,7 @@ class _ForecastConfiguratorState extends State<ForecastConfigurator> {
                       );
 
                       setState(() {
-                        widget.config.forecastTime = combined;
+                        widget.config.setDateTime(combined);
                       });
                     },
                   ),
