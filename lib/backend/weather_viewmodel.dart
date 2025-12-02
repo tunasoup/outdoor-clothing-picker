@@ -69,19 +69,6 @@ class WeatherViewModel extends ChangeNotifier {
     return weathers;
   }
 
-  /// Create a manual weather from a [temperature] and set it active.
-  Future<void> setManualWeather({String? temperature}) async {
-    final temp = double.tryParse(temperature?.trim() ?? '');
-    if (temp == null) return await setWeather(null);
-    await setWeather(Weather.fromTemperature(temp));
-  }
-
-  /// Set the current weather information with the provided [weather], or reset if null.
-  Future<void> setWeather(Weather? weather) async {
-    final weathers = weather == null ? null : [weather];
-    await setWeathers(weathers);
-  }
-
   /// Set the current weather information with the provided [weathers], or reset if null.
   Future<void> setWeathers(List<Weather>? weathers) async {
     final prefs = await SharedPreferences.getInstance();
@@ -93,7 +80,6 @@ class WeatherViewModel extends ChangeNotifier {
       final jsonString = jsonEncode(weathers.map((w) => w.toJson()).toList());
       await prefs.setString(PrefKeys.latestWeathers, jsonString);
     }
-    notifyListeners(); // FIXME: called unnecessary often
   }
 
   Future<void> applyForecastConfigs(List<ForecastConfig>? configs) async {
@@ -162,7 +148,7 @@ class WeatherViewModel extends ChangeNotifier {
     try {
       await fetchSelectedWeathers();
     } catch (e) {
-      await setWeather(null);
+      await setWeathers(null);
       rethrow;
     } finally {
       _isLoading = false;
