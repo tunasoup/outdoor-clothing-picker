@@ -1,11 +1,10 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:outdoor_clothing_picker/backend/forecast_config.dart';
 import 'package:outdoor_clothing_picker/backend/weather_viewmodel.dart';
 import 'package:outdoor_clothing_picker/pages/weather_config_page.dart';
 import 'package:outdoor_clothing_picker/widgets/utils.dart';
 import 'package:provider/provider.dart';
-
-import 'package:outdoor_clothing_picker/backend/forecast_config.dart';
 
 /// Widget for displaying weather info and opening the weather config page.
 class WeatherWidget extends StatefulWidget {
@@ -42,7 +41,7 @@ class _WeatherWidgetState extends State<WeatherWidget> {
               draftConfigs = result;
               await errorWrapper(context, () async {
                 try {
-                  await viewModel.applyForecastConfigs(result);
+                  await viewModel.applyForecastConfigs(configs: result);
                 } catch (e) {
                   rethrow;
                 }
@@ -59,7 +58,6 @@ class _WeatherWidgetState extends State<WeatherWidget> {
               ),
               child: Stack(
                 children: [
-                  // TODO: should not show refresh indicator and this at the same time
                   if (viewModel.isLoading)
                     Center(child: CircularProgressIndicator(strokeWidth: 3)),
                   Center(
