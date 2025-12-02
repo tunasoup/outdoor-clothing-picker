@@ -5,6 +5,8 @@ import 'package:outdoor_clothing_picker/pages/weather_config_page.dart';
 import 'package:outdoor_clothing_picker/widgets/utils.dart';
 import 'package:provider/provider.dart';
 
+import 'package:outdoor_clothing_picker/backend/forecast_config.dart';
+
 /// Widget for displaying weather info and opening the weather config page.
 class WeatherWidget extends StatefulWidget {
   const WeatherWidget({super.key});
@@ -14,6 +16,11 @@ class WeatherWidget extends StatefulWidget {
 }
 
 class _WeatherWidgetState extends State<WeatherWidget> {
+  // Keep track of current configs and save them only on success, so that active weathers are
+  // not changed by failed configs, but the user can go back to edit the drafts if they do not
+  // restart the app.
+  List<ForecastConfig>? draftConfigs;
+
   @override
   Widget build(BuildContext context) {
     final viewModel = context.watch<WeatherViewModel>();
@@ -27,10 +34,20 @@ class _WeatherWidgetState extends State<WeatherWidget> {
             onTap: () async {
               final result = await Navigator.push(
                 context,
-                MaterialPageRoute(builder: (context) => WeatherConfigPage()),
+                MaterialPageRoute(
+                  builder: (context) => WeatherConfigPage(initialConfigs: draftConfigs),
+                ),
               );
+              if (result == null) return;
+              draftConfigs = result;
               await errorWrapper(context, () async {
-                await viewModel.applyForecastConfigs(result);
+                try {
+                  await viewModel.applyForecastConfigs(result);
+                } catch (e) {
+                  rethrow;
+                }
+                await saveForecastConfigs(result);
+                draftConfigs = null;
               });
               // TODO: tapping could be expected to show more detailed weather informations as well
             },
@@ -134,7 +151,7 @@ class GetWeatherButton extends StatelessWidget {
           ),
           onPressed: viewModel.isLoading
               ? null
-              : () async => await errorWrapper(context, viewModel.tryFetchCurrentWeather),
+              : () async => await errorWrapper(context, viewModel.tryFetchSelectedWeathers),
           child: viewModel.isLoading
               ? const SizedBox(
                   width: 16,
