@@ -1,14 +1,12 @@
-import 'dart:convert';
-
 import 'package:flutter/material.dart';
 import 'package:outdoor_clothing_picker/backend/forecast_config.dart';
-import 'package:outdoor_clothing_picker/backend/utils.dart';
 import 'package:outdoor_clothing_picker/widgets/forecast_configurator.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 
 // TODO: Add favorites
 class WeatherConfigPage extends StatefulWidget {
-  const WeatherConfigPage({super.key});
+  final List<ForecastConfig>? initialConfigs;
+
+  const WeatherConfigPage({super.key, this.initialConfigs});
 
   @override
   State<WeatherConfigPage> createState() => _WeatherConfigPageState();
@@ -21,7 +19,18 @@ class _WeatherConfigPageState extends State<WeatherConfigPage> {
   void initState() {
     super.initState();
     configs = [];
-    _loadForecastConfigs();
+    if (widget.initialConfigs != null) {
+      configs = widget.initialConfigs!;
+    } else {
+      _loadConfigs();
+    }
+  }
+
+  Future<void> _loadConfigs() async {
+    final loadedConfigs = await loadForecastConfigs();
+    setState(() {
+      configs = loadedConfigs;
+    });
   }
 
   void _addConfig() {
@@ -37,7 +46,6 @@ class _WeatherConfigPageState extends State<WeatherConfigPage> {
   }
 
   void _applyAndExit() {
-    _saveForecastConfigs();
     Navigator.pop(context, configs);
   }
 
@@ -61,24 +69,6 @@ class _WeatherConfigPageState extends State<WeatherConfigPage> {
         duration: const Duration(seconds: 3),
       ),
     );
-  }
-
-  Future<void> _saveForecastConfigs() async {
-    final prefs = await SharedPreferences.getInstance();
-    final jsonList = configs.map((e) => jsonEncode(e.toJson())).toList();
-    await prefs.setStringList(PrefKeys.forecastConfigs, jsonList);
-  }
-
-  Future<void> _loadForecastConfigs() async {
-    final prefs = await SharedPreferences.getInstance();
-    final savedList = prefs.getStringList(PrefKeys.forecastConfigs);
-    setState(() {
-      if (savedList != null && savedList.isNotEmpty) {
-        configs = savedList.map((e) => ForecastConfig.fromJson(jsonDecode(e))).toList();
-      } else {
-        configs = [ForecastConfig()];
-      }
-    });
   }
 
   @override

@@ -1,5 +1,8 @@
+import 'dart:convert';
+
 import 'package:flutter/material.dart';
 import 'package:outdoor_clothing_picker/backend/utils.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 /// Configuration for obtaining a weather model. In [isManual] mode the manual temperature is
 /// used. Otherwise, [location], [time] and [dateOffset] are used for API weather calls. Empty
@@ -128,4 +131,26 @@ TimeOfDay? timeOfDayFromJson(String? json) {
   final hour = int.parse(parts[0]);
   final minute = int.parse(parts[1]);
   return TimeOfDay(hour: hour, minute: minute);
+}
+
+// TODO: add forecast config viewmodel and config repository
+Future<void> saveForecastConfigs(List<ForecastConfig> configs) async {
+  final prefs = await SharedPreferences.getInstance();
+  final jsonList = configs.map((e) => jsonEncode(e.toJson())).toList();
+  await prefs.setStringList(PrefKeys.forecastConfigs, jsonList);
+}
+
+/// Load the saved forecast configs. If [useDefault] is enabled and there are no saved configs,
+/// a default config is returned, matching current time and position.
+Future<List<ForecastConfig>> loadForecastConfigs({bool useDefault = true}) async {
+  final prefs = await SharedPreferences.getInstance();
+  final savedList = prefs.getStringList(PrefKeys.forecastConfigs);
+  List<ForecastConfig> configs = [];
+  if (savedList != null && savedList.isNotEmpty) {
+    configs = savedList.map((e) => ForecastConfig.fromJson(jsonDecode(e))).toList();
+  }
+  if (configs.isEmpty && useDefault) {
+    configs = [ForecastConfig()];
+  }
+  return configs;
 }

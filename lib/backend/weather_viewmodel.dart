@@ -34,13 +34,12 @@ class WeatherViewModel extends ChangeNotifier {
       if (kDebugMode) debugPrint('Setting old weathers...');
       final weathers = loadWeathersFromJson(savedWeathers);
       await setWeathers(weathers);
-      // If the saved weathers has an API call, and not recent, start refreshing it
+      // If the saved weathers has an API call, and not recent, start refreshing them
       if (_currentWeatherViews.any((e) => !e.isManual) &&
           isOlderThan(weathers.first.updateDate, Duration(minutes: 30))) {
         try {
           if (kDebugMode) debugPrint('Fetching newer weather...');
-          // TODO: use saved forecastConfigs which should match the old weathers
-          await fetchCurrentWeather();
+          await fetchSelectedWeathers();
         } catch (_) {
           if (kDebugMode) debugPrint('New weather unavailable');
         }
@@ -104,9 +103,9 @@ class WeatherViewModel extends ChangeNotifier {
     configs = cleanForecastConfigs(configs);
 
     if (configs.isEmpty) {
-      // TODO: decide what to do, either reset weather, do not act (maybe snackbar), or run
-      //  current. Realistically only empty if an empty manual temperature is provided, which
-      //  could be prevented in the UI by disabling apply.
+      await setWeathers(null);
+      _isLoading = false;
+      notifyListeners();
       return;
     }
 
@@ -138,30 +137,30 @@ class WeatherViewModel extends ChangeNotifier {
 
   List<ForecastConfig> cleanForecastConfigs(List<ForecastConfig> configs) {
     if (kDebugMode) debugPrint('Configs: $configs');
-    configs.removeWhere((c) => c.isEmpty);
+    configs = configs.where((c) => !c.isEmpty).toList();
     configs = configs.toSet().toList(); // Remove duplicates
     if (kDebugMode) debugPrint('Cleaned configs: $configs');
     return configs;
   }
 
-  /// Try to fetch the current weather without waiting for it.
+  /// Try to fetch the selected weathers without waiting for them.
   Future<void> refresh() {
-    // TODO: refresh according to the current config, get current if no configs
-    return tryFetchCurrentWeather();
+    return tryFetchSelectedWeathers();
   }
 
-  Future<void> fetchCurrentWeather() async {
-    final Weather weather = await _weatherService.fetchWeather();
-    if (kDebugMode) debugPrint('start to set weather');
-    await setWeather(weather);
+  /// Fetch the weathers matching the latest successful configs, or if there are none, the
+  /// default config (current weather in current position).
+  Future<void> fetchSelectedWeathers() async {
+    final configs = await loadForecastConfigs(useDefault: true);
+    await applyForecastConfigs(configs);
   }
 
-  Future<void> tryFetchCurrentWeather() async {
+  Future<void> tryFetchSelectedWeathers() async {
     _isLoading = true;
     notifyListeners();
 
     try {
-      await fetchCurrentWeather();
+      await fetchSelectedWeathers();
     } catch (e) {
       await setWeather(null);
       rethrow;
