@@ -16,12 +16,12 @@ class WeatherViewModel extends ChangeNotifier {
     _initialize();
   }
 
-  List<WeatherPresenter> _currentWeatherViews = [WeatherPresenter.createEmpty()];
+  List<WeatherPresenter> _activeWeatherViews = [WeatherPresenter.createEmpty()];
   bool _isLoading = false;
 
   bool get isLoading => _isLoading;
 
-  List<WeatherPresenter> get weathers => _currentWeatherViews;
+  List<WeatherPresenter> get weathers => _activeWeatherViews;
 
   Future<void> _initialize() async {
     // Load a possible saved Weathers from previous use
@@ -35,13 +35,13 @@ class WeatherViewModel extends ChangeNotifier {
       final weathers = loadWeathersFromJson(savedWeathers);
       await setWeathers(weathers);
       // If the saved weathers has an API call, and not recent, start refreshing them
-      if (_currentWeatherViews.any((e) => !e.isManual) &&
+      if (_activeWeatherViews.any((e) => !e.isManual) &&
           isOlderThan(weathers.first.updateDate, Duration(minutes: 30))) {
         try {
-          if (kDebugMode) debugPrint('Fetching newer weather...');
-          await fetchSelectedWeathers();
+          if (kDebugMode) debugPrint('Fetching newer weathers...');
+          await fetchSelectedWeathers(showLoading: false);
         } catch (_) {
-          if (kDebugMode) debugPrint('New weather unavailable');
+          if (kDebugMode) debugPrint('New weathers unavailable');
         }
       }
     }
@@ -50,15 +50,15 @@ class WeatherViewModel extends ChangeNotifier {
   }
 
   String get updateInfo {
-    if (_currentWeatherViews.isEmpty || _currentWeatherViews.first.isEmpty) {
+    if (_activeWeatherViews.isEmpty || _activeWeatherViews.first.isEmpty) {
       return 'Pull down to fetch current weather or tap for input';
-    } else if (_currentWeatherViews.any((e) => !e.isManual)) {
+    } else if (_activeWeatherViews.any((e) => !e.isManual)) {
       // Each current weather should have the same time they were updated
-      final updateDate = _currentWeatherViews.first.updateDate;
+      final updateDate = _activeWeatherViews.first.updateDate;
       return 'Updated ${formatTime(time: updateDate, showConditionalDay: true)}';
     } else {
       String msg = 'Using Manual Temperature';
-      msg += _currentWeatherViews.length > 1 ? 's' : '';
+      msg += _activeWeatherViews.length > 1 ? 's' : '';
       return msg;
     }
   }
@@ -73,25 +73,34 @@ class WeatherViewModel extends ChangeNotifier {
   Future<void> setWeathers(List<Weather>? weathers) async {
     final prefs = await SharedPreferences.getInstance();
     if (weathers == null || weathers.isEmpty) {
-      _currentWeatherViews = [WeatherPresenter.createEmpty()];
+      _activeWeatherViews = [WeatherPresenter.createEmpty()];
       await prefs.remove(PrefKeys.latestWeathers);
     } else {
-      _currentWeatherViews = weathers.map(WeatherPresenter.fromWeather).toList();
+      _activeWeatherViews = weathers.map(WeatherPresenter.fromWeather).toList();
       final jsonString = jsonEncode(weathers.map((w) => w.toJson()).toList());
       await prefs.setString(PrefKeys.latestWeathers, jsonString);
     }
   }
 
-  Future<void> applyForecastConfigs(List<ForecastConfig>? configs) async {
+  /// Fetch weathers matching the provided [configs] and set them as active. [showLoading]
+  /// should be set to false if an outer function is already notifying listeners.
+  Future<void> applyForecastConfigs({
+    required List<ForecastConfig>? configs,
+    bool showLoading = true,
+  }) async {
     if (configs == null) return;
-    _isLoading = true;
-    notifyListeners();
+    if (showLoading) {
+      _isLoading = true;
+      notifyListeners();
+    }
     configs = cleanForecastConfigs(configs);
 
     if (configs.isEmpty) {
       await setWeathers(null);
-      _isLoading = false;
-      notifyListeners();
+      if (showLoading) {
+        _isLoading = false;
+        notifyListeners();
+      }
       return;
     }
 
@@ -116,8 +125,10 @@ class WeatherViewModel extends ChangeNotifier {
     } catch (e) {
       rethrow;
     } finally {
-      _isLoading = false;
-      notifyListeners();
+      if (showLoading) {
+        _isLoading = false;
+        notifyListeners();
+      }
     }
   }
 
@@ -131,22 +142,28 @@ class WeatherViewModel extends ChangeNotifier {
 
   /// Try to fetch the selected weathers without waiting for them.
   Future<void> refresh() {
-    return tryFetchSelectedWeathers();
+    return tryFetchSelectedWeathers(showLoading: false);
   }
 
   /// Fetch the weathers matching the latest successful configs, or if there are none, the
-  /// default config (current weather in current position).
-  Future<void> fetchSelectedWeathers() async {
+  /// default config (current weather in current position). [showLoading] should be set to false
+  /// if an outer function is already notifying listeners.
+  Future<void> fetchSelectedWeathers({bool showLoading = true}) async {
     final configs = await loadForecastConfigs(useDefault: true);
-    await applyForecastConfigs(configs);
+    await applyForecastConfigs(configs: configs, showLoading: showLoading);
   }
 
-  Future<void> tryFetchSelectedWeathers() async {
-    _isLoading = true;
-    notifyListeners();
+  /// Standalone outer function for fetching weather that match the saved forecast configs.
+  /// [showLoading] should be set to false if called by RefreshIndicator to avoid double loading
+  /// icons.
+  Future<void> tryFetchSelectedWeathers({bool showLoading = true}) async {
+    if (showLoading) {
+      _isLoading = true;
+      notifyListeners();
+    }
 
     try {
-      await fetchSelectedWeathers();
+      await fetchSelectedWeathers(showLoading: false);
     } catch (e) {
       await setWeathers(null);
       rethrow;
