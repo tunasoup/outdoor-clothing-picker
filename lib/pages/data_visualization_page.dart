@@ -6,9 +6,10 @@ import 'package:outdoor_clothing_picker/widgets/add_dialogs.dart';
 import 'package:outdoor_clothing_picker/widgets/utils.dart';
 import 'package:provider/provider.dart';
 
-// TODO: finish conversion to listview builder and delete obsolete code
-// FIXME: select all does not rebuild cards
-abstract class DataListItem {}
+/// Abstract object to place inside a Listview builder.
+abstract class DataListItem {
+  Widget build(BuildContext context);
+}
 
 class DataHeaderItem extends DataListItem {
   final String tableName;
@@ -16,6 +17,24 @@ class DataHeaderItem extends DataListItem {
   final VoidCallback onAdd;
 
   DataHeaderItem(this.tableName, this.provider, this.onAdd);
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      children: [
+        Text(tableName.toUpperCase(), style: Theme.of(context).textTheme.titleLarge),
+        const SizedBox(width: 8),
+        ElevatedButton(
+          style: ElevatedButton.styleFrom(
+            backgroundColor: Theme.of(context).colorScheme.primaryContainer,
+            foregroundColor: Theme.of(context).colorScheme.onPrimaryContainer,
+          ),
+          onPressed: provider.isLoading ? null : onAdd,
+          child: const Text('Add New'),
+        ),
+      ],
+    );
+  }
 }
 
 class DataRowItem extends DataListItem {
@@ -23,9 +42,33 @@ class DataRowItem extends DataListItem {
   final Map<String, dynamic> row;
 
   DataRowItem(this.dataView, this.row);
+
+  @override
+  Widget build(BuildContext context) {
+    return dataView._buildDataRow(context, row, dataView.getProvider(context, false));
+  }
 }
 
-class DataDividerItem extends DataListItem {}
+class DataDividerItem extends DataListItem {
+  @override
+  Widget build(BuildContext context) {
+    return const Divider(height: 32);
+  }
+}
+
+class NoDataItem extends DataListItem {
+  @override
+  Widget build(BuildContext context) {
+    return const Text('No Data');
+  }
+}
+
+class LoadingItem extends DataListItem {
+  @override
+  Widget build(BuildContext context) {
+    return Center(child: CircularProgressIndicator());
+  }
+}
 
 /// The Data visualization page shows the contents of the local data and allows modifying it.
 class DataVisualizationPage extends StatefulWidget {
@@ -59,57 +102,71 @@ class _DataVisualizationContent extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final activityProvider = Provider.of<ActivityItemsProvider>(context);
-    final categoryProvider = Provider.of<CategoryItemsProvider>(context);
-    final clothingProvider = Provider.of<ClothingItemsProvider>(context);
+    final activityProvider = Provider.of<ActivityItemsProvider>(context, listen: true);
+    final categoryProvider = Provider.of<CategoryItemsProvider>(context, listen: true);
+    final clothingProvider = Provider.of<ClothingItemsProvider>(context, listen: true);
 
     // Filter items by searchQuery
-    final activityRows = const ActivityDataView().filterByAnyValue(
-      activityProvider.itemList,
-      searchQuery,
-    );
-    final categoryRows = const CategoryDataView().filterByAnyValue(
-      categoryProvider.itemList,
-      searchQuery,
-    );
-    final clothingRows = const ClothingDataView().filterByAnyValue(
-      clothingProvider.itemList,
-      searchQuery,
-    );
+    final activityRows = filterByAnyValue(activityProvider.itemList, searchQuery);
+    final categoryRows = filterByAnyValue(categoryProvider.itemList, searchQuery);
+    final clothingRows = filterByAnyValue(clothingProvider.itemList, searchQuery);
+
+    final activityDV = const ActivityDataView();
+    final categoryDV = const CategoryDataView();
+    final clothingDV = const ClothingDataView();
 
     // Update visible items for selection
     WidgetsBinding.instance.addPostFrameCallback((_) {
       final selectionProvider = context.read<SelectionProvider>();
       selectionProvider.updateVisibleItems(
-        const ActivityDataView(),
+        activityDV,
         activityRows.map((row) => row['id'] as int).toSet(),
       );
       selectionProvider.updateVisibleItems(
-        const CategoryDataView(),
+        categoryDV,
         categoryRows.map((row) => row['id'] as int).toSet(),
       );
       selectionProvider.updateVisibleItems(
-        const ClothingDataView(),
+        clothingDV,
         clothingRows.map((row) => row['id'] as int).toSet(),
       );
     });
 
-    // Build the flattened list
+    // Build a list of all the visible rows and other items
     final List<DataListItem> items = [
-      DataHeaderItem('Activities', activityProvider, () {
-        showRowDialog(context: context, tableName: 'activities', mode: DialogMode.add);
+      DataHeaderItem(activityDV.tableName.toUpperCase(), activityProvider, () {
+        showRowDialog(
+          context: context,
+          tableName: activityDV.tableName.toLowerCase(),
+          mode: DialogMode.add,
+        );
       }),
-      ...activityRows.map((row) => DataRowItem(const ActivityDataView(), row)),
+      if (activityProvider.isLoading)
+        LoadingItem()
+      else if (activityRows.isEmpty)
+        NoDataItem()
+      else
+        ...activityRows.map((row) => DataRowItem(activityDV, row)),
       DataDividerItem(),
-      DataHeaderItem('Categories', categoryProvider, () {
-        showRowDialog(context: context, tableName: 'categories', mode: DialogMode.add);
+      DataHeaderItem(categoryDV.tableName.toUpperCase(), categoryProvider, () {
+        showRowDialog(
+          context: context,
+          tableName: categoryDV.tableName.toLowerCase(),
+          mode: DialogMode.add,
+        );
       }),
-      ...categoryRows.map((row) => DataRowItem(const CategoryDataView(), row)),
+      if (categoryRows.isEmpty) NoDataItem(),
+      ...categoryRows.map((row) => DataRowItem(categoryDV, row)),
       DataDividerItem(),
-      DataHeaderItem('Clothing', clothingProvider, () {
-        showRowDialog(context: context, tableName: 'clothing', mode: DialogMode.add);
+      DataHeaderItem(clothingDV.tableName.toUpperCase(), clothingProvider, () {
+        showRowDialog(
+          context: context,
+          tableName: clothingDV.tableName.toLowerCase(),
+          mode: DialogMode.add,
+        );
       }),
-      ...clothingRows.map((row) => DataRowItem(const ClothingDataView(), row)),
+      if (clothingRows.isEmpty) NoDataItem(),
+      ...clothingRows.map((row) => DataRowItem(clothingDV, row)),
       DataDividerItem(),
     ];
 
@@ -123,54 +180,13 @@ class _DataVisualizationContent extends StatelessWidget {
             itemCount: items.length,
             itemBuilder: (context, index) {
               final item = items[index];
-              if (item is DataHeaderItem) {
-                return Row(
-                  children: [
-                    Text(
-                      item.tableName.toUpperCase(),
-                      style: Theme.of(context).textTheme.titleLarge,
-                    ),
-                    const SizedBox(width: 8),
-                    ElevatedButton(
-                      onPressed: item.provider.isLoading ? null : item.onAdd,
-                      child: const Text('Add New'),
-                    ),
-                  ],
-                );
-              } else if (item is DataRowItem) {
-                return item.dataView._buildDataRow(
-                  context,
-                  item.row,
-                  item.dataView.getProvider(context, false),
-                );
-              } else if (item is DataDividerItem) {
-                return const Divider(height: 32);
-              }
-              return const SizedBox.shrink();
+              return item.build(context);
             },
           ),
         );
       },
     );
   }
-
-  // @override
-  // Widget build2(BuildContext context) {
-  //   return ChangeNotifierProvider(
-  //     create: (_) => SelectionProvider(),
-  //     child: Scaffold(
-  //       appBar: DataAppBar(searchCallback: _searchCallback),
-  //       body: ListView(
-  //         padding: const EdgeInsets.all(16),
-  //         children: [
-  //           ActivityDataView(searchQuery: searchQuery),
-  //           CategoryDataView(searchQuery: searchQuery),
-  //           ClothingDataView(searchQuery: searchQuery),
-  //         ],
-  //       ),
-  //     ),
-  //   );
-  // }
 }
 
 class DataAppBar extends StatefulWidget implements PreferredSizeWidget {
@@ -453,17 +469,15 @@ Future<void> editRow(
   );
 }
 
-abstract class DataView extends StatelessWidget {
-  final String? searchQuery;
-
-  const DataView({super.key, this.searchQuery});
+abstract class DataView {
+  const DataView();
 
   String get tableName;
 
   ItemsProvider getProvider(BuildContext context, bool listen);
 
   String _cardText(Map<String, dynamic> row) {
-    debugPrint('card text build');
+    if (kDebugMode) debugPrint('card text build');
     return row.entries
         .map(modifyRowEntry)
         .where((e) => e != null) // Remove skipped pairs
@@ -485,48 +499,6 @@ abstract class DataView extends StatelessWidget {
 
   /// Overridable custom rules for children to change details visually only
   MapEntry<String, dynamic>? rowEntryRules(MapEntry<String, dynamic> entry) => entry;
-
-  List<Map<String, dynamic>> filterByAnyValue(
-    List<Map<String, dynamic>> items,
-    String? searchQuery,
-  ) {
-    if (searchQuery == null || searchQuery.isEmpty) return items;
-
-    final query = searchQuery.toLowerCase();
-
-    return items.where((item) {
-      return item.values.any((value) {
-        // Process empty null values as if they were null strings
-        final strValue = value?.toString() ?? 'null';
-        return strValue.toLowerCase().contains(query);
-      });
-    }).toList();
-  }
-
-  Widget _buildHeader(BuildContext context, ItemsProvider provider) {
-    return Row(
-      children: [
-        Text(tableName.toUpperCase(), style: Theme.of(context).textTheme.titleLarge),
-        const SizedBox(width: 8),
-        ElevatedButton(
-          onPressed: provider.isLoading
-              ? null
-              : () async {
-                  await showRowDialog(
-                    context: context,
-                    tableName: tableName.toLowerCase(),
-                    mode: DialogMode.add,
-                  );
-                },
-          style: ElevatedButton.styleFrom(
-            backgroundColor: Theme.of(context).colorScheme.primaryContainer,
-            foregroundColor: Theme.of(context).colorScheme.onPrimaryContainer,
-          ),
-          child: const Text('Add New'),
-        ),
-      ],
-    );
-  }
 
   Widget _buildDataRow(BuildContext context, Map<String, dynamic> row, ItemsProvider provider) {
     final rowId = row['id'] as int;
@@ -568,44 +540,10 @@ abstract class DataView extends StatelessWidget {
       },
     );
   }
-
-  @override
-  Widget build(BuildContext context) {
-    final provider = getProvider(context, true);
-    return Selector<SelectionProvider, bool>(
-      selector: (_, p) => p.isSelectionMode,
-      builder: (_, isSelectionMode, _) {
-        List<Map<String, dynamic>> rows = provider.itemList;
-        rows = filterByAnyValue(rows, searchQuery);
-
-        // Update provider (in the next frame) with currently visible rows for this table
-        final visibleIds = rows.map((row) => row['id'] as int).toSet();
-        final selectionProvider = context.read<SelectionProvider>();
-        WidgetsBinding.instance.addPostFrameCallback((_) {
-          selectionProvider.updateVisibleItems(this, visibleIds);
-        });
-
-        return Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            _buildHeader(context, provider),
-            const SizedBox(width: 8),
-            if (provider.isLoading)
-              Center(child: CircularProgressIndicator())
-            else if (rows.isEmpty)
-              const Text('No data')
-            else
-              ...rows.map((row) => _buildDataRow(context, row, provider)),
-            const Divider(height: 32),
-          ],
-        );
-      },
-    );
-  }
 }
 
 class ActivityDataView extends DataView {
-  const ActivityDataView({super.key, super.searchQuery});
+  const ActivityDataView();
 
   @override
   String get tableName => "Activities";
@@ -616,7 +554,7 @@ class ActivityDataView extends DataView {
 }
 
 class CategoryDataView extends DataView {
-  const CategoryDataView({super.key, super.searchQuery});
+  const CategoryDataView();
 
   @override
   String get tableName => "Categories";
@@ -639,7 +577,7 @@ class CategoryDataView extends DataView {
 }
 
 class ClothingDataView extends DataView {
-  const ClothingDataView({super.key, super.searchQuery});
+  const ClothingDataView();
 
   @override
   String get tableName => "Clothing";
@@ -730,4 +668,24 @@ class SelectionProvider extends ChangeNotifier {
     selectedItems.clear();
     notifyListeners();
   }
+}
+
+/// Filter the [items] to those that include the provided [searchQuery] in any of their values.
+/// All items are returned if [searchQuery] is empty. Empty values are considered as the string
+/// "null".
+List<Map<String, dynamic>> filterByAnyValue(
+  List<Map<String, dynamic>> items,
+  String? searchQuery,
+) {
+  if (searchQuery == null || searchQuery.isEmpty) return items;
+
+  final query = searchQuery.toLowerCase();
+
+  return items.where((item) {
+    return item.values.any((value) {
+      // Process empty null values as if they were null strings
+      final strValue = value?.toString() ?? 'null';
+      return strValue.toLowerCase().contains(query);
+    });
+  }).toList();
 }
