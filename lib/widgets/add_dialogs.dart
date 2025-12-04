@@ -458,5 +458,5 @@ Future<bool> showRowDialog({
     case 'clothing':
       return await ClothingDialog(mode: mode, initialData: initialData).show(context);
   }
-  throw Exception("Unknown table name $tableName");
+  throw Exception('Unknown table name $tableName');
 }

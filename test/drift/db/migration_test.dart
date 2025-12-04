@@ -41,39 +41,39 @@ void main() {
   final v3ActivitiesData = [v3.ActivitiesData(id: 1, name: 'Running')];
 
   final v1CategoriesData = [
-    v1.CategoriesData(name: "Torso", normX: 0.0, normY: 0.5),
+    v1.CategoriesData(name: 'Torso', normX: 0.0, normY: 0.5),
   ];
   final v2CategoriesData = [
-    v2.CategoriesData(id: 1, name: "Torso", normX: 0.0, normY: 0.5),
+    v2.CategoriesData(id: 1, name: 'Torso', normX: 0.0, normY: 0.5),
   ];
   final v3CategoriesData = [
-    v3.CategoriesData(id: 1, name: "Torso", normX: 0.0, normY: 0.5),
+    v3.CategoriesData(id: 1, name: 'Torso', normX: 0.0, normY: 0.5),
   ];
 
   final v1ClothingData = [
     v1.ClothingData(
       id: 1,
-      name: "Clothing",
+      name: 'Clothing',
       minTemp: 2,
       maxTemp: 5,
-      category: "Torso",
-      activity: "Running",
+      category: 'Torso',
+      activity: 'Running',
     ),
   ];
   final v2ClothingData = [
     v2.ClothingData(
       id: 1,
-      name: "Clothing",
+      name: 'Clothing',
       minTemp: 2,
       maxTemp: 5,
-      category: "Torso",
-      activity: "Running",
+      category: 'Torso',
+      activity: 'Running',
     ),
   ];
   final v3ClothingData = <v3.ClothingData>[
     v3.ClothingData(
       id: 1,
-      name: "Clothing",
+      name: 'Clothing',
       minTemp: 2,
       maxTemp: 5,
       categoryId: 1,

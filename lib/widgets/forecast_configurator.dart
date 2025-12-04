@@ -129,7 +129,7 @@ class _ForecastConfiguratorState extends State<ForecastConfigurator> {
           children: [
             Row(
               children: [
-                const Text("Mode: "),
+                const Text('Mode: '),
                 const SizedBox(width: 4),
                 ToggleButtons(
                   isSelected: [!widget.config.isManual, widget.config.isManual],
@@ -143,11 +143,11 @@ class _ForecastConfiguratorState extends State<ForecastConfigurator> {
                   children: const [
                     Padding(
                       padding: EdgeInsets.symmetric(horizontal: 12),
-                      child: Text("Forecast"),
+                      child: Text('Forecast'),
                     ),
                     Padding(
                       padding: EdgeInsets.symmetric(horizontal: 12),
-                      child: Text("Manual °C"),
+                      child: Text('Manual °C'),
                     ),
                   ],
                 ),
@@ -196,7 +196,7 @@ class _ForecastConfiguratorState extends State<ForecastConfigurator> {
             if (widget.config.isManual)
               TextFormField(
                 controller: _tempController,
-                decoration: const InputDecoration(labelText: "Temperature (°C)"),
+                decoration: const InputDecoration(labelText: 'Temperature (°C)'),
                 keyboardType: TextInputType.number,
               ),
           ],

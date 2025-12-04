@@ -57,9 +57,9 @@ class _WeatherConfigPageState extends State<WeatherConfigPage> {
     ScaffoldMessenger.of(context).clearSnackBars();
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
-        content: const Text("Forecast deleted"),
+        content: const Text('Forecast deleted'),
         action: SnackBarAction(
-          label: "UNDO",
+          label: 'UNDO',
           onPressed: () {
             setState(() {
               configs.insert(removedIndex, removedConfig);
@@ -75,8 +75,8 @@ class _WeatherConfigPageState extends State<WeatherConfigPage> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text("Choose Forecasts"),
-        actions: [TextButton(onPressed: _applyAndExit, child: const Text("Apply"))],
+        title: const Text('Choose Forecasts'),
+        actions: [TextButton(onPressed: _applyAndExit, child: const Text('Apply'))],
       ),
 
       body: ListView.builder(
@@ -107,7 +107,7 @@ class _WeatherConfigPageState extends State<WeatherConfigPage> {
                   child: ElevatedButton.icon(
                     onPressed: _addConfig,
                     icon: const Icon(Icons.add),
-                    label: const Text("Add another forecast"),
+                    label: const Text('Add another forecast'),
                   ),
                 ),
             ],
