@@ -232,7 +232,8 @@ class ClothingDialog extends StatelessWidget {
   final Map<String, dynamic>? initialData;
 
   const ClothingDialog({super.key, required this.mode, this.initialData});
-
+  // TODO: Indicate that empty temps are infinite in UI
+  // TODO: Capital letter for all (or most) keyboards
   Future<bool> show(BuildContext context) async {
     final AppDb db = context.read<AppDb>();
     final success = await showDialog<bool>(

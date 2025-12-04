@@ -11,6 +11,8 @@ class SettingsPage extends StatefulWidget {
   State<SettingsPage> createState() => _SettingsPageState();
 }
 
+// TODO: Left-hand mode
+// TODO: Localization (language, units, time format)
 class _SettingsPageState extends State<SettingsPage> {
   final TextEditingController _controller = TextEditingController();
   bool _isLoading = true;

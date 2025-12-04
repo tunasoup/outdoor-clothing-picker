@@ -18,6 +18,8 @@ Future<void> errorWrapper(BuildContext context, Future<void> Function() action) 
   }
 }
 
+// TODO: Global snackbar function
+
 IconData? iconFromCondition(String? condition) {
   // OWM main conditions
   switch (condition?.toLowerCase()) {

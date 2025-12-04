@@ -69,6 +69,7 @@ class WeatherViewModel extends ChangeNotifier {
     return weathers;
   }
 
+  // TODO: Manual weather should not require an API key
   /// Set the current weather information with the provided [weathers], or reset if null.
   Future<void> setWeathers(List<Weather>? weathers) async {
     final prefs = await SharedPreferences.getInstance();

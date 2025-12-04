@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:outdoor_clothing_picker/backend/utils.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
+// TODO: Custom theme
 const seedColor = Colors.green;
 ThemeData lightMode = ThemeData(colorScheme: ColorScheme.fromSeed(seedColor: seedColor));
 ThemeData darkMode = ThemeData(
