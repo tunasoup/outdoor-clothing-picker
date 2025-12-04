@@ -242,6 +242,7 @@ class WeatherService {
     return Weather.fromOWMJson(jsonDecode(response.body));
   }
 
+  // TODO: Make work even without Location Accuracy (and WiFi) on Android
   Future<Location> getCurrentLocation() async {
     LocationPermission permission = await Geolocator.checkPermission();
     if (permission == LocationPermission.denied) {

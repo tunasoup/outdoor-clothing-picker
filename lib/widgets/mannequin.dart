@@ -27,6 +27,9 @@ class Mannequin extends StatefulWidget {
   State<Mannequin> createState() => _MannequinState();
 }
 
+// TODO: In interactive, drag and zoom
+// TODO: New edit mode, where each category is visualized and movable and deletable
+// TODO: Painted text should adjust to device's font size similar to Text
 class _MannequinState extends State<Mannequin> with WidgetsBindingObserver {
   final GlobalKey _figureKey = GlobalKey();
   final GlobalKey _stackKey = GlobalKey();
