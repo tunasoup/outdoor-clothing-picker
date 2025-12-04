@@ -490,7 +490,9 @@ abstract class DataView {
             child: const Icon(Icons.delete, color: Colors.white, size: 28),
           ),
           direction: isSelectionMode ? DismissDirection.none : DismissDirection.horizontal,
-          confirmDismiss: (_) async {return await deleteRow(context, this, rowId);},
+          confirmDismiss: (_) async {
+            return await deleteRow(context, this, rowId);
+          },
           child: Card(
             margin: const EdgeInsets.symmetric(vertical: 4),
             child: ListTile(
@@ -530,7 +532,7 @@ class ActivityDataView extends DataView {
   const ActivityDataView();
 
   @override
-  String get tableName => "Activities";
+  String get tableName => 'Activities';
 
   @override
   ItemsProvider getProvider(BuildContext context, bool listen) =>
@@ -541,7 +543,7 @@ class CategoryDataView extends DataView {
   const CategoryDataView();
 
   @override
-  String get tableName => "Categories";
+  String get tableName => 'Categories';
 
   @override
   ItemsProvider getProvider(BuildContext context, bool listen) =>
@@ -564,7 +566,7 @@ class ClothingDataView extends DataView {
   const ClothingDataView();
 
   @override
-  String get tableName => "Clothing";
+  String get tableName => 'Clothing';
 
   @override
   ItemsProvider getProvider(BuildContext context, bool listen) =>
@@ -675,7 +677,9 @@ List<Map<String, dynamic>> filterByAnyValue(
 }
 
 Future<bool> deleteRow(BuildContext context, DataView dataView, int rowId) async {
-  final Map<DataView, Set<int>> row = {dataView: {rowId}};
+  final Map<DataView, Set<int>> row = {
+    dataView: {rowId},
+  };
   return await deleteRows(context, row);
 }
 
@@ -710,10 +714,7 @@ Future<bool> deleteRows(BuildContext context, Map<DataView, Set<int>> rows) asyn
   await context.read<ClothingItemsProvider>().refresh();
   ScaffoldMessenger.of(context).clearSnackBars();
   ScaffoldMessenger.of(context).showSnackBar(
-    SnackBar(
-      content: Text("Deleted $count item(s)"),
-      duration: const Duration(seconds: 3),
-    ),
+    SnackBar(content: Text('Deleted $count item(s)'), duration: const Duration(seconds: 3)),
   );
   return true;
 }

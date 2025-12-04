@@ -10,3 +10,4 @@ linter:
     - always_declare_return_types
     - unawaited_futures
     - unnecessary_lambdas
+    - prefer_single_quotes
