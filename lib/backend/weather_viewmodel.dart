@@ -69,7 +69,6 @@ class WeatherViewModel extends ChangeNotifier {
     return weathers;
   }
 
-  // TODO: Manual weather should not require an API key
   /// Set the current weather information with the provided [weathers], or reset if null.
   Future<void> setWeathers(List<Weather>? weathers) async {
     final prefs = await SharedPreferences.getInstance();
@@ -119,9 +118,11 @@ class WeatherViewModel extends ChangeNotifier {
         .map((e) => Weather.fromTemperature(e.manualTemperature!.toDouble()))
         .toList();
 
-    // Add API weathers
     try {
-      weathers += await _weatherService.fetchWeathers(automatic);
+      if (automatic.isNotEmpty) {
+        // Add API weathers
+        weathers += await _weatherService.fetchWeathers(automatic);
+      }
       await setWeathers(weathers);
     } catch (e) {
       rethrow;
