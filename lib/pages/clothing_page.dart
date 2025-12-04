@@ -99,9 +99,7 @@ Future<void> showAddMenu({required BuildContext context, required GlobalKey anch
       mode: DialogMode.add,
     );
     if (success) {
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text('Added $selected successfully')));
+      showSnackBar(context: context, text: 'Added $selected successfully');
     }
   }
 }

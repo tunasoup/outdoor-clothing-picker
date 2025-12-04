@@ -8,17 +8,29 @@ Future<void> errorWrapper(BuildContext context, Future<void> Function() action) 
     await action();
   } catch (e) {
     debugPrint('$e');
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text('$e'),
-        backgroundColor: Theme.of(context).colorScheme.error,
-        duration: Duration(seconds: 5),
-      ),
-    );
+    showSnackBar(context: context, text: '$e', isError: true);
   }
 }
 
-// TODO: Global snackbar function
+void showSnackBar({
+  required BuildContext context,
+  required String text,
+  bool isError = false,
+  int seconds = 5,
+  SnackBarAction? action,
+}) {
+  final theme = Theme.of(context);
+
+  ScaffoldMessenger.of(context).clearSnackBars();
+  ScaffoldMessenger.of(context).showSnackBar(
+    SnackBar(
+      content: Text(text),
+      duration: Duration(seconds: seconds),
+      action: action,
+      backgroundColor: isError ? theme.colorScheme.error : theme.snackBarTheme.backgroundColor,
+    ),
+  );
+}
 
 IconData? iconFromCondition(String? condition) {
   // OWM main conditions
