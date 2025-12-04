@@ -232,7 +232,6 @@ class ClothingDialog extends StatelessWidget {
 
   const ClothingDialog({super.key, required this.mode, this.initialData});
 
-  // TODO: Indicate that empty temps are infinite in UI
   Future<bool> show(BuildContext context) async {
     final AppDb db = context.read<AppDb>();
     final success = await showDialog<bool>(
@@ -273,14 +272,20 @@ class ClothingDialog extends StatelessWidget {
               createTextFormField(
                 isNumeric: true,
                 initialValue: vm.initialMinTemp?.toString(),
-                decoration: InputDecoration(labelText: 'Min Temperature'),
+                decoration: InputDecoration(
+                  labelText: 'Min Temperature',
+                  hintText: 'Leave empty for -∞°C',
+                ),
                 validator: vm.validateMinTemp,
                 onSaved: vm.saveMinTemp,
               ),
               createTextFormField(
                 isNumeric: true,
                 initialValue: vm.initialMaxTemp?.toString(),
-                decoration: InputDecoration(labelText: 'Max Temperature'),
+                decoration: InputDecoration(
+                  labelText: 'Max Temperature',
+                  hintText: 'Leave empty for ∞°C',
+                ),
                 validator: vm.validateMaxTemp,
                 onSaved: vm.saveMaxTemp,
               ),
