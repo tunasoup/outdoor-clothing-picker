@@ -27,13 +27,15 @@ class Mannequin extends StatefulWidget {
   State<Mannequin> createState() => _MannequinState();
 }
 
-// TODO: In interactive, drag and zoom
 // TODO: New edit mode, where each category is visualized and movable and deletable
 class _MannequinState extends State<Mannequin> with WidgetsBindingObserver {
   final GlobalKey _figureKey = GlobalKey();
   final GlobalKey _stackKey = GlobalKey();
   Rect? figureRect;
   Offset? _circlePosition;
+  static const double magnifierRadius = 40.0;
+  static const double magnifierScale = 2.0;
+  Offset? localMagPosition;
 
   @override
   void initState() {
@@ -81,10 +83,25 @@ class _MannequinState extends State<Mannequin> with WidgetsBindingObserver {
     }
   }
 
-  void _handleInteractiveTap(Offset normalized) {
-    setState(() {
-      _circlePosition = normalized;
-    });
+  void _updateCircleIfInside(Offset localPos, bool isTap) {
+    if (figureRect != null && figureRect!.contains(localPos)) {
+      final normalizedX = (localPos.dx - figureRect!.left) / figureRect!.width;
+      final normalizedY = (localPos.dy - figureRect!.top) / figureRect!.height;
+      final normalizedOffset = Offset(normalizedX, normalizedY);
+
+      if (kDebugMode && isTap) {
+        debugPrint('Tapped at normalized coordinate: ($normalizedOffset)');
+      }
+
+      if (widget.isInteractiveMode) {
+        setState(() {
+          _circlePosition = normalizedOffset;
+          if (!isTap) localMagPosition = localPos;
+        });
+      }
+
+      widget.onTap?.call(normalizedOffset);
+    }
   }
 
   @override
@@ -95,52 +112,71 @@ class _MannequinState extends State<Mannequin> with WidgetsBindingObserver {
     final figureColor = Theme.of(context).colorScheme.onSurfaceVariant;
     final textScaler = MediaQuery.textScalerOf(context);
 
+    // TODO: Optimize repaints
     return LayoutBuilder(
       builder: (context, constraints) {
-        return GestureDetector(
-          // Detect and calculate normalized coordinates within the figure
-          behavior: HitTestBehavior.translucent,
-          onTapDown: (TapDownDetails details) {
-            if (figureRect != null) {
-              final localPos = details.localPosition;
-              if (figureRect!.contains(localPos)) {
-                final normalizedX = (localPos.dx - figureRect!.left) / figureRect!.width;
-                final normalizedY = (localPos.dy - figureRect!.top) / figureRect!.height;
-                final normalizedOffset = Offset(normalizedX, normalizedY);
-
-                if (kDebugMode) {
-                  debugPrint('Tapped at normalized coordinate: ($normalizedOffset)');
-                }
-
-                if (widget.isInteractiveMode) _handleInteractiveTap(normalizedOffset);
-
-                widget.onTap?.call(normalizedOffset);
-              }
-            }
-          },
+        return RepaintBoundary(
           child: Stack(
-            key: _stackKey,
             children: [
-              Center(child: _addSvg(constraints, figureColor, _figureKey)),
-              if (figureRect != null)
-                RepaintBoundary(
-                  child: CustomPaint(
-                    painter: widget.isInteractiveMode
-                        ? CirclePainter(
-                            normalizedPosition: _circlePosition,
-                            figureRect: figureRect!,
-                            foregroundColor: overlayColor,
-                            backgroundColor: circleColor,
-                          )
-                        : ClothingPainter(
-                            constraints: constraints,
-                            clothing: viewModel.filteredClothing,
-                            foregroundColor: overlayColor,
-                            backgroundColor: circleColor,
-                            figureRect: figureRect!,
-                            textScaler: textScaler,
-                          ),
-                    size: Size(constraints.maxWidth, constraints.maxHeight),
+              GestureDetector(
+                // Detect and calculate normalized coordinates within the figure
+                behavior: HitTestBehavior.translucent,
+                onPanUpdate: (DragUpdateDetails details) {
+                  if (figureRect != null && widget.isInteractiveMode) {
+                    _updateCircleIfInside(details.localPosition, false);
+                  }
+                },
+                onPanDown: (DragDownDetails details) {
+                  if (figureRect != null) {
+                    _updateCircleIfInside(details.localPosition, true);
+                  }
+                },
+                onPanEnd: (DragEndDetails details) {
+                  if (figureRect != null && widget.isInteractiveMode) {
+                    setState(() {
+                      localMagPosition = null;
+                    });
+                  }
+                },
+
+                child: Stack(
+                  key: _stackKey,
+                  children: [
+                    Center(child: _addSvg(constraints, figureColor, _figureKey)),
+                    if (figureRect != null)
+                      CustomPaint(
+                        painter: widget.isInteractiveMode
+                            ? CirclePainter(
+                                normalizedPosition: _circlePosition,
+                                figureRect: figureRect!,
+                                foregroundColor: overlayColor,
+                                backgroundColor: circleColor,
+                              )
+                            : ClothingPainter(
+                                constraints: constraints,
+                                clothing: viewModel.filteredClothing,
+                                foregroundColor: overlayColor,
+                                backgroundColor: circleColor,
+                                figureRect: figureRect!,
+                                textScaler: textScaler,
+                              ),
+                        size: Size(constraints.maxWidth, constraints.maxHeight),
+                      ),
+                  ],
+                ),
+              ),
+              // Magnifier
+              if (localMagPosition != null)
+                Positioned(
+                  left: localMagPosition!.dx - magnifierRadius,
+                  top: localMagPosition!.dy - magnifierRadius - 25,
+                  child: RawMagnifier(
+                    decoration: MagnifierDecoration(
+                      shape: CircleBorder(side: BorderSide(color: overlayColor, width: 3)),
+                    ),
+                    size: Size(magnifierRadius * magnifierScale, magnifierRadius * magnifierScale),
+                    magnificationScale: magnifierScale,
+                    focalPointOffset: Offset(0, 25),
                   ),
                 ),
             ],
