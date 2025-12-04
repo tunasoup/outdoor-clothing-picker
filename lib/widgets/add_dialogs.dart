@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:outdoor_clothing_picker/backend/dialog_viewmodel.dart';
 import 'package:outdoor_clothing_picker/backend/items_provider.dart';
 import 'package:outdoor_clothing_picker/database/database.dart';
@@ -57,7 +56,7 @@ class ActivityDialog extends StatelessWidget {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            TextFormField(
+            createTextFormField(
               initialValue: vm.initialName,
               decoration: InputDecoration(labelText: 'Activity Name'),
               validator: vm.validateName,
@@ -138,7 +137,7 @@ class CategoryDialog extends StatelessWidget {
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              TextFormField(
+              createTextFormField(
                 initialValue: vm.initialName,
                 decoration: InputDecoration(labelText: 'Category Name'),
                 validator: vm.validateName,
@@ -232,8 +231,8 @@ class ClothingDialog extends StatelessWidget {
   final Map<String, dynamic>? initialData;
 
   const ClothingDialog({super.key, required this.mode, this.initialData});
+
   // TODO: Indicate that empty temps are infinite in UI
-  // TODO: Capital letter for all (or most) keyboards
   Future<bool> show(BuildContext context) async {
     final AppDb db = context.read<AppDb>();
     final success = await showDialog<bool>(
@@ -265,27 +264,25 @@ class ClothingDialog extends StatelessWidget {
           key: vm.formKey,
           child: Column(
             children: [
-              TextFormField(
+              createTextFormField(
                 initialValue: vm.initialName,
                 decoration: InputDecoration(labelText: 'Name'),
                 validator: vm.validateName,
                 onSaved: vm.saveName,
               ),
-              TextFormField(
+              createTextFormField(
+                isNumeric: true,
                 initialValue: vm.initialMinTemp?.toString(),
                 decoration: InputDecoration(labelText: 'Min Temperature'),
                 validator: vm.validateMinTemp,
                 onSaved: vm.saveMinTemp,
-                keyboardType: TextInputType.numberWithOptions(signed: true),
-                inputFormatters: [FilteringTextInputFormatter.allow(RegExp(r'^-?[0-9]*'))],
               ),
-              TextFormField(
+              createTextFormField(
+                isNumeric: true,
                 initialValue: vm.initialMaxTemp?.toString(),
                 decoration: InputDecoration(labelText: 'Max Temperature'),
                 validator: vm.validateMaxTemp,
                 onSaved: vm.saveMaxTemp,
-                keyboardType: TextInputType.numberWithOptions(signed: true),
-                inputFormatters: [FilteringTextInputFormatter.allow(RegExp(r'^-?[0-9]*'))],
               ),
               Consumer<CategoryItemsProvider>(
                 builder: (context, provider, _) {

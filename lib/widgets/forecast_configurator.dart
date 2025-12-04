@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:outdoor_clothing_picker/backend/forecast_config.dart';
 import 'package:outdoor_clothing_picker/backend/utils.dart';
+import 'package:outdoor_clothing_picker/widgets/utils.dart';
 
 class ForecastConfigurator extends StatefulWidget {
   final ForecastConfig config;
@@ -156,13 +157,12 @@ class _ForecastConfiguratorState extends State<ForecastConfigurator> {
             const SizedBox(height: 12),
 
             if (!widget.config.isManual) ...[
-              TextFormField(
+              createTextFormField(
                 controller: _locationController,
                 decoration: const InputDecoration(
                   labelText: 'City',
                   hintText: 'Using location if left empty',
                 ),
-                textCapitalization: TextCapitalization.sentences,
               ),
 
               const SizedBox(height: 16),
@@ -194,10 +194,9 @@ class _ForecastConfiguratorState extends State<ForecastConfigurator> {
             ],
 
             if (widget.config.isManual)
-              TextFormField(
+              createTextFormField(
                 controller: _tempController,
                 decoration: const InputDecoration(labelText: 'Temperature (°C)'),
-                keyboardType: TextInputType.number,
               ),
           ],
         ),
