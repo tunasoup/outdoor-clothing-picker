@@ -1,5 +1,6 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:weather_icons/weather_icons.dart';
 
 /// Wrapper for showing a snackbar of a possible error when running [action].
@@ -29,6 +30,34 @@ void showSnackBar({
       action: action,
       backgroundColor: isError ? theme.colorScheme.error : theme.snackBarTheme.backgroundColor,
     ),
+  );
+}
+
+/// TextFormField with default values depending on whether a numeric input is used.
+TextFormField createTextFormField({
+  bool isNumeric = false,
+  String? initialValue,
+  TextEditingController? controller,
+  InputDecoration? decoration,
+  FormFieldValidator<String>? validator,
+  ValueChanged<String>? onChanged,
+  FormFieldSetter<String>? onSaved,
+  ValueChanged<String>? onFieldSubmitted,
+  bool autofocus = false,
+  TextCapitalization textCapitalization = TextCapitalization.sentences,
+}) {
+  return TextFormField(
+    initialValue: initialValue,
+    controller: controller,
+    decoration: decoration,
+    validator: validator,
+    onChanged: onChanged,
+    onSaved: onSaved,
+    onFieldSubmitted: onFieldSubmitted,
+    autofocus: autofocus,
+    textCapitalization: textCapitalization,
+    keyboardType: isNumeric ? TextInputType.numberWithOptions(signed: true) : null,
+    inputFormatters: isNumeric ? [FilteringTextInputFormatter.allow(RegExp(r'^-?[0-9]*'))] : null,
   );
 }
 
