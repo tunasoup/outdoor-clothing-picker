@@ -70,6 +70,7 @@ class LoadingItem extends DataListItem {
   }
 }
 
+// TODO: Add back button functionality for canceling modes
 /// The Data visualization page shows the contents of the local data and allows modifying it.
 class DataVisualizationPage extends StatefulWidget {
   const DataVisualizationPage({super.key});
@@ -712,9 +713,6 @@ Future<bool> deleteRows(BuildContext context, Map<DataView, Set<int>> rows) asyn
   }
   // Rebuild clothing in case its references were removed
   await context.read<ClothingItemsProvider>().refresh();
-  ScaffoldMessenger.of(context).clearSnackBars();
-  ScaffoldMessenger.of(context).showSnackBar(
-    SnackBar(content: Text('Deleted $count item(s)'), duration: const Duration(seconds: 3)),
-  );
+  showSnackBar(context: context, text: 'Deleted $count item(s)', seconds: 3);
   return true;
 }

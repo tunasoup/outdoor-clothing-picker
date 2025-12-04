@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:outdoor_clothing_picker/backend/forecast_config.dart';
 import 'package:outdoor_clothing_picker/widgets/forecast_configurator.dart';
+import 'package:outdoor_clothing_picker/widgets/utils.dart';
 
 // TODO: Add favorites
 class WeatherConfigPage extends StatefulWidget {
@@ -54,21 +55,15 @@ class _WeatherConfigPageState extends State<WeatherConfigPage> {
     final removedIndex = index;
     _removeConfig(index);
 
-    ScaffoldMessenger.of(context).clearSnackBars();
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: const Text('Forecast deleted'),
-        action: SnackBarAction(
-          label: 'UNDO',
-          onPressed: () {
-            setState(() {
-              configs.insert(removedIndex, removedConfig);
-            });
-          },
-        ),
-        duration: const Duration(seconds: 3),
-      ),
+    final action = SnackBarAction(
+      label: 'UNDO',
+      onPressed: () {
+        setState(() {
+          configs.insert(removedIndex, removedConfig);
+        });
+      },
     );
+    showSnackBar(context: context, text: 'Forecast deleted', action: action, seconds: 3);
   }
 
   @override
