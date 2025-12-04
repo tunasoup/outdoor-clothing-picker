@@ -29,7 +29,6 @@ class Mannequin extends StatefulWidget {
 
 // TODO: In interactive, drag and zoom
 // TODO: New edit mode, where each category is visualized and movable and deletable
-// TODO: Painted text should adjust to device's font size similar to Text
 class _MannequinState extends State<Mannequin> with WidgetsBindingObserver {
   final GlobalKey _figureKey = GlobalKey();
   final GlobalKey _stackKey = GlobalKey();
@@ -94,6 +93,7 @@ class _MannequinState extends State<Mannequin> with WidgetsBindingObserver {
     final overlayColor = Theme.of(context).colorScheme.onPrimaryContainer;
     final circleColor = Theme.of(context).colorScheme.primaryContainer;
     final figureColor = Theme.of(context).colorScheme.onSurfaceVariant;
+    final textScaler = MediaQuery.textScalerOf(context);
 
     return LayoutBuilder(
       builder: (context, constraints) {
@@ -138,6 +138,7 @@ class _MannequinState extends State<Mannequin> with WidgetsBindingObserver {
                             foregroundColor: overlayColor,
                             backgroundColor: circleColor,
                             figureRect: figureRect!,
+                            textScaler: textScaler,
                           ),
                     size: Size(constraints.maxWidth, constraints.maxHeight),
                   ),
@@ -157,6 +158,7 @@ class ClothingPainter extends CustomPainter {
   final Color foregroundColor;
   final Color backgroundColor;
   final Rect figureRect;
+  final TextScaler textScaler;
 
   ClothingPainter({
     required this.constraints,
@@ -164,6 +166,7 @@ class ClothingPainter extends CustomPainter {
     required this.foregroundColor,
     required this.backgroundColor,
     required this.figureRect,
+    required this.textScaler,
   });
 
   @override
@@ -204,6 +207,7 @@ class ClothingPainter extends CustomPainter {
         textDirection: TextDirection.ltr,
         maxLines: 2,
         ellipsis: '..',
+        textScaler: textScaler,
       );
 
       // Calculate the start position and maximum allowed space for the label so that it fits the
