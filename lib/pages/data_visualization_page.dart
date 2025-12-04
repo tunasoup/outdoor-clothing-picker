@@ -250,35 +250,8 @@ class _DataAppBarState extends State<DataAppBar> {
 
   Future<void> _startDeletion(BuildContext context) async {
     final selectionProvider = context.read<SelectionProvider>();
-    final count = selectionProvider.selectedCount;
-    if (count == 0) return;
-
-    String? msg;
-    // Show a different confirmation message for singe item deletions
-    final singleItem = selectionProvider.singleSelectedItem;
-    if (singleItem != null) {
-      final dataView = singleItem.key, rowId = singleItem.value;
-      final provider = dataView.getProvider(context, false);
-      int referenceCount = await provider.referencedByCount(rowId);
-      final item = provider.itemById(rowId);
-      msg = createDeleteMessage(singular: item, referenceCount: referenceCount);
-    } else {
-      msg = createDeleteMessage(itemCount: count);
-    }
-
-    final confirmed = await showDeleteAlert(context, msg);
-    if (!confirmed) return;
-
-    for (final entry in selectionProvider.selectedItems.entries) {
-      final dataView = entry.key;
-      final ids = entry.value;
-      await errorWrapper(context, () async {
-        await dataView.getProvider(context, false).deleteItems(ids.toList());
-      });
-    }
-    // Rebuild clothing in case its references were removed
-    await context.read<ClothingItemsProvider>().refresh();
-    selectionProvider.clearSelection();
+    final success = await deleteRows(context, selectionProvider.selectedItems);
+    if (success) selectionProvider.clearSelection();
   }
 
   @override
@@ -508,32 +481,43 @@ abstract class DataView {
         final selectionProvider = context.read<SelectionProvider>();
         final isSelectionMode = selectionProvider.isSelectionMode;
 
-        return Card(
-          margin: const EdgeInsets.symmetric(vertical: 4),
-          child: ListTile(
-            title: Text('${row['name']}'),
-            subtitle: Text(_cardText(row)),
-            selected: isSelected,
-            onLongPress: () => selectionProvider.toggleSelection(this, rowId),
-            onTap: () async {
-              if (isSelectionMode) {
-                selectionProvider.toggleSelection(this, rowId);
-              } else {
-                await errorWrapper(context, () async {
-                  await editRow(context, provider, row, tableName.toLowerCase());
-                });
-              }
-            },
-            trailing: AnimatedSwitcher(
-              duration: const Duration(milliseconds: 200),
-              child: isSelectionMode
-                  ? Icon(
-                      isSelected ? Icons.check_circle : Icons.radio_button_unchecked,
-                      color: isSelected
-                          ? Theme.of(context).colorScheme.primary
-                          : Theme.of(context).colorScheme.outlineVariant,
-                    )
-                  : const SizedBox.shrink(),
+        return Dismissible(
+          key: ValueKey((this, rowId)),
+          background: Container(
+            alignment: Alignment.centerRight,
+            padding: const EdgeInsets.symmetric(horizontal: 20),
+            color: Colors.red,
+            child: const Icon(Icons.delete, color: Colors.white, size: 28),
+          ),
+          direction: isSelectionMode ? DismissDirection.none : DismissDirection.horizontal,
+          confirmDismiss: (_) async {return await deleteRow(context, this, rowId);},
+          child: Card(
+            margin: const EdgeInsets.symmetric(vertical: 4),
+            child: ListTile(
+              title: Text('${row['name']}'),
+              subtitle: Text(_cardText(row)),
+              selected: isSelected,
+              onLongPress: () => selectionProvider.toggleSelection(this, rowId),
+              onTap: () async {
+                if (isSelectionMode) {
+                  selectionProvider.toggleSelection(this, rowId);
+                } else {
+                  await errorWrapper(context, () async {
+                    await editRow(context, provider, row, tableName.toLowerCase());
+                  });
+                }
+              },
+              trailing: AnimatedSwitcher(
+                duration: const Duration(milliseconds: 200),
+                child: isSelectionMode
+                    ? Icon(
+                        isSelected ? Icons.check_circle : Icons.radio_button_unchecked,
+                        color: isSelected
+                            ? Theme.of(context).colorScheme.primary
+                            : Theme.of(context).colorScheme.outlineVariant,
+                      )
+                    : const SizedBox.shrink(),
+              ),
             ),
           ),
         );
@@ -688,4 +672,48 @@ List<Map<String, dynamic>> filterByAnyValue(
       return strValue.toLowerCase().contains(query);
     });
   }).toList();
+}
+
+Future<bool> deleteRow(BuildContext context, DataView dataView, int rowId) async {
+  final Map<DataView, Set<int>> row = {dataView: {rowId}};
+  return await deleteRows(context, row);
+}
+
+Future<bool> deleteRows(BuildContext context, Map<DataView, Set<int>> rows) async {
+  final count = rows.values.fold(0, (sum, set) => sum + set.length);
+  if (count == 0) return false;
+
+  String? msg;
+  // Show a different confirmation message for singe item deletions
+  if (count == 1) {
+    final row = rows.entries.single;
+    final dataView = row.key, rowId = row.value.first;
+    final provider = dataView.getProvider(context, false);
+    int referenceCount = await provider.referencedByCount(rowId);
+    final item = provider.itemById(rowId);
+    msg = createDeleteMessage(singular: item, referenceCount: referenceCount);
+  } else {
+    msg = createDeleteMessage(itemCount: count);
+  }
+
+  final confirmed = await showDeleteAlert(context, msg);
+  if (!confirmed) return false;
+
+  for (final entry in rows.entries) {
+    final dataView = entry.key;
+    final ids = entry.value;
+    await errorWrapper(context, () async {
+      await dataView.getProvider(context, false).deleteItems(ids.toList());
+    });
+  }
+  // Rebuild clothing in case its references were removed
+  await context.read<ClothingItemsProvider>().refresh();
+  ScaffoldMessenger.of(context).clearSnackBars();
+  ScaffoldMessenger.of(context).showSnackBar(
+    SnackBar(
+      content: Text("Deleted $count item(s)"),
+      duration: const Duration(seconds: 3),
+    ),
+  );
+  return true;
 }
