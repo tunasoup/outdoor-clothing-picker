@@ -35,6 +35,8 @@ class _WeatherConfigPageState extends State<WeatherConfigPage> {
   }
 
   void _addConfig() {
+    // Disable a possible config undo message
+    ScaffoldMessenger.of(context).clearSnackBars();
     final lastLocation = configs.isNotEmpty ? configs.last.location : '';
 
     if (configs.length < 4) {
@@ -63,11 +65,13 @@ class _WeatherConfigPageState extends State<WeatherConfigPage> {
         });
       },
     );
-    showSnackBar(context: context, text: 'Forecast deleted', action: action, seconds: 3);
+    showSnackBar(context: context, text: 'Forecast deleted', action: action);
   }
 
   @override
   Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+
     return Scaffold(
       floatingActionButton: FloatingActionButton(
         onPressed: _applyAndExit,
@@ -89,20 +93,24 @@ class _WeatherConfigPageState extends State<WeatherConfigPage> {
                 background: Container(
                   alignment: Alignment.centerRight,
                   padding: const EdgeInsets.symmetric(horizontal: 20),
-                  color: Colors.red,
-                  child: const Icon(Icons.delete, color: Colors.white, size: 28),
+                  color: colorScheme.errorContainer,
+                  child: Icon(Icons.delete, color: colorScheme.onErrorContainer, size: 28),
                 ),
                 onDismissed: (_) => _onDismissConfig(index),
                 child: ForecastConfigurator(config: configs[index]),
               ),
 
-              if (isLast && configs.length < 4)
+              if (isLast)
                 Padding(
-                  padding: const EdgeInsets.only(bottom: 16),
-                  child: ElevatedButton.icon(
-                    onPressed: _addConfig,
-                    icon: const Icon(Icons.add),
-                    label: const Text('Add another forecast'),
+                  padding: const EdgeInsets.only(top: 16),
+                  // TODO: Add an animation
+                  child: IconButton(
+                    onPressed: configs.length < 4 ? _addConfig : null,
+                    icon: const Icon(Icons.add, size: 28),
+                    style: IconButton.styleFrom(
+                      backgroundColor: colorScheme.primaryContainer,
+                      foregroundColor: colorScheme.onPrimaryContainer,
+                    )
                   ),
                 ),
             ],
