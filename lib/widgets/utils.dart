@@ -4,9 +4,9 @@ import 'package:flutter/services.dart';
 import 'package:weather_icons/weather_icons.dart';
 
 /// Wrapper for showing a snackbar of a possible error when running [action].
-Future<void> errorWrapper(BuildContext context, Future<void> Function() action) async {
+Future<dynamic> errorWrapper(BuildContext context, Future<dynamic> Function() action) async {
   try {
-    await action();
+    return await action();
   } catch (e) {
     debugPrint('$e');
     showSnackBar(context: context, text: '$e', isError: true);
