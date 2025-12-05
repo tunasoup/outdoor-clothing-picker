@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:outdoor_clothing_picker/backend/dialog_viewmodel.dart';
@@ -239,14 +241,8 @@ class _DataAppBarState extends State<DataAppBar> {
     final singleItem = selectionProvider.singleSelectedItem;
     if (singleItem == null) throw Exception('Only one item should be provided for duplication');
     final dataView = singleItem.key, rowId = singleItem.value;
-    final provider = dataView.getProvider(context, false);
-    final tableName = dataView.tableName;
-    final item = provider.itemById(rowId);
-    if (item == null) throw Exception('Got null item during duplication');
-    await errorWrapper(context, () async {
-      final success = await copyRow(context, provider, item, tableName);
-      if (success) selectionProvider.clearSelection();
-    });
+    final success = await duplicateRow(context, dataView, rowId);
+    if (success) selectionProvider.clearSelection();
   }
 
   Future<void> _startDeletion(BuildContext context) async {
@@ -413,18 +409,56 @@ Future<bool> showDeleteAlert(BuildContext context, String message) async {
       false;
 }
 
-Future<bool> copyRow(
-  BuildContext context,
-  ItemsProvider provider,
-  Map<String, dynamic> data,
-  String tableName,
-) async {
-  if (kDebugMode) debugPrint('Copy $provider data: $data');
+Future<bool> deleteRow(BuildContext context, DataView dataView, int rowId) async {
+  final Map<DataView, Set<int>> row = {
+    dataView: {rowId},
+  };
+  return await deleteRows(context, row);
+}
+
+Future<bool> deleteRows(BuildContext context, Map<DataView, Set<int>> rows) async {
+  final count = rows.values.fold(0, (sum, set) => sum + set.length);
+  if (count == 0) return false;
+  String? msg;
+  // Show a different confirmation message for singe item deletions
+  if (count == 1) {
+    final row = rows.entries.single;
+    final dataView = row.key, rowId = row.value.first;
+    final provider = dataView.getProvider(context, false);
+    int referenceCount = await provider.referencedByCount(rowId);
+    final item = provider.itemById(rowId);
+    msg = createDeleteMessage(singular: item, referenceCount: referenceCount);
+  } else {
+    msg = createDeleteMessage(itemCount: count);
+  }
+
+  final confirmed = await showDeleteAlert(context, msg);
+  if (!confirmed) return false;
+
+  for (final entry in rows.entries) {
+    final dataView = entry.key;
+    final ids = entry.value;
+    await errorWrapper(context, () async {
+      await dataView.getProvider(context, false).deleteItems(ids.toList());
+    });
+  }
+  // Rebuild clothing in case its references were removed
+  await context.read<ClothingItemsProvider>().refresh();
+  showSnackBar(context: context, text: 'Deleted $count item(s)', seconds: 3);
+  return true;
+}
+
+Future<bool> duplicateRow(BuildContext context, DataView dataView, int rowId) async {
+  final provider = dataView.getProvider(context, false);
+  final tableName = dataView.tableName;
+  final item = provider.itemById(rowId);
+  if (item == null) throw Exception('Got null item during duplication');
+  if (kDebugMode) debugPrint('Copy $provider data: $item');
   return await showRowDialog(
     context: context,
     tableName: tableName.toLowerCase(),
     mode: DialogMode.copy,
-    initialData: data,
+    initialData: item,
   );
 }
 
@@ -475,6 +509,7 @@ abstract class DataView {
   MapEntry<String, dynamic>? rowEntryRules(MapEntry<String, dynamic> entry) => entry;
 
   Widget _buildDataRow(BuildContext context, Map<String, dynamic> row, ItemsProvider provider) {
+    final colorScheme = Theme.of(context).colorScheme;
     final rowId = row['id'] as int;
     return Selector<SelectionProvider, bool>(
       selector: (_, p) => p.isSelected(this, rowId),
@@ -485,14 +520,33 @@ abstract class DataView {
         return Dismissible(
           key: ValueKey((this, rowId)),
           background: Container(
+            alignment: Alignment.centerLeft,
+            padding: const EdgeInsets.symmetric(horizontal: 20),
+            color: colorScheme.tertiaryContainer,
+            child: Icon(Icons.copy, color: colorScheme.onTertiaryContainer, size: 28),
+          ),
+          secondaryBackground: Container(
             alignment: Alignment.centerRight,
             padding: const EdgeInsets.symmetric(horizontal: 20),
-            color: Colors.red,
-            child: const Icon(Icons.delete, color: Colors.white, size: 28),
+            color: colorScheme.errorContainer,
+            child: Icon(Icons.delete, color: colorScheme.onErrorContainer, size: 28),
           ),
           direction: isSelectionMode ? DismissDirection.none : DismissDirection.horizontal,
-          confirmDismiss: (_) async {
-            return await deleteRow(context, this, rowId);
+          confirmDismiss: (direction) async {
+            if (direction == DismissDirection.endToStart) {
+              return await errorWrapper(context, () async {
+                return await deleteRow(context, this, rowId);
+              });
+            } else if (direction == DismissDirection.startToEnd) {
+              // Do not wait to reset the widget's visuals during copy dialog
+              unawaited(
+                errorWrapper(context, () async {
+                  await duplicateRow(context, this, rowId);
+                }),
+              );
+              return false; // Never dismiss
+            }
+            return false;
           },
           child: Card(
             margin: const EdgeInsets.symmetric(vertical: 4),
@@ -675,44 +729,4 @@ List<Map<String, dynamic>> filterByAnyValue(
       return strValue.toLowerCase().contains(query);
     });
   }).toList();
-}
-
-Future<bool> deleteRow(BuildContext context, DataView dataView, int rowId) async {
-  final Map<DataView, Set<int>> row = {
-    dataView: {rowId},
-  };
-  return await deleteRows(context, row);
-}
-
-Future<bool> deleteRows(BuildContext context, Map<DataView, Set<int>> rows) async {
-  final count = rows.values.fold(0, (sum, set) => sum + set.length);
-  if (count == 0) return false;
-
-  String? msg;
-  // Show a different confirmation message for singe item deletions
-  if (count == 1) {
-    final row = rows.entries.single;
-    final dataView = row.key, rowId = row.value.first;
-    final provider = dataView.getProvider(context, false);
-    int referenceCount = await provider.referencedByCount(rowId);
-    final item = provider.itemById(rowId);
-    msg = createDeleteMessage(singular: item, referenceCount: referenceCount);
-  } else {
-    msg = createDeleteMessage(itemCount: count);
-  }
-
-  final confirmed = await showDeleteAlert(context, msg);
-  if (!confirmed) return false;
-
-  for (final entry in rows.entries) {
-    final dataView = entry.key;
-    final ids = entry.value;
-    await errorWrapper(context, () async {
-      await dataView.getProvider(context, false).deleteItems(ids.toList());
-    });
-  }
-  // Rebuild clothing in case its references were removed
-  await context.read<ClothingItemsProvider>().refresh();
-  showSnackBar(context: context, text: 'Deleted $count item(s)', seconds: 3);
-  return true;
 }
