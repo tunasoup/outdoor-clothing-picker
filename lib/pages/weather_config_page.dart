@@ -69,11 +69,11 @@ class _WeatherConfigPageState extends State<WeatherConfigPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Choose Forecasts'),
-        actions: [TextButton(onPressed: _applyAndExit, child: const Text('Apply'))],
+      floatingActionButton: FloatingActionButton(
+        onPressed: _applyAndExit,
+        child: const Icon(Icons.check),
       ),
-
+      appBar: AppBar(title: const Text('Choose Forecasts')),
       body: ListView.builder(
         padding: const EdgeInsets.all(16),
         itemCount: configs.length,
