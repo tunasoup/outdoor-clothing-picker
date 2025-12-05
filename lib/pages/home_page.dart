@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:outdoor_clothing_picker/database/database.dart';
 import 'package:outdoor_clothing_picker/pages/clothing_page.dart';
 import 'package:outdoor_clothing_picker/pages/data_visualization_page.dart';
 import 'package:outdoor_clothing_picker/pages/settings_page.dart';
@@ -7,9 +6,7 @@ import 'package:outdoor_clothing_picker/widgets/navigation.dart';
 
 /// Parent widget for the real UI pages, managing navigation.
 class HomePage extends StatefulWidget {
-  final AppDb db;
-
-  const HomePage({super.key, required this.db});
+  const HomePage({super.key});
 
   @override
   State<HomePage> createState() => _HomePageState();
