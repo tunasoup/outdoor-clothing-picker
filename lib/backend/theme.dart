@@ -11,30 +11,39 @@ ThemeData darkMode = ThemeData(
 
 /// Provider for switching between light and dark mode.
 class ThemeProvider with ChangeNotifier {
-  ThemeData _themeData = lightMode;
+  // Load theme should be called before any getters.
+  late bool _isDark;
 
-  ThemeData get themeData => _themeData;
-
-  bool get isDarkMode => _themeData == darkMode;
-
-  set themeData(ThemeData themeData) {
-    _themeData = themeData;
-    notifyListeners();
+  ThemeMode get themeMode {
+    return _isDark ? ThemeMode.dark : ThemeMode.light;
   }
+
+  bool get isDarkMode => _isDark;
 
   Future<void> loadTheme() async {
     final prefs = await SharedPreferences.getInstance();
-    final isDark = prefs.getBool(PrefKeys.darkMode) ?? false;
-    _themeData = isDark ? darkMode : lightMode;
+    final isDark = prefs.getBool(PrefKeys.darkMode);
+    if (isDark == null) {
+      await applySystemTheme();
+    } else {
+      _isDark = isDark;
+    }
     notifyListeners();
   }
 
-  Future<void> toggleTheme() async {
-    final isCurrentlyDark = _themeData == darkMode;
-    _themeData = isCurrentlyDark ? lightMode : darkMode;
-    notifyListeners();
+  Future<void> applySystemTheme() async {
+    _isDark = WidgetsBinding.instance.platformDispatcher.platformBrightness == Brightness.dark;
+    await _saveTheme();
+  }
 
+  Future<void> toggleTheme() async {
+    _isDark = !_isDark;
+    await _saveTheme();
+    notifyListeners();
+  }
+
+  Future<void> _saveTheme() async {
     final prefs = await SharedPreferences.getInstance();
-    await prefs.setBool(PrefKeys.darkMode, !isCurrentlyDark);
+    await prefs.setBool(PrefKeys.darkMode, _isDark);
   }
 }

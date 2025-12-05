@@ -48,9 +48,11 @@ class MyApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return MaterialApp(
       title: 'Outdoor Clothing Picker',
-      theme: Provider.of<ThemeProvider>(context).themeData,
       home: HomePage(db: db),
       debugShowCheckedModeBanner: false,
+      theme: lightMode,
+      darkTheme: darkMode,
+      themeMode: Provider.of<ThemeProvider>(context).themeMode,
     );
   }
 }
