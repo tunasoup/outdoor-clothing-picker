@@ -256,92 +256,105 @@ class _DataAppBarState extends State<DataAppBar> {
     final selectionProvider = context.watch<SelectionProvider>();
     final isSelectionMode = selectionProvider.isSelectionMode;
 
-    return AppBar(
-      iconTheme: IconThemeData(size: 28),
-      backgroundColor: Theme.of(context).colorScheme.surfaceContainerHigh,
-      title: isSelectionMode
-          ? Row(
-              children: [
-                Text(
-                  '${selectionProvider.selectedCount} Selected',
-                  style: Theme.of(context).textTheme.titleLarge,
-                ),
-              ],
-            )
-          : _isSearching
-          ? TextField(
-              controller: _searchController,
-              autofocus: _shouldAutofocus,
-              decoration: const InputDecoration(hintText: 'Search...', border: InputBorder.none),
-              textInputAction: TextInputAction.search,
-              onChanged: _onSubmitted,
-            )
-          : const Text('Data'),
-      leading: isSelectionMode
-          ? TextButton(
-              style: TextButton.styleFrom(
-                padding: EdgeInsets.zero,
-                minimumSize: Size(50, 50),
-                tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-              ),
-              onPressed: () {
-                if (selectionProvider.allSelected) {
-                  selectionProvider.clearSelection();
-                } else {
-                  selectionProvider.selectAllVisible();
-                }
-              },
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
+    return PopScope(
+      canPop: !(isSelectionMode || _isSearching),
+      // Back button closes a possible selection mode, then a possible search
+      onPopInvokedWithResult: (bool didPop, Object? result) {
+        debugPrint('database didPop: $didPop, result: $result');
+        if (isSelectionMode) {
+          selectionProvider.clearSelection();
+        } else if (_isSearching) {
+          _stopSearch();
+        }
+        // TODO: Default back button action should take to clothing page
+      },
+      child: AppBar(
+        iconTheme: IconThemeData(size: 28),
+        backgroundColor: Theme.of(context).colorScheme.surfaceContainerHigh,
+        title: isSelectionMode
+            ? Row(
                 children: [
-                  Icon(
-                    selectionProvider.allSelected
-                        ? Icons.check_circle
-                        : Icons.radio_button_unchecked,
-                    size: 28,
+                  Text(
+                    '${selectionProvider.selectedCount} Selected',
+                    style: Theme.of(context).textTheme.titleLarge,
                   ),
-                  const Text('All', style: TextStyle(fontSize: 10)),
                 ],
-              ),
-            )
-          : null,
-      actions: [
-        Padding(
-          padding: const EdgeInsets.only(right: 16.0),
-          child: isSelectionMode
-              ? Row(
-                  children: [
-                    IconButton(
-                      icon: Icon(Icons.delete, color: Theme.of(context).colorScheme.error),
-                      tooltip: 'Delete selected',
-                      onPressed: () async {
-                        await errorWrapper(context, () async {
-                          await _startDeletion(context);
-                        });
-                      },
-                    ),
-                    IconButton(
-                      icon: Icon(Icons.copy),
-                      tooltip: 'Copy selected',
-                      onPressed: selectionProvider.selectedCount != 1
-                          ? null
-                          : () async {
-                              await errorWrapper(context, () async {
-                                await _startDuplication(context);
-                              });
-                            },
-                    ),
-                  ],
-                )
-              : _isSearching
-              ? IconButton(icon: const Icon(Icons.close), onPressed: _stopSearch)
-              : IconButton(
-                  icon: const Icon(Icons.search),
-                  tooltip: 'Search',
-                  onPressed: _startSearch,
+              )
+            : _isSearching
+            ? TextField(
+                controller: _searchController,
+                autofocus: _shouldAutofocus,
+                decoration: const InputDecoration(hintText: 'Search...', border: InputBorder.none),
+                textInputAction: TextInputAction.search,
+                onChanged: _onSubmitted,
+              )
+            : const Text('Data'),
+        leading: isSelectionMode
+            ? TextButton(
+                style: TextButton.styleFrom(
+                  padding: EdgeInsets.zero,
+                  minimumSize: Size(50, 50),
+                  tapTargetSize: MaterialTapTargetSize.shrinkWrap,
                 ),
-        ),
-      ],
+                onPressed: () {
+                  if (selectionProvider.allSelected) {
+                    selectionProvider.clearSelection();
+                  } else {
+                    selectionProvider.selectAllVisible();
+                  }
+                },
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Icon(
+                      selectionProvider.allSelected
+                          ? Icons.check_circle
+                          : Icons.radio_button_unchecked,
+                      size: 28,
+                    ),
+                    const Text('All', style: TextStyle(fontSize: 10)),
+                  ],
+                ),
+              )
+            : null,
+        actions: [
+          Padding(
+            padding: const EdgeInsets.only(right: 16.0),
+            child: isSelectionMode
+                ? Row(
+                    children: [
+                      IconButton(
+                        icon: Icon(Icons.delete, color: Theme.of(context).colorScheme.error),
+                        tooltip: 'Delete selected',
+                        onPressed: () async {
+                          await errorWrapper(context, () async {
+                            await _startDeletion(context);
+                          });
+                        },
+                      ),
+                      IconButton(
+                        icon: Icon(Icons.copy),
+                        tooltip: 'Copy selected',
+                        onPressed: selectionProvider.selectedCount != 1
+                            ? null
+                            : () async {
+                                await errorWrapper(context, () async {
+                                  await _startDuplication(context);
+                                });
+                              },
+                      ),
+                    ],
+                  )
+                : _isSearching
+                ? IconButton(icon: const Icon(Icons.close), onPressed: _stopSearch)
+                : IconButton(
+                    icon: const Icon(Icons.search),
+                    tooltip: 'Search',
+                    onPressed: _startSearch,
+                  ),
+          ),
+        ],
+      ),
     );
   }
 }
