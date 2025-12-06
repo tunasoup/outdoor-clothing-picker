@@ -74,7 +74,7 @@ class LoadingItem extends DataListItem {
 
 // TODO: Add back button functionality for canceling modes
 /// The Data visualization page shows the contents of the local data and allows modifying it.
-class DataVisualizationPage extends StatefulWidget {
+class DataVisualizationPage extends AppPage {
   const DataVisualizationPage({super.key});
 
   @override
@@ -83,6 +83,9 @@ class DataVisualizationPage extends StatefulWidget {
 
 class _DataVisualizationPageState extends State<DataVisualizationPage> {
   String? searchQuery;
+
+  @override
+  PreferredSizeWidget? get appBar => DataAppBar(searchCallback: _searchCallback);
 
   void _searchCallback(String query) {
     setState(() => searchQuery = query);
@@ -499,31 +502,34 @@ abstract class DataView {
 
   String _cardText(Map<String, dynamic> row) {
     if (kDebugMode) debugPrint('card text build');
-    return row.entries
-        .map(modifyRowEntry)
-        .where((e) => e != null) // Remove skipped pairs
-        .map((e) => '${e!.key}: ${e.value}')
-        .join(', ');
+    return modifyRowEntries(row).entries.map((e) => '${e.key}: ${e.value}').join('\n');
   }
 
-  MapEntry<String, dynamic>? modifyRowEntry(MapEntry<String, dynamic> entry) {
-    final base = _applyBaseRules(entry);
-    if (base == null) return null;
+  Map<String, dynamic> modifyRowEntries(Map<String, dynamic> row) {
+    final base = _applyBaseRules(row);
+    if (base.isEmpty) return base;
     return rowEntryRules(base);
   }
 
-  MapEntry<String, dynamic>? _applyBaseRules(MapEntry<String, dynamic> entry) {
-    // Hide id in release
-    if (entry.key == 'id' && !kDebugMode) return null;
-    return entry;
+  Map<String, dynamic> _applyBaseRules(Map<String, dynamic> row) {
+    final output = <String, dynamic>{};
+    row.forEach((key, value) {
+      // Hide id in release
+      if (!kDebugMode && key == 'id') return;
+      // Hide name as it is shown as the title
+      if (key == 'name') return;
+      output[key] = value;
+    });
+    return output;
   }
 
   /// Overridable custom rules for children to change details visually only
-  MapEntry<String, dynamic>? rowEntryRules(MapEntry<String, dynamic> entry) => entry;
+  Map<String, dynamic> rowEntryRules(Map<String, dynamic> row) => row;
 
   Widget _buildDataRow(BuildContext context, Map<String, dynamic> row, ItemsProvider provider) {
     final colorScheme = Theme.of(context).colorScheme;
     final rowId = row['id'] as int;
+    final subtitle = _cardText(row);
     return Selector<SelectionProvider, bool>(
       selector: (_, p) => p.isSelected(this, rowId),
       builder: (_, isSelected, _) {
@@ -565,7 +571,7 @@ abstract class DataView {
             margin: const EdgeInsets.symmetric(vertical: 4),
             child: ListTile(
               title: Text('${row['name']}'),
-              subtitle: Text(_cardText(row)),
+              subtitle: subtitle.isEmpty ? null : Text(subtitle),
               selected: isSelected,
               onLongPress: () => selectionProvider.toggleSelection(this, rowId),
               onTap: () async {
@@ -618,15 +624,24 @@ class CategoryDataView extends DataView {
       Provider.of<CategoryItemsProvider>(context, listen: listen);
 
   @override
-  MapEntry<String, dynamic>? rowEntryRules(MapEntry<String, dynamic> entry) {
-    String key = entry.key;
-    dynamic value = entry.value;
-    if ((key == 'norm_x' || key == 'norm_y') && value is num) {
-      value = value.toStringAsFixed(2);
-    } else {
-      return entry;
-    }
-    return MapEntry(key, value);
+  Map<String, dynamic> rowEntryRules(Map<String, dynamic> row) {
+    final normX = row['norm_x'];
+    final normY = row['norm_y'];
+    if (normX == null && normY == null) return row;
+
+    final output = <String, dynamic>{};
+    row.forEach((key, value) {
+      if (key == 'norm_x') {
+        // Insert the combination of coordinates at the same spot
+        output['x, y'] = '(${normX.toStringAsFixed(2)}, ${normY.toStringAsFixed(2)})';
+        return;
+      } else if (key == 'norm_y') {
+        return;
+      }
+      output[key] = value;
+    });
+
+    return output;
   }
 }
 
@@ -641,20 +656,25 @@ class ClothingDataView extends DataView {
       Provider.of<ClothingItemsProvider>(context, listen: listen);
 
   @override
-  MapEntry<String, dynamic>? rowEntryRules(MapEntry<String, dynamic> entry) {
-    String key = entry.key;
-    dynamic value = entry.value;
-    if (key == 'min_temp' && value == null) {
-      // Infinite temperatures are still considered null for search filters
-      value = '-inf';
-    } else if (key == 'max_temp' && value == null) {
-      value = 'inf';
-    } else if (key == 'activities') {
-      value = value?.join(', ');
-    } else {
-      return entry;
-    }
-    return MapEntry(key, value);
+  Map<String, dynamic> rowEntryRules(Map<String, dynamic> row) {
+    final min = row['min_temp'];
+    final max = row['max_temp'];
+
+    final output = <String, dynamic>{};
+    row.forEach((key, value) {
+      if (key == 'min_temp') {
+        // Insert the combination of temperatures at the same spot
+        output['temperatures'] = '${min ?? '-∞'} to ${max ?? '∞'}';
+        return;
+      } else if (key == 'max_temp') {
+        return;
+      } else if (key == 'activities') {
+        value = value?.join(', ');
+      }
+      output[key] = value;
+    });
+
+    return output;
   }
 }
 
