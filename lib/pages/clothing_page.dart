@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_expandable_fab/flutter_expandable_fab.dart';
 import 'package:outdoor_clothing_picker/backend/clothing_viewmodel.dart';
 import 'package:outdoor_clothing_picker/backend/dialog_viewmodel.dart';
 import 'package:outdoor_clothing_picker/backend/items_provider.dart';
@@ -20,7 +21,7 @@ class ClothingPage extends StatefulWidget {
 }
 
 class _ClothingPageState extends State<ClothingPage> {
-  final GlobalKey _fabKey = GlobalKey();
+  final _fabKey = GlobalKey<ExpandableFabState>();
 
   @override
   void initState() {
@@ -29,14 +30,91 @@ class _ClothingPageState extends State<ClothingPage> {
     html.document.onContextMenu.listen((event) => event.preventDefault());
   }
 
+  Future<void> startAddDialog(BuildContext context, String tableName) async {
+    bool success = await showRowDialog(
+      context: context,
+      tableName: tableName,
+      mode: DialogMode.add,
+    );
+    if (success) {
+      showSnackBar(context: context, text: 'Item added successfully');
+    }
+  }
+
+  void toggleFABState() {
+    final state = _fabKey.currentState;
+    if (state != null) {
+      state.toggle();
+    }
+  }
+
+  ExpandableFab createEFAB({required BuildContext context}) {
+    return ExpandableFab(
+      key: _fabKey,
+      pos: ExpandableFabPos.right,
+      type: ExpandableFabType.up,
+      childrenAnimation: ExpandableFabAnimation.none,
+      distance: 70,
+      overlayStyle: ExpandableFabOverlayStyle(
+        color: Theme.of(context).colorScheme.surface.withValues(alpha: 0.7),
+      ),
+      openButtonBuilder: RotateFloatingActionButtonBuilder(
+        child: const Icon(Icons.add),
+        fabSize: ExpandableFabSize.regular,
+      ),
+      children: [
+        // TODO: 3rd party icon for clothing
+        createEFABChild(
+          context: context,
+          text: 'Clothing',
+          tableName: 'clothing',
+          icon: Icons.inventory,
+        ),
+        createEFABChild(
+          context: context,
+          text: 'Category',
+          tableName: 'categories',
+          icon: Icons.man,
+        ),
+        createEFABChild(
+          context: context,
+          text: 'Activity',
+          tableName: 'activities',
+          icon: Icons.directions_run,
+        ),
+      ],
+    );
+  }
+
+  Widget createEFABChild({
+    required BuildContext context,
+    required String text,
+    required String tableName,
+    required IconData icon,
+  }) {
+    return Row(
+      children: [
+        Text(text),
+        const SizedBox(width: 10),
+        FloatingActionButton.small(
+          onPressed: () async {
+            await startAddDialog(context, tableName);
+            // Need to close after the dialog, otherwise the animation breaks a possible autofocus
+            toggleFABState();
+          },
+          child: Icon(icon),
+        ),
+      ],
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      floatingActionButton: FloatingActionButton(
-        key: _fabKey,
-        onPressed: () => showAddMenu(context: context, anchorKey: _fabKey),
-        child: Icon(Icons.add),
-      ),
+      // FIXME: FAB needs to be set on the top-most scaffold, otherwise snackbars will not move
+      //  it. Probably need to create navigation multiple times.
+      floatingActionButtonLocation: ExpandableFab.location,
+      floatingActionButton: createEFAB(context: context),
       body: SafeArea(
         child: RefreshIndicator(
           onRefresh: () async =>
