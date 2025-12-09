@@ -1,11 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:outdoor_clothing_picker/backend/theme.dart';
 import 'package:outdoor_clothing_picker/backend/utils.dart';
+import 'package:outdoor_clothing_picker/pages/app_page.dart';
 import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
-class SettingsPage extends StatefulWidget {
-  const SettingsPage({super.key});
+class SettingsPage extends AppPage {
+  const SettingsPage({super.key, super.bottomNavigationBar});
 
   @override
   State<SettingsPage> createState() => _SettingsPageState();
@@ -59,6 +60,7 @@ class _SettingsPageState extends State<SettingsPage> {
         title: const Text('Settings'),
         backgroundColor: Theme.of(context).colorScheme.surfaceContainerHigh,
       ),
+      bottomNavigationBar: widget.bottomNavigationBar,
       body: _isLoading
           ? const Center(child: CircularProgressIndicator())
           : ListView(

@@ -4,6 +4,7 @@ import 'package:outdoor_clothing_picker/backend/clothing_viewmodel.dart';
 import 'package:outdoor_clothing_picker/backend/dialog_viewmodel.dart';
 import 'package:outdoor_clothing_picker/backend/items_provider.dart';
 import 'package:outdoor_clothing_picker/backend/weather_viewmodel.dart';
+import 'package:outdoor_clothing_picker/pages/app_page.dart';
 import 'package:outdoor_clothing_picker/widgets/add_dialogs.dart';
 import 'package:outdoor_clothing_picker/widgets/mannequin.dart';
 import 'package:outdoor_clothing_picker/widgets/utils.dart';
@@ -13,8 +14,8 @@ import 'package:universal_html/html.dart' as html;
 
 /// The clothing page visualizes which clothings from a local database would be appropriate
 /// for the current/selected weather, while allowing the user to add new items.
-class ClothingPage extends StatefulWidget {
-  const ClothingPage({super.key});
+class ClothingPage extends AppPage {
+  const ClothingPage({super.key, super.bottomNavigationBar});
 
   @override
   State<ClothingPage> createState() => _ClothingPageState();
@@ -37,7 +38,7 @@ class _ClothingPageState extends State<ClothingPage> {
       mode: DialogMode.add,
     );
     if (success) {
-      showSnackBar(context: context, text: 'Item added successfully');
+      showSnackBar(context: context, text: 'Item added successfully', seconds: 3);
     }
   }
 
@@ -111,8 +112,7 @@ class _ClothingPageState extends State<ClothingPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      // FIXME: FAB needs to be set on the top-most scaffold, otherwise snackbars will not move
-      //  it. Probably need to create navigation multiple times.
+      bottomNavigationBar: widget.bottomNavigationBar,
       floatingActionButtonLocation: ExpandableFab.location,
       floatingActionButton: createEFAB(context: context),
       body: SafeArea(
