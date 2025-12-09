@@ -103,6 +103,7 @@ class _ClothingPageState extends State<ClothingPage> {
             // Need to close after the dialog, otherwise the animation breaks a possible autofocus
             toggleFABState();
           },
+          heroTag: text,
           child: Icon(icon),
         ),
       ],
