@@ -24,9 +24,9 @@ class DataHeaderItem extends DataListItem {
   @override
   Widget build(BuildContext context) {
     return Row(
+      mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
         Text(tableName.toUpperCase(), style: Theme.of(context).textTheme.titleLarge),
-        const SizedBox(width: 8),
         ElevatedButton(
           style: ElevatedButton.styleFrom(
             backgroundColor: Theme.of(context).colorScheme.primaryContainer,
@@ -281,12 +281,18 @@ class _DataAppBarState extends State<DataAppBar> {
                 ],
               )
             : _isSearching
-            ? TextField(
-                controller: _searchController,
-                autofocus: _shouldAutofocus,
-                decoration: const InputDecoration(hintText: 'Search...', border: InputBorder.none),
-                textInputAction: TextInputAction.search,
-                onChanged: _onSubmitted,
+            ? Directionality(
+                textDirection: TextDirection.ltr,
+                child: TextField(
+                  controller: _searchController,
+                  autofocus: _shouldAutofocus,
+                  decoration: const InputDecoration(
+                    hintText: 'Search...',
+                    border: InputBorder.none,
+                  ),
+                  textInputAction: TextInputAction.search,
+                  onChanged: _onSubmitted,
+                ),
               )
             : const Text('Data'),
         leading: isSelectionMode
@@ -533,63 +539,67 @@ abstract class DataView {
         final selectionProvider = context.read<SelectionProvider>();
         final isSelectionMode = selectionProvider.isSelectionMode;
 
-        return Dismissible(
-          key: ValueKey((this, rowId)),
-          background: Container(
-            alignment: Alignment.centerLeft,
-            padding: const EdgeInsets.symmetric(horizontal: 20),
-            color: colorScheme.tertiaryContainer,
-            child: Icon(Icons.copy, color: colorScheme.onTertiaryContainer, size: 28),
-          ),
-          secondaryBackground: Container(
-            alignment: Alignment.centerRight,
-            padding: const EdgeInsets.symmetric(horizontal: 20),
-            color: colorScheme.errorContainer,
-            child: Icon(Icons.delete, color: colorScheme.onErrorContainer, size: 28),
-          ),
-          direction: isSelectionMode ? DismissDirection.none : DismissDirection.horizontal,
-          confirmDismiss: (direction) async {
-            if (direction == DismissDirection.endToStart) {
-              return await errorWrapper(context, () async {
-                return await deleteRow(context, this, rowId);
-              });
-            } else if (direction == DismissDirection.startToEnd) {
-              // Do not wait to reset the widget's visuals during copy dialog
-              unawaited(
-                errorWrapper(context, () async {
-                  await duplicateRow(context, this, rowId);
-                }),
-              );
-              return false; // Never dismiss
-            }
-            return false;
-          },
-          child: Card(
-            margin: const EdgeInsets.symmetric(vertical: 4),
-            child: ListTile(
-              title: Text('${row['name']}'),
-              subtitle: subtitle.isEmpty ? null : Text(subtitle),
-              selected: isSelected,
-              onLongPress: () => selectionProvider.toggleSelection(this, rowId),
-              onTap: () async {
-                if (isSelectionMode) {
-                  selectionProvider.toggleSelection(this, rowId);
-                } else {
-                  await errorWrapper(context, () async {
-                    await editRow(context, provider, row, tableName.toLowerCase());
-                  });
-                }
-              },
-              trailing: AnimatedSwitcher(
-                duration: const Duration(milliseconds: 200),
-                child: isSelectionMode
-                    ? Icon(
-                        isSelected ? Icons.check_circle : Icons.radio_button_unchecked,
-                        color: isSelected
-                            ? Theme.of(context).colorScheme.primary
-                            : Theme.of(context).colorScheme.outlineVariant,
-                      )
-                    : const SizedBox.shrink(),
+        return Directionality(
+          // Force left-alignment even in left-handed mode
+          textDirection: TextDirection.ltr,
+          child: Dismissible(
+            key: ValueKey((this, rowId)),
+            background: Container(
+              alignment: Alignment.centerLeft,
+              padding: const EdgeInsets.symmetric(horizontal: 20),
+              color: colorScheme.tertiaryContainer,
+              child: Icon(Icons.copy, color: colorScheme.onTertiaryContainer, size: 28),
+            ),
+            secondaryBackground: Container(
+              alignment: Alignment.centerRight,
+              padding: const EdgeInsets.symmetric(horizontal: 20),
+              color: colorScheme.errorContainer,
+              child: Icon(Icons.delete, color: colorScheme.onErrorContainer, size: 28),
+            ),
+            direction: isSelectionMode ? DismissDirection.none : DismissDirection.horizontal,
+            confirmDismiss: (direction) async {
+              if (direction == DismissDirection.endToStart) {
+                return await errorWrapper(context, () async {
+                  return await deleteRow(context, this, rowId);
+                });
+              } else if (direction == DismissDirection.startToEnd) {
+                // Do not wait to reset the widget's visuals during copy dialog
+                unawaited(
+                  errorWrapper(context, () async {
+                    await duplicateRow(context, this, rowId);
+                  }),
+                );
+                return false; // Never dismiss
+              }
+              return false;
+            },
+            child: Card(
+              margin: const EdgeInsets.symmetric(vertical: 4),
+              child: ListTile(
+                title: Text('${row['name']}'),
+                subtitle: subtitle.isEmpty ? null : Text(subtitle),
+                selected: isSelected,
+                onLongPress: () => selectionProvider.toggleSelection(this, rowId),
+                onTap: () async {
+                  if (isSelectionMode) {
+                    selectionProvider.toggleSelection(this, rowId);
+                  } else {
+                    await errorWrapper(context, () async {
+                      await editRow(context, provider, row, tableName.toLowerCase());
+                    });
+                  }
+                },
+                trailing: AnimatedSwitcher(
+                  duration: const Duration(milliseconds: 200),
+                  child: isSelectionMode
+                      ? Icon(
+                          isSelected ? Icons.check_circle : Icons.radio_button_unchecked,
+                          color: isSelected
+                              ? Theme.of(context).colorScheme.primary
+                              : Theme.of(context).colorScheme.outlineVariant,
+                        )
+                      : const SizedBox.shrink(),
+                ),
               ),
             ),
           ),

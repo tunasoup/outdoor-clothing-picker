@@ -27,6 +27,8 @@ class SettingsProvider with ChangeNotifier {
 
   bool get isLeftHanded => _isLeftHanded;
 
+  TextDirection get textDirection => isLeftHanded ? TextDirection.rtl : TextDirection.ltr;
+
   Future<void> loadTheme() async {
     final prefs = await SharedPreferences.getInstance();
     final isDark = prefs.getBool(PrefKeys.darkMode);
@@ -55,7 +57,7 @@ class SettingsProvider with ChangeNotifier {
 
   Future<void> _saveHand() async {
     final prefs = await SharedPreferences.getInstance();
-    await prefs.setBool(PrefKeys.darkMode, _isLeftHanded);
+    await prefs.setBool(PrefKeys.leftHanded, _isLeftHanded);
   }
 
   Future<void> loadHand() async {

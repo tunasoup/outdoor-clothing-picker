@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:outdoor_clothing_picker/backend/dialog_viewmodel.dart';
 import 'package:outdoor_clothing_picker/backend/items_provider.dart';
+import 'package:outdoor_clothing_picker/backend/settings.dart';
 import 'package:outdoor_clothing_picker/database/database.dart';
 import 'package:outdoor_clothing_picker/widgets/mannequin.dart';
 import 'package:outdoor_clothing_picker/widgets/utils.dart';
@@ -48,6 +49,7 @@ class ActivityDialog extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final vm = context.read<ActivityDialogViewModel>();
+    final textDirection = context.read<SettingsProvider>().textDirection;
 
     return AlertDialog(
       title: Text(vm.getTitle()),
@@ -73,6 +75,7 @@ class ActivityDialog extends StatelessWidget {
             Padding(padding: EdgeInsets.all(16.0)),
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              textDirection: textDirection,
               children: [
                 TextButton(onPressed: () => Navigator.pop(context, false), child: Text('Cancel')),
                 ElevatedButton(
@@ -128,6 +131,7 @@ class CategoryDialog extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final vm = context.read<CategoryDialogViewModel>();
+    final textDirection = context.read<SettingsProvider>().textDirection;
 
     return AlertDialog(
       title: Text(vm.getTitle()),
@@ -150,6 +154,7 @@ class CategoryDialog extends StatelessWidget {
               Padding(padding: EdgeInsets.all(16.0)),
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                textDirection: textDirection,
                 children: [
                   TextButton(
                     onPressed: () => Navigator.pop(context, false),
@@ -255,6 +260,7 @@ class ClothingDialog extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final vm = context.read<ClothingDialogViewModel>();
+    final textDirection = context.read<SettingsProvider>().textDirection;
 
     return AlertDialog(
       title: Text(vm.getTitle()),
@@ -311,6 +317,7 @@ class ClothingDialog extends StatelessWidget {
               Padding(padding: EdgeInsets.all(16.0)),
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                textDirection: textDirection,
                 children: [
                   TextButton(
                     onPressed: () => Navigator.pop(context, false),

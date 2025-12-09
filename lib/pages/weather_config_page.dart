@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:outdoor_clothing_picker/backend/forecast_config.dart';
+import 'package:outdoor_clothing_picker/backend/settings.dart';
 import 'package:outdoor_clothing_picker/widgets/forecast_configurator.dart';
 import 'package:outdoor_clothing_picker/widgets/utils.dart';
+import 'package:provider/provider.dart';
 
 // TODO: Add favorites
 class WeatherConfigPage extends StatefulWidget {
@@ -71,8 +73,13 @@ class _WeatherConfigPageState extends State<WeatherConfigPage> {
   @override
   Widget build(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
+    final isLeftHanded = context.read<SettingsProvider>().isLeftHanded;
+    final pos = isLeftHanded
+        ? FloatingActionButtonLocation.startFloat
+        : FloatingActionButtonLocation.endFloat;
 
     return Scaffold(
+      floatingActionButtonLocation: pos,
       floatingActionButton: FloatingActionButton(
         onPressed: _applyAndExit,
         child: const Icon(Icons.check),
@@ -110,7 +117,7 @@ class _WeatherConfigPageState extends State<WeatherConfigPage> {
                     style: IconButton.styleFrom(
                       backgroundColor: colorScheme.primaryContainer,
                       foregroundColor: colorScheme.onPrimaryContainer,
-                    )
+                    ),
                   ),
                 ),
             ],
