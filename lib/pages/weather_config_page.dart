@@ -85,44 +85,46 @@ class _WeatherConfigPageState extends State<WeatherConfigPage> {
         child: const Icon(Icons.check),
       ),
       appBar: AppBar(title: const Text('Choose Forecasts')),
-      body: ListView.builder(
-        padding: const EdgeInsets.all(16),
-        itemCount: configs.length,
-        itemBuilder: (context, index) {
-          final isLast = index == configs.length - 1;
-          return Column(
-            children: [
-              Dismissible(
-                key: ObjectKey(configs[index]),
-                direction: configs.length > 1
-                    ? DismissDirection.endToStart
-                    : DismissDirection.none,
-                background: Container(
-                  alignment: Alignment.centerRight,
-                  padding: const EdgeInsets.symmetric(horizontal: 20),
-                  color: colorScheme.errorContainer,
-                  child: Icon(Icons.delete, color: colorScheme.onErrorContainer, size: 28),
+      body: SafeArea(
+        child: ListView.builder(
+          padding: const EdgeInsets.all(16),
+          itemCount: configs.length,
+          itemBuilder: (context, index) {
+            final isLast = index == configs.length - 1;
+            return Column(
+              children: [
+                Dismissible(
+                  key: ObjectKey(configs[index]),
+                  direction: configs.length > 1
+                      ? DismissDirection.endToStart
+                      : DismissDirection.none,
+                  background: Container(
+                    alignment: Alignment.centerRight,
+                    padding: const EdgeInsets.symmetric(horizontal: 20),
+                    color: colorScheme.errorContainer,
+                    child: Icon(Icons.delete, color: colorScheme.onErrorContainer, size: 28),
+                  ),
+                  onDismissed: (_) => _onDismissConfig(index),
+                  child: ForecastConfigurator(config: configs[index]),
                 ),
-                onDismissed: (_) => _onDismissConfig(index),
-                child: ForecastConfigurator(config: configs[index]),
-              ),
 
-              if (isLast)
-                Padding(
-                  padding: const EdgeInsets.only(top: 16),
-                  // TODO: Add an animation
-                  child: IconButton(
-                    onPressed: configs.length < 4 ? _addConfig : null,
-                    icon: const Icon(Icons.add, size: 28),
-                    style: IconButton.styleFrom(
-                      backgroundColor: colorScheme.primaryContainer,
-                      foregroundColor: colorScheme.onPrimaryContainer,
+                if (isLast)
+                  Padding(
+                    padding: const EdgeInsets.only(top: 16),
+                    // TODO: Add an animation
+                    child: IconButton(
+                      onPressed: configs.length < 4 ? _addConfig : null,
+                      icon: const Icon(Icons.add, size: 28),
+                      style: IconButton.styleFrom(
+                        backgroundColor: colorScheme.primaryContainer,
+                        foregroundColor: colorScheme.onPrimaryContainer,
+                      ),
                     ),
                   ),
-                ),
-            ],
-          );
-        },
+              ],
+            );
+          },
+        ),
       ),
     );
   }
