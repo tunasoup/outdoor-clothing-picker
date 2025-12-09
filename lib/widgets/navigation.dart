@@ -30,7 +30,7 @@ List<NavigationRailDestination> navigationRailDestinations = destinations
     )
     .toList();
 
-Widget buildNavigationRail(
+NavigationRail buildNavigationRail(
   BuildContext context,
   void Function(int) onDestinationSelected,
   int selectedIndex,
@@ -45,7 +45,7 @@ Widget buildNavigationRail(
   );
 }
 
-Widget buildNavigationBar(
+NavigationBar buildNavigationBar(
   BuildContext context,
   void Function(int) onDestinationSelected,
   int selectedIndex,

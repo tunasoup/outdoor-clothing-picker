@@ -1,5 +1,6 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:outdoor_clothing_picker/pages/app_page.dart';
 import 'package:outdoor_clothing_picker/pages/clothing_page.dart';
 import 'package:outdoor_clothing_picker/pages/data_visualization_page.dart';
 import 'package:outdoor_clothing_picker/pages/settings_page.dart';
@@ -15,12 +16,13 @@ class HomePage extends StatefulWidget {
 
 class _HomePageState extends State<HomePage> {
   int currentPageIndex = 0;
-  bool wideScreen = false;
+  bool isWideScreen = false;
 
-  late final List<Widget> pages = [
-    ClothingPage(), // Landing page
-    DataVisualizationPage(),
-    const SettingsPage(),
+  late final List<AppPage Function(NavigationBar? navBar)> pages = [
+    // First page is the landing page
+    (bottomNav) => ClothingPage(bottomNavigationBar: bottomNav),
+    (bottomNav) => DataVisualizationPage(bottomNavigationBar: bottomNav),
+    (bottomNav) => SettingsPage(bottomNavigationBar: bottomNav),
   ];
 
   void onIndexChanged(int index) {
@@ -34,26 +36,26 @@ class _HomePageState extends State<HomePage> {
     super.didChangeDependencies();
     if (kIsWeb) {
       final double width = MediaQuery.of(context).size.width;
-      wideScreen = width > 600;
+      isWideScreen = width > 600;
     } else {
-      wideScreen = MediaQuery.orientationOf(context) == Orientation.landscape;
+      isWideScreen = MediaQuery.orientationOf(context) == Orientation.landscape;
     }
   }
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      body: wideScreen
-          ? Row(
-              children: [
-                buildNavigationRail(context, onIndexChanged, currentPageIndex),
-                Expanded(child: pages[currentPageIndex]),
-              ],
-            )
-          : pages[currentPageIndex],
-      bottomNavigationBar: wideScreen
-          ? null
-          : buildNavigationBar(context, onIndexChanged, currentPageIndex),
-    );
+    final bottomNavigationBar = isWideScreen
+        ? null
+        : buildNavigationBar(context, onIndexChanged, currentPageIndex);
+    final page = pages[currentPageIndex](bottomNavigationBar);
+
+    return isWideScreen
+        ? Row(
+            children: [
+              buildNavigationRail(context, onIndexChanged, currentPageIndex),
+              Expanded(child: page),
+            ],
+          )
+        : page;
   }
 }

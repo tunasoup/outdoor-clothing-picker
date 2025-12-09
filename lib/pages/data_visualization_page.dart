@@ -4,6 +4,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:outdoor_clothing_picker/backend/dialog_viewmodel.dart';
 import 'package:outdoor_clothing_picker/backend/items_provider.dart';
+import 'package:outdoor_clothing_picker/pages/app_page.dart';
 import 'package:outdoor_clothing_picker/widgets/add_dialogs.dart';
 import 'package:outdoor_clothing_picker/widgets/utils.dart';
 import 'package:provider/provider.dart';
@@ -72,10 +73,9 @@ class LoadingItem extends DataListItem {
   }
 }
 
-// TODO: Add back button functionality for canceling modes
 /// The Data visualization page shows the contents of the local data and allows modifying it.
 class DataVisualizationPage extends AppPage {
-  const DataVisualizationPage({super.key});
+  const DataVisualizationPage({super.key, super.bottomNavigationBar});
 
   @override
   State<DataVisualizationPage> createState() => _DataVisualizationPageState();
@@ -83,9 +83,6 @@ class DataVisualizationPage extends AppPage {
 
 class _DataVisualizationPageState extends State<DataVisualizationPage> {
   String? searchQuery;
-
-  @override
-  PreferredSizeWidget? get appBar => DataAppBar(searchCallback: _searchCallback);
 
   void _searchCallback(String query) {
     setState(() => searchQuery = query);
@@ -95,16 +92,19 @@ class _DataVisualizationPageState extends State<DataVisualizationPage> {
   Widget build(BuildContext context) {
     return ChangeNotifierProvider(
       create: (_) => SelectionProvider(),
-      child: _DataVisualizationContent(searchQuery: searchQuery, searchCallback: _searchCallback),
+      child: Scaffold(
+        appBar: DataAppBar(searchCallback: _searchCallback),
+        bottomNavigationBar: widget.bottomNavigationBar,
+        body: _DataVisualizationContent(searchQuery: searchQuery),
+      ),
     );
   }
 }
 
 class _DataVisualizationContent extends StatelessWidget {
   final String? searchQuery;
-  final ValueChanged<String> searchCallback;
 
-  const _DataVisualizationContent({required this.searchQuery, required this.searchCallback});
+  const _DataVisualizationContent({required this.searchQuery});
 
   @override
   Widget build(BuildContext context) {
@@ -179,16 +179,13 @@ class _DataVisualizationContent extends StatelessWidget {
     return Selector<SelectionProvider, bool>(
       selector: (_, p) => p.isSelectionMode,
       builder: (_, isSelectionMode, _) {
-        return Scaffold(
-          appBar: DataAppBar(searchCallback: searchCallback),
-          body: ListView.builder(
-            padding: const EdgeInsets.all(16),
-            itemCount: items.length,
-            itemBuilder: (context, index) {
-              final item = items[index];
-              return item.build(context);
-            },
-          ),
+        return ListView.builder(
+          padding: const EdgeInsets.all(16),
+          itemCount: items.length,
+          itemBuilder: (context, index) {
+            final item = items[index];
+            return item.build(context);
+          },
         );
       },
     );
