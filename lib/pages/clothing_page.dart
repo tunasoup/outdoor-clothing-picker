@@ -3,6 +3,7 @@ import 'package:flutter_expandable_fab/flutter_expandable_fab.dart';
 import 'package:outdoor_clothing_picker/backend/clothing_viewmodel.dart';
 import 'package:outdoor_clothing_picker/backend/dialog_viewmodel.dart';
 import 'package:outdoor_clothing_picker/backend/items_provider.dart';
+import 'package:outdoor_clothing_picker/backend/settings.dart';
 import 'package:outdoor_clothing_picker/backend/weather_viewmodel.dart';
 import 'package:outdoor_clothing_picker/pages/app_page.dart';
 import 'package:outdoor_clothing_picker/widgets/add_dialogs.dart';
@@ -50,9 +51,11 @@ class _ClothingPageState extends State<ClothingPage> {
   }
 
   ExpandableFab createEFAB({required BuildContext context}) {
+    final isLeftHanded = context.read<SettingsProvider>().isLeftHanded;
+    final pos = isLeftHanded ? ExpandableFabPos.left : ExpandableFabPos.right;
     return ExpandableFab(
       key: _fabKey,
-      pos: ExpandableFabPos.right,
+      pos: pos,
       type: ExpandableFabType.up,
       childrenAnimation: ExpandableFabAnimation.none,
       distance: 70,
@@ -200,20 +203,24 @@ class ActivityDropdown extends StatelessWidget {
   Widget build(BuildContext context) {
     return Consumer<ActivityItemsProvider>(
       builder: (context, ActivityItemsProvider provider, _) {
-        return DropdownButtonFormField<String>(
-          initialValue: initialValue,
-          items:
-              (provider.names.toList()..sort((a, b) => a.toLowerCase().compareTo(b.toLowerCase())))
-                  .map(
-                    (item) => DropdownMenuItem(
-                      value: item,
-                      child: Text(item, overflow: TextOverflow.clip),
-                    ),
-                  )
-                  .toList(),
-          onChanged: onChanged,
-          isExpanded: true,
-          decoration: InputDecoration(labelText: text),
+        return Directionality(
+          textDirection: TextDirection.ltr,
+          child: DropdownButtonFormField<String>(
+            initialValue: initialValue,
+            items:
+                (provider.names.toList()
+                      ..sort((a, b) => a.toLowerCase().compareTo(b.toLowerCase())))
+                    .map(
+                      (item) => DropdownMenuItem(
+                        value: item,
+                        child: Text(item, overflow: TextOverflow.clip),
+                      ),
+                    )
+                    .toList(),
+            onChanged: onChanged,
+            isExpanded: true,
+            decoration: InputDecoration(labelText: text),
+          ),
         );
       },
     );

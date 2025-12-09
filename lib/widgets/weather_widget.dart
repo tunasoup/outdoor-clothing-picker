@@ -25,64 +25,67 @@ class _WeatherWidgetState extends State<WeatherWidget> {
     final viewModel = context.watch<WeatherViewModel>();
     final colorScheme = Theme.of(context).colorScheme;
 
-    return Column(
-      children: [
-        SizedBox(
-          width: double.infinity,
-          child: GestureDetector(
-            onTap: () async {
-              final result = await Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder: (context) => WeatherConfigPage(initialConfigs: draftConfigs),
-                ),
-              );
-              if (result == null) return;
-              draftConfigs = result;
-              await errorWrapper(context, () async {
-                try {
-                  await viewModel.applyForecastConfigs(configs: result);
-                } catch (e) {
-                  rethrow;
-                }
-                await saveForecastConfigs(result);
-                draftConfigs = null;
-              });
-              // TODO: tapping could be expected to show more detailed weather informations as well
-            },
-            child: Container(
-              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-              decoration: BoxDecoration(
-                color: colorScheme.primaryContainer,
-                borderRadius: BorderRadius.circular(12),
-              ),
-              child: Stack(
-                children: [
-                  if (viewModel.isLoading)
-                    Center(child: CircularProgressIndicator(strokeWidth: 3)),
-                  Center(
-                    child: Column(
-                      children: [
-                        SingleChildScrollView(
-                          scrollDirection: Axis.horizontal,
-                          child: Row(
-                            spacing: 16,
-                            children: viewModel.weathers
-                                .map((e) => _buildWeatherDisplay(e, colorScheme))
-                                .toList(),
-                          ),
-                        ),
-                        _buildUpdateInfo(viewModel, colorScheme),
-                      ],
-                    ),
+    return Directionality(
+      textDirection: TextDirection.ltr,
+      child: Column(
+        children: [
+          SizedBox(
+            width: double.infinity,
+            child: GestureDetector(
+              onTap: () async {
+                final result = await Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => WeatherConfigPage(initialConfigs: draftConfigs),
                   ),
-                ],
+                );
+                if (result == null) return;
+                draftConfigs = result;
+                await errorWrapper(context, () async {
+                  try {
+                    await viewModel.applyForecastConfigs(configs: result);
+                  } catch (e) {
+                    rethrow;
+                  }
+                  await saveForecastConfigs(result);
+                  draftConfigs = null;
+                });
+                // TODO: tapping could be expected to show more detailed weather informations as well
+              },
+              child: Container(
+                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                decoration: BoxDecoration(
+                  color: colorScheme.primaryContainer,
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: Stack(
+                  children: [
+                    if (viewModel.isLoading)
+                      Center(child: CircularProgressIndicator(strokeWidth: 3)),
+                    Center(
+                      child: Column(
+                        children: [
+                          SingleChildScrollView(
+                            scrollDirection: Axis.horizontal,
+                            child: Row(
+                              spacing: 16,
+                              children: viewModel.weathers
+                                  .map((e) => _buildWeatherDisplay(e, colorScheme))
+                                  .toList(),
+                            ),
+                          ),
+                          _buildUpdateInfo(viewModel, colorScheme),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
               ),
             ),
           ),
-        ),
-        if (kIsWeb) GetWeatherButton(viewModel: viewModel),
-      ],
+          if (kIsWeb) GetWeatherButton(viewModel: viewModel),
+        ],
+      ),
     );
   }
 

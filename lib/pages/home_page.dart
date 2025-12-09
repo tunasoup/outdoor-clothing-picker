@@ -1,10 +1,12 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:outdoor_clothing_picker/backend/settings.dart';
 import 'package:outdoor_clothing_picker/pages/app_page.dart';
 import 'package:outdoor_clothing_picker/pages/clothing_page.dart';
 import 'package:outdoor_clothing_picker/pages/data_visualization_page.dart';
 import 'package:outdoor_clothing_picker/pages/settings_page.dart';
 import 'package:outdoor_clothing_picker/widgets/navigation.dart';
+import 'package:provider/provider.dart';
 
 /// Parent widget for the real UI pages, managing navigation.
 class HomePage extends StatefulWidget {
@@ -48,14 +50,21 @@ class _HomePageState extends State<HomePage> {
         ? null
         : buildNavigationBar(context, onIndexChanged, currentPageIndex);
     final page = pages[currentPageIndex](bottomNavigationBar);
+    final textDirection = Provider.of<SettingsProvider>(context, listen: true).textDirection;
 
-    return isWideScreen
-        ? Row(
-            children: [
-              buildNavigationRail(context, onIndexChanged, currentPageIndex),
-              Expanded(child: page),
-            ],
-          )
-        : page;
+    // Setting Directionality at this level does not affect widgets such as alert dialogs and
+    // MaterialPageRoutes, but most of their contents should not change anyway for left-handed
+    // mode, rather, buttons and such should be modified manually
+    return Directionality(
+      textDirection: textDirection,
+      child: isWideScreen
+          ? Row(
+              children: [
+                buildNavigationRail(context, onIndexChanged, currentPageIndex),
+                Expanded(child: page),
+              ],
+            )
+          : page,
+    );
   }
 }
