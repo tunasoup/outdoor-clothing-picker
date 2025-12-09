@@ -35,6 +35,8 @@ class _MannequinState extends State<Mannequin> with WidgetsBindingObserver {
   Offset? _circlePosition;
   static const double magnifierRadius = 40.0;
   static const double magnifierScale = 2.0;
+  // Y-offset of the magnifier to lift it from behind the finger
+  static const double fingerAdjustment = 55;
   Offset? localMagPosition;
 
   @override
@@ -167,16 +169,17 @@ class _MannequinState extends State<Mannequin> with WidgetsBindingObserver {
               ),
               // Magnifier
               if (localMagPosition != null)
+                // FIXME: Movement slows near the top of the widget
                 Positioned(
                   left: localMagPosition!.dx - magnifierRadius,
-                  top: localMagPosition!.dy - magnifierRadius - 25,
+                  top: localMagPosition!.dy - magnifierRadius - fingerAdjustment,
                   child: RawMagnifier(
                     decoration: MagnifierDecoration(
                       shape: CircleBorder(side: BorderSide(color: overlayColor, width: 3)),
                     ),
                     size: Size(magnifierRadius * magnifierScale, magnifierRadius * magnifierScale),
                     magnificationScale: magnifierScale,
-                    focalPointOffset: Offset(0, 25),
+                    focalPointOffset: Offset(0, fingerAdjustment),
                   ),
                 ),
             ],
