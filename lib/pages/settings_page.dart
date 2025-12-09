@@ -1,5 +1,7 @@
+import 'dart:math' as math;
+
 import 'package:flutter/material.dart';
-import 'package:outdoor_clothing_picker/backend/theme.dart';
+import 'package:outdoor_clothing_picker/backend/settings.dart';
 import 'package:outdoor_clothing_picker/backend/utils.dart';
 import 'package:outdoor_clothing_picker/pages/app_page.dart';
 import 'package:provider/provider.dart';
@@ -12,7 +14,6 @@ class SettingsPage extends AppPage {
   State<SettingsPage> createState() => _SettingsPageState();
 }
 
-// TODO: Left-hand mode
 // TODO: Localization (language, units, time format)
 class _SettingsPageState extends State<SettingsPage> {
   final TextEditingController _controller = TextEditingController();
@@ -65,7 +66,7 @@ class _SettingsPageState extends State<SettingsPage> {
           ? const Center(child: CircularProgressIndicator())
           : ListView(
               padding: const EdgeInsets.all(16),
-              children: [_buildAPIKeyBox(), const ThemeSelectorTile()],
+              children: [_buildAPIKeyBox(), const ThemeSelectorTile(), const HandLayoutTile()],
             ),
     );
   }
@@ -82,8 +83,8 @@ class ThemeSelectorTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final themeProvider = context.watch<ThemeProvider>();
-    final isDarkMode = themeProvider.isDarkMode;
+    final settingsProvider = context.watch<SettingsProvider>();
+    final isDarkMode = settingsProvider.isDarkMode;
 
     return ListTile(
       leading: Icon(
@@ -95,11 +96,42 @@ class ThemeSelectorTile extends StatelessWidget {
       trailing: Switch.adaptive(
         value: isDarkMode,
         onChanged: (_) async {
-          await themeProvider.toggleTheme();
+          await settingsProvider.toggleTheme();
         },
       ),
+      // Make the whole tile tappable
       onTap: () async {
-        await themeProvider.toggleTheme();
+        await settingsProvider.toggleTheme();
+      },
+    );
+  }
+}
+
+class HandLayoutTile extends StatelessWidget {
+  const HandLayoutTile({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    final settingsProvider = context.watch<SettingsProvider>();
+    final isLeftHanded = settingsProvider.isLeftHanded;
+
+    return ListTile(
+      leading: Transform(
+        alignment: Alignment.center,
+        transform: Matrix4.rotationY(isLeftHanded ? math.pi : 0),
+        child: Icon(Icons.back_hand, color: Theme.of(context).colorScheme.primary),
+      ),
+      title: const Text('Hand Layout'),
+      subtitle: Text(isLeftHanded ? 'Left-handed' : 'Right-handed'),
+      trailing: Switch.adaptive(
+        value: isLeftHanded,
+        onChanged: (_) async {
+          await settingsProvider.toggleHand();
+        },
+      ),
+      // Make the whole tile tappable
+      onTap: () async {
+        await settingsProvider.toggleHand();
       },
     );
   }

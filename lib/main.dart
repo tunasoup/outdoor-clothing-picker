@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:outdoor_clothing_picker/backend/clothing_viewmodel.dart';
 import 'package:outdoor_clothing_picker/backend/items_provider.dart';
-import 'package:outdoor_clothing_picker/backend/theme.dart';
+import 'package:outdoor_clothing_picker/backend/settings.dart';
 import 'package:outdoor_clothing_picker/backend/weather_service.dart';
 import 'package:outdoor_clothing_picker/backend/weather_viewmodel.dart';
 import 'package:outdoor_clothing_picker/database/database.dart';
@@ -14,14 +14,14 @@ void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   db = AppDb();
 
-  final themeProvider = ThemeProvider();
-  await themeProvider.loadTheme();
+  final settingsProvider = SettingsProvider();
+  await settingsProvider.initialize();
 
   runApp(
     MultiProvider(
       providers: [
         Provider<AppDb>.value(value: db),
-        ChangeNotifierProvider<ThemeProvider>.value(value: themeProvider),
+        ChangeNotifierProvider<SettingsProvider>.value(value: settingsProvider),
         ChangeNotifierProvider(create: (_) => ActivityItemsProvider(db)),
         ChangeNotifierProvider(create: (_) => CategoryItemsProvider(db)),
         ChangeNotifierProvider(create: (_) => ClothingItemsProvider(db)),
@@ -52,7 +52,7 @@ class MyApp extends StatelessWidget {
       debugShowCheckedModeBanner: false,
       theme: lightMode,
       darkTheme: darkMode,
-      themeMode: Provider.of<ThemeProvider>(context).themeMode,
+      themeMode: Provider.of<SettingsProvider>(context, listen: true).themeMode,
     );
   }
 }
