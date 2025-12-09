@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:outdoor_clothing_picker/pages/clothing_page.dart';
 import 'package:outdoor_clothing_picker/pages/data_visualization_page.dart';
@@ -31,8 +32,12 @@ class _HomePageState extends State<HomePage> {
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
-    final double width = MediaQuery.of(context).size.width;
-    wideScreen = width > 600;
+    if (kIsWeb) {
+      final double width = MediaQuery.of(context).size.width;
+      wideScreen = width > 600;
+    } else {
+      wideScreen = MediaQuery.orientationOf(context) == Orientation.landscape;
+    }
   }
 
   @override
