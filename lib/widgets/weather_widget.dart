@@ -39,6 +39,7 @@ class _WeatherWidgetState extends State<WeatherWidget> {
                     builder: (context) => WeatherConfigPage(initialConfigs: draftConfigs),
                   ),
                 );
+                ScaffoldMessenger.of(context).clearSnackBars();
                 if (result == null) return;
                 draftConfigs = result;
                 await errorWrapper(context, () async {
