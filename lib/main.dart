@@ -46,13 +46,18 @@ class MyApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(
-      title: 'Outdoor Clothing Picker',
-      home: HomePage(),
-      debugShowCheckedModeBanner: false,
-      theme: lightMode,
-      darkTheme: darkMode,
-      themeMode: Provider.of<SettingsProvider>(context, listen: true).themeMode,
+    return Selector<SettingsProvider, ThemeMode>(
+      selector: (_, provider) => provider.themeMode,
+      builder: (_, themeMode, _) {
+        return MaterialApp(
+          title: 'Outdoor Clothing Picker',
+          home: HomePage(),
+          debugShowCheckedModeBanner: false,
+          theme: lightMode,
+          darkTheme: darkMode,
+          themeMode: themeMode,
+        );
+      },
     );
   }
 }
