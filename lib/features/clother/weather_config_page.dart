@@ -1,9 +1,10 @@
 import 'package:flutter/material.dart';
-import 'package:outdoor_clothing_picker/backend/forecast_config.dart';
-import 'package:outdoor_clothing_picker/backend/settings.dart';
-import 'package:outdoor_clothing_picker/widgets/forecast_configurator.dart';
-import 'package:outdoor_clothing_picker/widgets/utils.dart';
+import 'package:outdoor_clothing_picker/core/configs/settings.dart';
+import 'package:outdoor_clothing_picker/core/ui/ui_helpers.dart';
 import 'package:provider/provider.dart';
+
+import './forecast_config.dart';
+import './forecast_configurator.dart';
 
 // TODO: Add favorites
 class WeatherConfigPage extends StatefulWidget {

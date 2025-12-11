@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:outdoor_clothing_picker/backend/utils.dart';
+import 'package:outdoor_clothing_picker/core/utils/utils.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 // TODO: Custom theme

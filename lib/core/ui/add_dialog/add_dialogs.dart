@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
-import 'package:outdoor_clothing_picker/backend/dialog_viewmodel.dart';
-import 'package:outdoor_clothing_picker/backend/items_provider.dart';
-import 'package:outdoor_clothing_picker/backend/settings.dart';
-import 'package:outdoor_clothing_picker/database/database.dart';
-import 'package:outdoor_clothing_picker/widgets/mannequin.dart';
-import 'package:outdoor_clothing_picker/widgets/utils.dart';
+import 'package:outdoor_clothing_picker/core/ui/add_dialog/dialog_viewmodel.dart';
+import 'package:outdoor_clothing_picker/core/database/items_provider.dart';
+import 'package:outdoor_clothing_picker/core/configs/settings.dart';
+import 'package:outdoor_clothing_picker/core/database/database.dart';
+import 'package:outdoor_clothing_picker/core/ui/mannequin.dart';
+import 'package:outdoor_clothing_picker/core/ui/ui_helpers.dart';
 import 'package:provider/provider.dart';
 
 /// Dialog where a new Activity item can be created or provided [initialData] modified.

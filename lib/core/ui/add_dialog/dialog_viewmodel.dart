@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:outdoor_clothing_picker/backend/items_provider.dart';
-import 'package:outdoor_clothing_picker/database/database.dart';
+import 'package:outdoor_clothing_picker/core/database/items_provider.dart';
+import 'package:outdoor_clothing_picker/core/database/database.dart';
 
 enum DialogMode { add, edit, copy }
 

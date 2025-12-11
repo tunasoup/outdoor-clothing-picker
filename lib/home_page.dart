@@ -1,11 +1,11 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
-import 'package:outdoor_clothing_picker/backend/settings.dart';
-import 'package:outdoor_clothing_picker/pages/app_page.dart';
-import 'package:outdoor_clothing_picker/pages/clothing_page.dart';
-import 'package:outdoor_clothing_picker/pages/data_visualization_page.dart';
-import 'package:outdoor_clothing_picker/pages/settings_page.dart';
-import 'package:outdoor_clothing_picker/widgets/navigation.dart';
+import 'package:outdoor_clothing_picker/core/configs/settings.dart';
+import 'package:outdoor_clothing_picker/core/ui/app_page.dart';
+import 'package:outdoor_clothing_picker/features/clother/clothing_page.dart';
+import 'package:outdoor_clothing_picker/features/database_editor/data_visualization_page.dart';
+import 'package:outdoor_clothing_picker/features/settings/settings_page.dart';
+import 'package:outdoor_clothing_picker/core/ui/navigation.dart';
 import 'package:provider/provider.dart';
 
 /// Parent widget for the real UI pages, managing navigation.

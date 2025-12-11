@@ -2,11 +2,11 @@ import 'dart:async';
 
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
-import 'package:outdoor_clothing_picker/backend/dialog_viewmodel.dart';
-import 'package:outdoor_clothing_picker/backend/items_provider.dart';
-import 'package:outdoor_clothing_picker/pages/app_page.dart';
-import 'package:outdoor_clothing_picker/widgets/add_dialogs.dart';
-import 'package:outdoor_clothing_picker/widgets/utils.dart';
+import 'package:outdoor_clothing_picker/core/ui/add_dialog/dialog_viewmodel.dart';
+import 'package:outdoor_clothing_picker/core/database/items_provider.dart';
+import 'package:outdoor_clothing_picker/core/ui/app_page.dart';
+import 'package:outdoor_clothing_picker/core/ui/add_dialog/add_dialogs.dart';
+import 'package:outdoor_clothing_picker/core/ui/ui_helpers.dart';
 import 'package:provider/provider.dart';
 
 /// Abstract object to place inside a Listview builder.

@@ -1,17 +1,18 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_expandable_fab/flutter_expandable_fab.dart';
-import 'package:outdoor_clothing_picker/backend/clothing_viewmodel.dart';
-import 'package:outdoor_clothing_picker/backend/dialog_viewmodel.dart';
-import 'package:outdoor_clothing_picker/backend/items_provider.dart';
-import 'package:outdoor_clothing_picker/backend/settings.dart';
-import 'package:outdoor_clothing_picker/backend/weather_viewmodel.dart';
-import 'package:outdoor_clothing_picker/pages/app_page.dart';
-import 'package:outdoor_clothing_picker/widgets/add_dialogs.dart';
-import 'package:outdoor_clothing_picker/widgets/mannequin.dart';
-import 'package:outdoor_clothing_picker/widgets/utils.dart';
-import 'package:outdoor_clothing_picker/widgets/weather_widget.dart';
+import 'package:outdoor_clothing_picker/core/configs/settings.dart';
+import 'package:outdoor_clothing_picker/core/database/items_provider.dart';
+import 'package:outdoor_clothing_picker/core/ui/add_dialog/add_dialogs.dart';
+import 'package:outdoor_clothing_picker/core/ui/add_dialog/dialog_viewmodel.dart';
+import 'package:outdoor_clothing_picker/core/ui/app_page.dart';
+import 'package:outdoor_clothing_picker/core/ui/mannequin.dart';
+import 'package:outdoor_clothing_picker/core/ui/ui_helpers.dart';
 import 'package:provider/provider.dart';
 import 'package:universal_html/html.dart' as html;
+
+import './clothing_viewmodel.dart';
+import './weather_viewmodel.dart';
+import './weather_widget.dart';
 
 /// The clothing page visualizes which clothings from a local database would be appropriate
 /// for the current/selected weather, while allowing the user to add new items.
@@ -140,7 +141,10 @@ class _ClothingPageState extends State<ClothingPage> {
                         context.read<ClothingViewModel>().setActivity(activity: value),
                   ),
                 ),
-                const SizedBox(height: 400, child: Mannequin()),
+                SizedBox(
+                  height: 400,
+                  child: Mannequin(clothing: context.watch<ClothingViewModel>().filteredClothing),
+                ),
               ],
             ),
           ),

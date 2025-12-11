@@ -4,10 +4,11 @@ import 'package:flutter/foundation.dart';
 import 'package:geocoding/geocoding.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:http/http.dart' as http;
-import 'package:outdoor_clothing_picker/backend/forecast_config.dart';
-import 'package:outdoor_clothing_picker/backend/utils.dart';
-import 'package:outdoor_clothing_picker/backend/weather_model.dart';
+import 'package:outdoor_clothing_picker/core/utils/utils.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+
+import './forecast_config.dart';
+import './weather_model.dart';
 
 class WeatherService {
   WeatherService();

@@ -1,9 +1,7 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
-import 'package:outdoor_clothing_picker/backend/clothing_viewmodel.dart';
-import 'package:outdoor_clothing_picker/database/database.dart';
-import 'package:provider/provider.dart';
+import 'package:outdoor_clothing_picker/core/database/database.dart';
 
 /// Widget with a figure with has a toggleable [isInteractiveMode], which causes either
 /// (false, default) current filtered clothing labels to be drawn on it,
@@ -15,12 +13,14 @@ class Mannequin extends StatefulWidget {
   final ValueChanged<Offset>? onTap;
   final bool isInteractiveMode;
   final Offset? initialCirclePosition;
+  final List<ValidClothingResult>? clothing;
 
   const Mannequin({
     super.key,
     this.onTap,
     this.isInteractiveMode = false,
     this.initialCirclePosition,
+    this.clothing,
   });
 
   @override
@@ -108,7 +108,6 @@ class _MannequinState extends State<Mannequin> with WidgetsBindingObserver {
 
   @override
   Widget build(BuildContext context) {
-    final viewModel = context.watch<ClothingViewModel>();
     final overlayColor = Theme.of(context).colorScheme.onPrimaryContainer;
     final circleColor = Theme.of(context).colorScheme.primaryContainer;
     final figureColor = Theme.of(context).colorScheme.onSurfaceVariant;
@@ -156,7 +155,7 @@ class _MannequinState extends State<Mannequin> with WidgetsBindingObserver {
                               )
                             : ClothingPainter(
                                 constraints: constraints,
-                                clothing: viewModel.filteredClothing,
+                                clothing: widget.clothing,
                                 foregroundColor: overlayColor,
                                 backgroundColor: circleColor,
                                 figureRect: figureRect!,
@@ -193,7 +192,7 @@ class _MannequinState extends State<Mannequin> with WidgetsBindingObserver {
 /// Draw the selected [clothing] labels on top of the [figureRect].
 class ClothingPainter extends CustomPainter {
   final BoxConstraints constraints;
-  final List<ValidClothingResult> clothing;
+  final List<ValidClothingResult>? clothing;
   final Color foregroundColor;
   final Color backgroundColor;
   final Rect figureRect;
@@ -211,6 +210,7 @@ class ClothingPainter extends CustomPainter {
   @override
   void paint(Canvas canvas, Size size) {
     if (kDebugMode) print('Painting');
+    if (clothing == null) return;
 
     final innerLinePaint = Paint()
       ..color = foregroundColor
@@ -221,7 +221,7 @@ class ClothingPainter extends CustomPainter {
       ..strokeWidth = 4;
 
     // TODO: convert to interactable widget which allows cycling through valid category clothing
-    for (var item in clothing) {
+    for (var item in clothing!) {
       final startX = figureRect.left + item.normX * figureRect.width;
       final y = figureRect.top + item.normY * figureRect.height;
 

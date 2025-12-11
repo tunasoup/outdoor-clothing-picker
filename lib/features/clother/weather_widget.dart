@@ -1,10 +1,11 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
-import 'package:outdoor_clothing_picker/backend/forecast_config.dart';
-import 'package:outdoor_clothing_picker/backend/weather_viewmodel.dart';
-import 'package:outdoor_clothing_picker/pages/weather_config_page.dart';
-import 'package:outdoor_clothing_picker/widgets/utils.dart';
+import 'package:outdoor_clothing_picker/core/ui/ui_helpers.dart';
 import 'package:provider/provider.dart';
+
+import './forecast_config.dart';
+import './weather_config_page.dart';
+import './weather_viewmodel.dart';
 
 /// Widget for displaying weather info and opening the weather config page.
 class WeatherWidget extends StatefulWidget {

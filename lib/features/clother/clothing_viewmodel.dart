@@ -1,10 +1,11 @@
 import 'package:collection/collection.dart';
 import 'package:flutter/foundation.dart';
-import 'package:outdoor_clothing_picker/backend/items_provider.dart';
-import 'package:outdoor_clothing_picker/backend/utils.dart';
-import 'package:outdoor_clothing_picker/backend/weather_viewmodel.dart';
-import 'package:outdoor_clothing_picker/database/database.dart';
+import 'package:outdoor_clothing_picker/core/database/database.dart';
+import 'package:outdoor_clothing_picker/core/database/items_provider.dart';
+import 'package:outdoor_clothing_picker/core/utils/utils.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+
+import './weather_viewmodel.dart';
 
 class ClothingViewModel extends ChangeNotifier {
   final AppDb _db;

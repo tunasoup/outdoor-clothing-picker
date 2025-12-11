@@ -1,9 +1,9 @@
 import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
-import 'package:outdoor_clothing_picker/backend/settings.dart';
-import 'package:outdoor_clothing_picker/backend/utils.dart';
-import 'package:outdoor_clothing_picker/pages/app_page.dart';
+import 'package:outdoor_clothing_picker/core/configs/settings.dart';
+import 'package:outdoor_clothing_picker/core/ui/app_page.dart';
+import 'package:outdoor_clothing_picker/core/utils/utils.dart';
 import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -15,6 +15,7 @@ class SettingsPage extends AppPage {
 }
 
 // TODO: Localization (language, units, time format)
+// TODO: Data import and export
 class _SettingsPageState extends State<SettingsPage> {
   final TextEditingController _controller = TextEditingController();
   bool _isLoading = true;

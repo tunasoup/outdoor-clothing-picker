@@ -1,7 +1,8 @@
 import 'package:flutter/material.dart';
-import 'package:outdoor_clothing_picker/backend/forecast_config.dart';
-import 'package:outdoor_clothing_picker/backend/utils.dart';
-import 'package:outdoor_clothing_picker/widgets/utils.dart';
+import 'package:outdoor_clothing_picker/core/ui/ui_helpers.dart';
+import 'package:outdoor_clothing_picker/core/utils/utils.dart';
+
+import './forecast_config.dart';
 
 class ForecastConfigurator extends StatefulWidget {
   final ForecastConfig config;

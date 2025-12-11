@@ -2,11 +2,12 @@ import 'dart:async';
 import 'dart:convert';
 
 import 'package:flutter/foundation.dart';
-import 'package:outdoor_clothing_picker/backend/forecast_config.dart';
-import 'package:outdoor_clothing_picker/backend/utils.dart';
-import 'package:outdoor_clothing_picker/backend/weather_model.dart';
-import 'package:outdoor_clothing_picker/backend/weather_service.dart';
+import 'package:outdoor_clothing_picker/core/utils/utils.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+
+import './forecast_config.dart';
+import './weather_model.dart';
+import './weather_service.dart';
 
 /// Manages and provides weather information obtained manually or via [_weatherService].
 class WeatherViewModel extends ChangeNotifier {
