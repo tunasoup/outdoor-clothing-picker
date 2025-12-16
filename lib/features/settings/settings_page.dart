@@ -1,14 +1,17 @@
 import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
-import 'package:outdoor_clothing_picker/core/configs/settings.dart';
 import 'package:outdoor_clothing_picker/core/ui/app_page.dart';
+import 'package:outdoor_clothing_picker/core/ui/ui_helpers.dart';
 import 'package:outdoor_clothing_picker/core/utils/utils.dart';
-import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
+import './settings_viewmodel.dart';
+
 class SettingsPage extends AppPage {
-  const SettingsPage({super.key, super.bottomNavigationBar});
+  final SettingsViewModel viewModel;
+
+  const SettingsPage({super.key, super.bottomNavigationBar, required this.viewModel});
 
   @override
   State<SettingsPage> createState() => _SettingsPageState();
@@ -63,13 +66,19 @@ class _SettingsPageState extends State<SettingsPage> {
         backgroundColor: Theme.of(context).colorScheme.surfaceContainerHigh,
       ),
       bottomNavigationBar: widget.bottomNavigationBar,
-      body: _isLoading
-          ? const Center(child: CircularProgressIndicator())
-          : ListView(
-              padding: const EdgeInsets.all(16),
-              children: [_buildAPIKeyBox(), const ThemeSelectorTile(), const HandLayoutTile()],
-            ),
-    );
+      body: ListenableBuilder(listenable: widget.viewModel, builder: (context, _) {
+        return widget.viewModel.isLoading
+            ? const Center(child: CircularProgressIndicator())
+            : ListView(
+          padding: const EdgeInsets.all(16),
+          children: [
+            _buildAPIKeyBox(),
+            ThemeSelectorTile(viewModel: widget.viewModel),
+            HandLayoutTile(viewModel: widget.viewModel),
+          ],
+        );
+      }
+    ));
   }
 
   @override
@@ -80,41 +89,43 @@ class _SettingsPageState extends State<SettingsPage> {
 }
 
 class ThemeSelectorTile extends StatelessWidget {
-  const ThemeSelectorTile({super.key});
+  final SettingsViewModel viewModel;
+
+  const ThemeSelectorTile({super.key, required this.viewModel});
 
   @override
   Widget build(BuildContext context) {
-    final settingsProvider = context.watch<SettingsProvider>();
-    final isDarkMode = settingsProvider.isDarkMode;
+    final isDarkMode = viewModel.isDarkMode;
 
     return ListTile(
       leading: Icon(
         isDarkMode ? Icons.dark_mode : Icons.light_mode,
         color: Theme.of(context).colorScheme.primary,
       ),
-      title: const Text('Theme'),
-      subtitle: Text(isDarkMode ? 'Dark mode' : 'Light mode'),
+      title: Text(viewModel.themeText),
+      subtitle: Text(viewModel.themeDescription),
       trailing: Switch.adaptive(
         value: isDarkMode,
         onChanged: (_) async {
-          await settingsProvider.toggleTheme();
+          await viewModel.toggleTheme();
         },
       ),
       // Make the whole tile tappable
       onTap: () async {
-        await settingsProvider.toggleTheme();
+        await viewModel.toggleTheme();
       },
     );
   }
 }
 
 class HandLayoutTile extends StatelessWidget {
-  const HandLayoutTile({super.key});
+  final SettingsViewModel viewModel;
+
+  const HandLayoutTile({super.key, required this.viewModel});
 
   @override
   Widget build(BuildContext context) {
-    final settingsProvider = context.watch<SettingsProvider>();
-    final isLeftHanded = settingsProvider.isLeftHanded;
+    final isLeftHanded = viewModel.isLeftHanded;
 
     return ListTile(
       leading: Transform(
@@ -122,17 +133,21 @@ class HandLayoutTile extends StatelessWidget {
         transform: Matrix4.rotationY(isLeftHanded ? math.pi : 0),
         child: Icon(Icons.back_hand, color: Theme.of(context).colorScheme.primary),
       ),
-      title: const Text('Hand Layout'),
-      subtitle: Text(isLeftHanded ? 'Left-handed' : 'Right-handed'),
+      title: Text(viewModel.layoutText),
+      subtitle: Text(viewModel.layoutDescription),
       trailing: Switch.adaptive(
         value: isLeftHanded,
         onChanged: (_) async {
-          await settingsProvider.toggleHand();
+          await errorWrapper(context, () async {
+            await viewModel.toggleHand();
+          });
         },
       ),
       // Make the whole tile tappable
       onTap: () async {
-        await settingsProvider.toggleHand();
+        await errorWrapper(context, () async {
+          await viewModel.toggleHand();
+        });
       },
     );
   }
