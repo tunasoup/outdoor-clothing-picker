@@ -3,14 +3,14 @@ import 'package:flutter/material.dart';
 /// Define pages for navigation widgets.
 const List<NavigationDestination> destinations = <NavigationDestination>[
   NavigationDestination(
-    icon: Icon(Icons.man),
-    selectedIcon: Icon(Icons.man_outlined),
-    label: 'Clothing',
-  ),
-  NavigationDestination(
     icon: Icon(Icons.storage),
     selectedIcon: Icon(Icons.storage_outlined),
     label: 'Database',
+  ),
+  NavigationDestination(
+    icon: Icon(Icons.man),
+    selectedIcon: Icon(Icons.man_outlined),
+    label: 'Clothing',
   ),
   NavigationDestination(
     icon: Icon(Icons.settings),
