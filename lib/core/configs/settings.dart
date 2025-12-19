@@ -12,12 +12,16 @@ ThemeData darkMode = ThemeData(
 /// Provider for adjusting user settings.
 class SettingsProvider with ChangeNotifier {
   // initialize should be called before any getters.
+  late String _apiKey;
   late bool _isDark;
   late bool _isLeftHanded;
 
   Future<void> initialize() async {
-    await Future.wait([loadTheme(), loadHand()]);
+    final prefs = await SharedPreferences.getInstance();
+    await Future.wait([loadApiKey(prefs: prefs), loadTheme(prefs: prefs), loadHand(prefs: prefs)]);
   }
+
+  String get apiKey => _apiKey;
 
   ThemeMode get themeMode {
     return _isDark ? ThemeMode.dark : ThemeMode.light;
@@ -29,8 +33,19 @@ class SettingsProvider with ChangeNotifier {
 
   TextDirection get textDirection => isLeftHanded ? TextDirection.rtl : TextDirection.ltr;
 
-  Future<void> loadTheme() async {
+  Future<void> saveApiKey({required String value}) async {
     final prefs = await SharedPreferences.getInstance();
+    await prefs.setString(PrefKeys.apiKeyOWM, value);
+    _apiKey = value;
+  }
+
+  Future<void> loadApiKey({SharedPreferences? prefs}) async {
+    prefs ??= await SharedPreferences.getInstance();
+    _apiKey = prefs.getString(PrefKeys.apiKeyOWM) ?? '';
+  }
+
+  Future<void> loadTheme({SharedPreferences? prefs}) async {
+    prefs ??= await SharedPreferences.getInstance();
     final isDark = prefs.getBool(PrefKeys.darkMode);
     if (isDark == null) {
       await applySystemTheme();
@@ -60,8 +75,8 @@ class SettingsProvider with ChangeNotifier {
     await prefs.setBool(PrefKeys.leftHanded, _isLeftHanded);
   }
 
-  Future<void> loadHand() async {
-    final prefs = await SharedPreferences.getInstance();
+  Future<void> loadHand({SharedPreferences? prefs}) async {
+    prefs ??= await SharedPreferences.getInstance();
     _isLeftHanded = prefs.getBool(PrefKeys.leftHanded) ?? false;
   }
 

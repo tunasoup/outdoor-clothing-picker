@@ -1,19 +1,27 @@
 import 'package:flutter/foundation.dart';
-
 import 'package:outdoor_clothing_picker/core/configs/settings.dart';
 
 class SettingsViewModel extends ChangeNotifier {
   final SettingsProvider _settingsRepository;
 
-  SettingsViewModel({
-    required SettingsProvider settingsRepository
-}) : _settingsRepository = settingsRepository;
-
-  // TODO: Add API setting, add initialization
+  SettingsViewModel({required SettingsProvider settingsRepository})
+    : _settingsRepository = settingsRepository;
 
   bool _isLoading = false;
+
   bool get isLoading => _isLoading;
 
+  // Weather API
+  // TODO: Should get from service, wait until another API is added
+  String get apiLabel => 'OpenWeatherMap API Key';
+
+  String get apiKey => _settingsRepository.apiKey;
+
+  Future<void> saveApiKey(String value) async {
+    await _settingsRepository.saveApiKey(value: value);
+  }
+
+  // Dark mode
   bool get isDarkMode => _settingsRepository.isDarkMode;
 
   String get themeText => 'Theme';
@@ -24,15 +32,18 @@ class SettingsViewModel extends ChangeNotifier {
     await _runWithLoading(_settingsRepository.toggleTheme);
   }
 
+  // Hand layout
   bool get isLeftHanded => _settingsRepository.isLeftHanded;
 
   String get layoutText => 'Hand Layout';
+
   String get layoutDescription => isLeftHanded ? 'Left-handed' : 'Right-handed';
 
   Future<void> toggleHand() async {
     await _runWithLoading(_settingsRepository.toggleHand);
   }
 
+  /// Wrap an async [command] with loading state toggles.
   Future<void> _runWithLoading(Future<void> Function() command) async {
     _isLoading = true;
     notifyListeners();
@@ -47,5 +58,4 @@ class SettingsViewModel extends ChangeNotifier {
       notifyListeners();
     }
   }
-
 }

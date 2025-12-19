@@ -3,14 +3,13 @@ import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import 'package:outdoor_clothing_picker/core/ui/app_page.dart';
 import 'package:outdoor_clothing_picker/core/ui/ui_helpers.dart';
-import 'package:outdoor_clothing_picker/core/utils/utils.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 
 import './settings_viewmodel.dart';
 
 class SettingsPage extends AppPage {
   final SettingsViewModel viewModel;
 
+  // FIXME: Does not need to be stateful, but there is no multi-inheritance for AppPage
   const SettingsPage({super.key, super.bottomNavigationBar, required this.viewModel});
 
   @override
@@ -20,44 +19,6 @@ class SettingsPage extends AppPage {
 // TODO: Localization (language, units, time format)
 // TODO: Data import and export
 class _SettingsPageState extends State<SettingsPage> {
-  final TextEditingController _controller = TextEditingController();
-  bool _isLoading = true;
-
-  @override
-  void initState() {
-    super.initState();
-    _loadSettings();
-  }
-
-  Future<void> _loadSettings() async {
-    final prefs = await SharedPreferences.getInstance();
-
-    await Future.wait([_loadApiKey(prefs)]);
-
-    if (mounted) setState(() => _isLoading = false);
-  }
-
-  Future<void> _loadApiKey(SharedPreferences prefs) async {
-    final savedKey = prefs.getString(PrefKeys.apiKeyOWM);
-    _controller.text = savedKey ?? '';
-  }
-
-  Future<void> _saveApiKey(String value) async {
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.setString(PrefKeys.apiKeyOWM, value);
-  }
-
-  Widget _buildAPIKeyBox() {
-    return TextField(
-      controller: _controller,
-      decoration: const InputDecoration(
-        labelText: 'OpenWeatherMap API Key',
-        border: OutlineInputBorder(),
-      ),
-      onChanged: _saveApiKey,
-    );
-  }
-
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -66,19 +27,53 @@ class _SettingsPageState extends State<SettingsPage> {
         backgroundColor: Theme.of(context).colorScheme.surfaceContainerHigh,
       ),
       bottomNavigationBar: widget.bottomNavigationBar,
-      body: ListenableBuilder(listenable: widget.viewModel, builder: (context, _) {
-        return widget.viewModel.isLoading
-            ? const Center(child: CircularProgressIndicator())
-            : ListView(
-          padding: const EdgeInsets.all(16),
-          children: [
-            _buildAPIKeyBox(),
-            ThemeSelectorTile(viewModel: widget.viewModel),
-            HandLayoutTile(viewModel: widget.viewModel),
-          ],
-        );
-      }
-    ));
+      body: ListenableBuilder(
+        listenable: widget.viewModel,
+        builder: (context, _) {
+          return widget.viewModel.isLoading
+              ? const Center(child: CircularProgressIndicator())
+              : ListView(
+                  padding: const EdgeInsets.all(16),
+                  children: [
+                    ApiKeyBox(viewModel: widget.viewModel),
+                    ThemeSelectorTile(viewModel: widget.viewModel),
+                    HandLayoutTile(viewModel: widget.viewModel),
+                  ],
+                );
+        },
+      ),
+    );
+  }
+}
+
+class ApiKeyBox extends StatefulWidget {
+  final SettingsViewModel viewModel;
+
+  const ApiKeyBox({super.key, required this.viewModel});
+
+  @override
+  State<ApiKeyBox> createState() => _ApiKeyBoxState();
+}
+
+class _ApiKeyBoxState extends State<ApiKeyBox> {
+  late TextEditingController _controller;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = TextEditingController(text: widget.viewModel.apiKey);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return TextField(
+      controller: _controller,
+      decoration: InputDecoration(
+        labelText: widget.viewModel.apiLabel,
+        border: OutlineInputBorder(),
+      ),
+      onChanged: widget.viewModel.saveApiKey,
+    );
   }
 
   @override
