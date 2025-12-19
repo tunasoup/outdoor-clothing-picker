@@ -106,7 +106,7 @@ class WeatherService {
   Future<String> getAPIKey() async {
     final prefs = await SharedPreferences.getInstance();
     final apiKey = prefs.getString(PrefKeys.apiKeyOWM);
-    if (apiKey == null) throw 'No API key, set it in Settings';
+    if (apiKey == null || apiKey.isEmpty) throw 'No API key, set it in Settings';
     return apiKey;
   }
 
