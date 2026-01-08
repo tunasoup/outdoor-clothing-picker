@@ -1,7 +1,7 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:outdoor_clothing_picker/core/ui/ui_helpers.dart';
-import 'package:provider/provider.dart';
+import 'package:outdoor_clothing_picker/core/utils/weather_model.dart';
 
 import './forecast_config.dart';
 import './weather_config_page.dart';
@@ -9,7 +9,9 @@ import './weather_viewmodel.dart';
 
 /// Widget for displaying weather info and opening the weather config page.
 class WeatherWidget extends StatefulWidget {
-  const WeatherWidget({super.key});
+  final WeatherViewModel viewModel;
+
+  const WeatherWidget({super.key, required this.viewModel});
 
   @override
   State<WeatherWidget> createState() => _WeatherWidgetState();
@@ -19,74 +21,80 @@ class _WeatherWidgetState extends State<WeatherWidget> {
   // Keep track of current configs and save them only on success, so that active weathers are
   // not changed by failed configs, but the user can go back to edit the drafts if they do not
   // restart the app.
+  // TODO: move to backend, set to result on page exit, null on saveForecastConfig
   List<ForecastConfig>? draftConfigs;
 
   @override
   Widget build(BuildContext context) {
-    final viewModel = context.watch<WeatherViewModel>();
     final colorScheme = Theme.of(context).colorScheme;
 
     return Directionality(
       textDirection: TextDirection.ltr,
-      child: Column(
-        children: [
-          SizedBox(
-            width: double.infinity,
-            child: GestureDetector(
-              onTap: () async {
-                final result = await Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (context) => WeatherConfigPage(initialConfigs: draftConfigs),
-                  ),
-                );
-                ScaffoldMessenger.of(context).clearSnackBars();
-                if (result == null) return;
-                draftConfigs = result;
-                await errorWrapper(context, () async {
-                  try {
-                    await viewModel.applyForecastConfigs(configs: result);
-                  } catch (e) {
-                    rethrow;
-                  }
-                  await saveForecastConfigs(result);
-                  draftConfigs = null;
-                });
-                // TODO: tapping could be expected to show more detailed weather informations as well
-              },
-              child: Container(
-                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                decoration: BoxDecoration(
-                  color: colorScheme.primaryContainer,
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                child: Stack(
-                  children: [
-                    if (viewModel.isLoading)
-                      Center(child: CircularProgressIndicator(strokeWidth: 3)),
-                    Center(
-                      child: Column(
-                        children: [
-                          SingleChildScrollView(
-                            scrollDirection: Axis.horizontal,
-                            child: Row(
-                              spacing: 16,
-                              children: viewModel.weathers
-                                  .map((e) => _buildWeatherDisplay(e, colorScheme))
-                                  .toList(),
-                            ),
-                          ),
-                          _buildUpdateInfo(viewModel, colorScheme),
-                        ],
+      child: ListenableBuilder(
+        listenable: widget.viewModel,
+        builder: (context, _) {
+          return Column(
+            children: [
+              SizedBox(
+                width: double.infinity,
+                child: GestureDetector(
+                  onTap: () async {
+                    final result = await Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        // TODO: Ideally weather config has its own view model, but by flutter
+                        //  guidelines, it should be an input argument, rethink navigation?
+                        builder: (context) => WeatherConfigPage(initialConfigs: draftConfigs),
                       ),
+                    );
+                    ScaffoldMessenger.of(context).clearSnackBars();
+                    if (result == null) return;
+                    draftConfigs = result;
+                    await errorWrapper(context, () async {
+                      try {
+                        await widget.viewModel.updateWeatherConfigs(configs: result);
+                      } catch (e) {
+                        rethrow;
+                      }
+                      draftConfigs = null;
+                    });
+                    // TODO: tapping could be expected to show more detailed weather informations as well
+                  },
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                    decoration: BoxDecoration(
+                      color: colorScheme.primaryContainer,
+                      borderRadius: BorderRadius.circular(12),
                     ),
-                  ],
+                    child: Stack(
+                      children: [
+                        if (widget.viewModel.isLoading)
+                          Center(child: CircularProgressIndicator(strokeWidth: 3)),
+                        Center(
+                          child: Column(
+                            children: [
+                              SingleChildScrollView(
+                                scrollDirection: Axis.horizontal,
+                                child: Row(
+                                  spacing: 16,
+                                  children: widget.viewModel.weathers
+                                      .map((e) => _buildWeatherDisplay(e, colorScheme))
+                                      .toList(),
+                                ),
+                              ),
+                              _buildUpdateInfo(widget.viewModel, colorScheme),
+                            ],
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
                 ),
               ),
-            ),
-          ),
-          if (kIsWeb) GetWeatherButton(viewModel: viewModel),
-        ],
+              if (kIsWeb) GetWeatherButton(viewModel: widget.viewModel),
+            ],
+          );
+        },
       ),
     );
   }
@@ -154,7 +162,7 @@ class GetWeatherButton extends StatelessWidget {
           ),
           onPressed: viewModel.isLoading
               ? null
-              : () async => await errorWrapper(context, viewModel.tryFetchSelectedWeathers),
+              : () async => await errorWrapper(context, viewModel.refreshWithLoading),
           child: viewModel.isLoading
               ? const SizedBox(
                   width: 16,

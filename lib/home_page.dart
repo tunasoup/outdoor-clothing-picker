@@ -4,6 +4,8 @@ import 'package:outdoor_clothing_picker/core/configs/settings.dart';
 import 'package:outdoor_clothing_picker/core/ui/app_page.dart';
 import 'package:outdoor_clothing_picker/core/ui/navigation.dart';
 import 'package:outdoor_clothing_picker/features/clother/clothing_page.dart';
+import 'package:outdoor_clothing_picker/features/clother/weather_viewmodel.dart';
+import 'package:outdoor_clothing_picker/features/clother/clothing_viewmodel.dart';
 import 'package:outdoor_clothing_picker/features/database_editor/data_visualization_page.dart';
 import 'package:outdoor_clothing_picker/features/settings/settings_page.dart';
 import 'package:outdoor_clothing_picker/features/settings/settings_viewmodel.dart';
@@ -32,18 +34,17 @@ class _HomePageState extends State<HomePage> {
     (context, navBar) {
       return DataVisualizationPage(bottomNavigationBar: navBar);
     },
-    //     (context, navBar) {
-    //   final clothingRepo = Provider.of<ClothingRepository>(context, listen: false);
-    //   final vm = ClothingViewModel(clothingRepo);
-    //   return ClothingPage(bottomNavigationBar: navBar, viewModel: vm);
-    // },
     (context, navBar) {
-      return ClothingPage(bottomNavigationBar: navBar);
+      final weatherVM = WeatherViewModel(weatherRepository: context.read());
+      final clothingVM = ClothingViewModel(
+        clothingRepository: context.read(),
+        weatherViewModel: weatherVM,
+      );
+      return ClothingPage(bottomNavigationBar: navBar, viewModel: clothingVM);
     },
     (context, navBar) {
-      final settingsRepo = Provider.of<SettingsProvider>(context, listen: false);
-      final vm = SettingsViewModel(settingsRepository: settingsRepo);
-      return SettingsPage(bottomNavigationBar: navBar, viewModel: vm);
+      final settingsVM = SettingsViewModel(settingsRepository: context.read());
+      return SettingsPage(bottomNavigationBar: navBar, viewModel: settingsVM);
     },
   ];
 

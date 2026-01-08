@@ -1,5 +1,7 @@
 import 'dart:convert';
 
+import 'package:outdoor_clothing_picker/core/utils/utils.dart';
+
 class Weather {
   final String cityName;
   final double temperature;
@@ -83,4 +85,58 @@ class Weather {
     'updateDate': updateDate.toString(),
     'isManual': isManual,
   };
+}
+
+class WeatherPresenter {
+  final String cityName;
+  final num? temperature;
+  final String? mainCondition;
+  final DateTime localTime;
+  final DateTime updateDate;
+  final bool isManual;
+  final bool isEmpty;
+
+  WeatherPresenter({
+    required this.cityName,
+    required this.temperature,
+    required this.mainCondition,
+    required this.localTime,
+    required this.updateDate,
+    required this.isManual,
+    this.isEmpty = false,
+  });
+
+  String get temperatureDisplay => '${temperature?.round() ?? '-'}°C';
+
+  String get description {
+    if (isManual) {
+      return 'manual\n';
+    } else {
+      return '$cityName\n${formatTime(time: localTime, showConditionalDay: true)}';
+    }
+  }
+
+  factory WeatherPresenter.fromWeather(Weather weather) {
+    return WeatherPresenter(
+      cityName: weather.cityName,
+      temperature: weather.temperature,
+      mainCondition: weather.mainCondition,
+      localTime: weather.localTime,
+      updateDate: weather.updateDate,
+      isManual: weather.isManual,
+    );
+  }
+
+  factory WeatherPresenter.createEmpty() {
+    final now = DateTime.timestamp();
+    return WeatherPresenter(
+      cityName: '',
+      temperature: null,
+      mainCondition: null,
+      localTime: now.toLocal(),
+      updateDate: now,
+      isManual: true,
+      isEmpty: true,
+    );
+  }
 }
