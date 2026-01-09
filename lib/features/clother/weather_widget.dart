@@ -1,10 +1,11 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 import 'package:outdoor_clothing_picker/core/ui/ui_helpers.dart';
 import 'package:outdoor_clothing_picker/core/utils/weather_model.dart';
+import 'package:outdoor_clothing_picker/routes.dart';
 
 import './forecast_config.dart';
-import './weather_config_page.dart';
 import './weather_viewmodel.dart';
 
 /// Widget for displaying weather info and opening the weather config page.
@@ -39,25 +40,25 @@ class _WeatherWidgetState extends State<WeatherWidget> {
                 width: double.infinity,
                 child: GestureDetector(
                   onTap: () async {
-                    final result = await Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        // TODO: Ideally weather config has its own view model, but by flutter
-                        //  guidelines, it should be an input argument, rethink navigation?
-                        builder: (context) => WeatherConfigPage(initialConfigs: draftConfigs),
-                      ),
-                    );
-                    ScaffoldMessenger.of(context).clearSnackBars();
-                    if (result == null) return;
-                    draftConfigs = result;
-                    await errorWrapper(context, () async {
-                      try {
-                        await widget.viewModel.updateWeatherConfigs(configs: result);
-                      } catch (e) {
-                        rethrow;
-                      }
-                      draftConfigs = null;
-                    });
+                    // TODO: Errorwrapper
+                    await context.push(Routes.forecastConfigs);
+                    // final result = await Navigator.push(
+                    //   context,
+                    //   MaterialPageRoute(
+                    //     builder: (context) => WeatherConfigPage(initialConfigs: draftConfigs),
+                    //   ),
+                    // );
+                    // ScaffoldMessenger.of(context).clearSnackBars();
+                    // if (result == null) return;
+                    // draftConfigs = result;
+                    // await errorWrapper(context, () async {
+                    //   try {
+                    //     await widget.viewModel.updateWeatherConfigs(configs: result);
+                    //   } catch (e) {
+                    //     rethrow;
+                    //   }
+                    //   draftConfigs = null;
+                    // });
                     // TODO: tapping could be expected to show more detailed weather informations as well
                   },
                   child: Container(

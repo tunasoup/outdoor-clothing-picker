@@ -5,7 +5,6 @@ import 'package:flutter/material.dart';
 import 'package:outdoor_clothing_picker/core/database/items_provider.dart';
 import 'package:outdoor_clothing_picker/core/ui/add_dialog/add_dialogs.dart';
 import 'package:outdoor_clothing_picker/core/ui/add_dialog/dialog_viewmodel.dart';
-import 'package:outdoor_clothing_picker/core/ui/app_page.dart';
 import 'package:outdoor_clothing_picker/core/ui/ui_helpers.dart';
 import 'package:provider/provider.dart';
 
@@ -75,8 +74,8 @@ class LoadingItem extends DataListItem {
 
 // TODO: Alternative visualization with a vertical temperature bar and clothing along it
 /// The Data visualization page shows the contents of the local data and allows modifying it.
-class DataVisualizationPage extends AppPage {
-  const DataVisualizationPage({super.key, super.bottomNavigationBar});
+class DataVisualizationPage extends StatefulWidget {
+  const DataVisualizationPage({super.key});
 
   @override
   State<DataVisualizationPage> createState() => _DataVisualizationPageState();
@@ -95,7 +94,6 @@ class _DataVisualizationPageState extends State<DataVisualizationPage> {
       create: (_) => SelectionProvider(),
       child: Scaffold(
         appBar: DataAppBar(searchCallback: _searchCallback),
-        bottomNavigationBar: widget.bottomNavigationBar,
         body: _DataVisualizationContent(searchQuery: searchQuery),
       ),
     );
@@ -267,7 +265,6 @@ class _DataAppBarState extends State<DataAppBar> {
         } else if (_isSearching) {
           _stopSearch();
         }
-        // TODO: Default back button action should take to clothing page
       },
       child: AppBar(
         iconTheme: IconThemeData(size: 28),

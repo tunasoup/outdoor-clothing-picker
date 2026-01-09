@@ -4,7 +4,6 @@ import 'package:outdoor_clothing_picker/core/configs/settings.dart';
 import 'package:outdoor_clothing_picker/core/database/items_provider.dart';
 import 'package:outdoor_clothing_picker/core/ui/add_dialog/add_dialogs.dart';
 import 'package:outdoor_clothing_picker/core/ui/add_dialog/dialog_viewmodel.dart';
-import 'package:outdoor_clothing_picker/core/ui/app_page.dart';
 import 'package:outdoor_clothing_picker/core/ui/mannequin.dart';
 import 'package:outdoor_clothing_picker/core/ui/ui_helpers.dart';
 import 'package:provider/provider.dart';
@@ -15,10 +14,10 @@ import './weather_widget.dart';
 
 /// The clothing page visualizes which clothings from a local database would be appropriate
 /// for the current/selected weather, while allowing the user to add new items.
-class ClothingPage extends AppPage {
+class ClothingPage extends StatefulWidget {
   final ClothingViewModel viewModel;
 
-  const ClothingPage({super.key, super.bottomNavigationBar, required this.viewModel});
+  const ClothingPage({super.key, required this.viewModel});
 
   @override
   State<ClothingPage> createState() => _ClothingPageState();
@@ -118,7 +117,6 @@ class _ClothingPageState extends State<ClothingPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      bottomNavigationBar: widget.bottomNavigationBar,
       floatingActionButtonLocation: ExpandableFab.location,
       floatingActionButton: createEFAB(context: context),
       body: SafeArea(

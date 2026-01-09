@@ -5,9 +5,8 @@ import 'package:outdoor_clothing_picker/core/database/items_provider.dart';
 import 'package:outdoor_clothing_picker/features/clother/clothing_repository.dart';
 import 'package:outdoor_clothing_picker/features/clother/weather_repository.dart';
 import 'package:outdoor_clothing_picker/features/clother/weather_service.dart';
+import 'package:outdoor_clothing_picker/router.dart';
 import 'package:provider/provider.dart';
-
-import './home_page.dart';
 
 late AppDb db;
 
@@ -50,9 +49,9 @@ class MyApp extends StatelessWidget {
     return Selector<SettingsProvider, ThemeMode>(
       selector: (_, provider) => provider.themeMode,
       builder: (_, themeMode, _) {
-        return MaterialApp(
+        return MaterialApp.router(
           title: 'Outdoor Clothing Picker',
-          home: HomePage(),
+          routerConfig: goRouter,
           debugShowCheckedModeBanner: false,
           theme: lightMode,
           darkTheme: darkMode,

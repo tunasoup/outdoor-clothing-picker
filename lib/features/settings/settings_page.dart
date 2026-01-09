@@ -1,24 +1,18 @@
 import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
-import 'package:outdoor_clothing_picker/core/ui/app_page.dart';
 import 'package:outdoor_clothing_picker/core/ui/ui_helpers.dart';
 
 import './settings_viewmodel.dart';
 
-class SettingsPage extends AppPage {
+class SettingsPage extends StatelessWidget {
   final SettingsViewModel viewModel;
 
-  // FIXME: Does not need to be stateful, but there is no multi-inheritance for AppPage
-  const SettingsPage({super.key, super.bottomNavigationBar, required this.viewModel});
+  const SettingsPage({super.key, required this.viewModel});
 
-  @override
-  State<SettingsPage> createState() => _SettingsPageState();
-}
+  // TODO: Localization (language, units, time format)
+  // TODO: Data import and export
 
-// TODO: Localization (language, units, time format)
-// TODO: Data import and export
-class _SettingsPageState extends State<SettingsPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -26,18 +20,17 @@ class _SettingsPageState extends State<SettingsPage> {
         title: const Text('Settings'),
         backgroundColor: Theme.of(context).colorScheme.surfaceContainerHigh,
       ),
-      bottomNavigationBar: widget.bottomNavigationBar,
       body: ListenableBuilder(
-        listenable: widget.viewModel,
+        listenable: viewModel,
         builder: (context, _) {
-          return widget.viewModel.isLoading
+          return viewModel.isLoading
               ? const Center(child: CircularProgressIndicator())
               : ListView(
                   padding: const EdgeInsets.all(16),
                   children: [
-                    ApiKeyBox(viewModel: widget.viewModel),
-                    ThemeSelectorTile(viewModel: widget.viewModel),
-                    HandLayoutTile(viewModel: widget.viewModel),
+                    ApiKeyBox(viewModel: viewModel),
+                    ThemeSelectorTile(viewModel: viewModel),
+                    HandLayoutTile(viewModel: viewModel),
                   ],
                 );
         },
