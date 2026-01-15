@@ -2,11 +2,11 @@ import 'dart:async';
 import 'dart:convert';
 
 import 'package:flutter/foundation.dart';
+import 'package:outdoor_clothing_picker/core/utils/forecast_config_model.dart';
 import 'package:outdoor_clothing_picker/core/utils/utils.dart';
 import 'package:outdoor_clothing_picker/core/utils/weather_model.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
-import './forecast_config.dart';
 import './weather_service.dart';
 
 /// Manages and provides weather information obtained manually or via [_weatherService].

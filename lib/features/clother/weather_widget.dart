@@ -2,10 +2,10 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:outdoor_clothing_picker/core/ui/ui_helpers.dart';
+import 'package:outdoor_clothing_picker/core/utils/forecast_config_model.dart';
 import 'package:outdoor_clothing_picker/core/utils/weather_model.dart';
 import 'package:outdoor_clothing_picker/routes.dart';
 
-import './forecast_config.dart';
 import './weather_viewmodel.dart';
 
 /// Widget for displaying weather info and opening the weather config page.

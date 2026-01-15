@@ -14,11 +14,11 @@ class ClothingViewModel extends ChangeNotifier {
     required this.weatherViewModel,
   }) : _clothingRepository = clothingRepository {
     _listener = () {
-      debugPrint('listener changed');
+      if (kDebugMode) debugPrint('listener changed');
       notifyListeners();
     };
     _clothingRepository.filtered.addListener(_listener);
-    debugPrint('clothingvm init');
+    if (kDebugMode) debugPrint('clothingvm init');
   }
 
   String? get activity => _clothingRepository.activity;
@@ -37,7 +37,7 @@ class ClothingViewModel extends ChangeNotifier {
   @override
   void dispose() {
     // FIXME: Not called when a page is changed, so there are multiple VMs, might fix with gorouter
-    debugPrint('disposed');
+    if (kDebugMode) debugPrint('disposed');
     _clothingRepository.filtered.removeListener(_listener);
     super.dispose();
   }

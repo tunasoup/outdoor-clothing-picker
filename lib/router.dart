@@ -4,9 +4,10 @@ import 'package:go_router/go_router.dart';
 import 'package:outdoor_clothing_picker/core/configs/settings.dart';
 import 'package:outdoor_clothing_picker/features/clother/clothing_page.dart';
 import 'package:outdoor_clothing_picker/features/clother/clothing_viewmodel.dart';
-import 'package:outdoor_clothing_picker/features/clother/weather_config_page.dart';
 import 'package:outdoor_clothing_picker/features/clother/weather_viewmodel.dart';
 import 'package:outdoor_clothing_picker/features/database_editor/data_visualization_page.dart';
+import 'package:outdoor_clothing_picker/features/forecast_config/forecast_config_page.dart';
+import 'package:outdoor_clothing_picker/features/forecast_config/forecast_config_viewmodel.dart';
 import 'package:outdoor_clothing_picker/features/settings/settings_page.dart';
 import 'package:outdoor_clothing_picker/features/settings/settings_viewmodel.dart';
 import 'package:provider/provider.dart';
@@ -50,7 +51,12 @@ final goRouter = GoRouter(
                 // FIXME: Going to and from a subroute recreates earlier VMs
                 GoRoute(
                   path: Routes.forecastConfigsRelative,
-                  builder: (context, state) => WeatherConfigPage(),
+                  builder: (context, state) {
+                    final forecastConfigVM = ForecastConfigViewModel(
+                      forecastConfigRepository: context.read(),
+                    );
+                    return ForecastConfigPage(viewModel: forecastConfigVM);
+                  },
                 ),
               ],
             ),

@@ -1,7 +1,7 @@
 import 'package:flutter/foundation.dart';
+import 'package:outdoor_clothing_picker/core/utils/forecast_config_model.dart';
 import 'package:outdoor_clothing_picker/core/utils/weather_model.dart';
 import 'package:outdoor_clothing_picker/features/clother/weather_repository.dart';
-import 'package:outdoor_clothing_picker/features/clother/forecast_config.dart';
 
 class WeatherViewModel extends ChangeNotifier {
   final WeatherRepository _weatherRepository;
