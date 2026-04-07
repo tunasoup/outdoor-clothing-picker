@@ -5,7 +5,8 @@ import 'package:outdoor_clothing_picker/core/configs/settings.dart';
 import 'package:outdoor_clothing_picker/features/clother/clothing_page.dart';
 import 'package:outdoor_clothing_picker/features/clother/clothing_viewmodel.dart';
 import 'package:outdoor_clothing_picker/features/clother/weather_viewmodel.dart';
-import 'package:outdoor_clothing_picker/features/database_editor/data_visualization_page.dart';
+import 'package:outdoor_clothing_picker/features/data_editor/data_editor_page.dart';
+import 'package:outdoor_clothing_picker/features/data_editor/data_editor_viewmodel.dart';
 import 'package:outdoor_clothing_picker/features/forecast_config/forecast_config_page.dart';
 import 'package:outdoor_clothing_picker/features/forecast_config/forecast_config_viewmodel.dart';
 import 'package:outdoor_clothing_picker/features/settings/settings_page.dart';
@@ -32,7 +33,13 @@ final goRouter = GoRouter(
       branches: [
         StatefulShellBranch(
           routes: [
-            GoRoute(path: Routes.database, builder: (context, state) => DataVisualizationPage()),
+            GoRoute(
+              path: Routes.database,
+              builder: (context, state) {
+                final dataEditorVM = DataEditorViewModel(dataEditorRepository: context.read());
+                return DataEditorPage(viewModel: dataEditorVM);
+              },
+            ),
           ],
         ),
         StatefulShellBranch(

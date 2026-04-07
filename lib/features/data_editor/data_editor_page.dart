@@ -8,6 +8,8 @@ import 'package:outdoor_clothing_picker/core/ui/add_dialog/dialog_viewmodel.dart
 import 'package:outdoor_clothing_picker/core/ui/ui_helpers.dart';
 import 'package:provider/provider.dart';
 
+import './data_editor_viewmodel.dart';
+
 /// Abstract object to place inside a Listview builder.
 abstract class DataListItem {
   Widget build(BuildContext context);
@@ -73,15 +75,17 @@ class LoadingItem extends DataListItem {
 }
 
 // TODO: Alternative visualization with a vertical temperature bar and clothing along it
-/// The Data visualization page shows the contents of the local data and allows modifying it.
-class DataVisualizationPage extends StatefulWidget {
-  const DataVisualizationPage({super.key});
+/// Shows the contents of the local data and allows modifying it.
+class DataEditorPage extends StatefulWidget {
+  final DataEditorViewModel viewModel;
+
+  const DataEditorPage({super.key, required this.viewModel});
 
   @override
-  State<DataVisualizationPage> createState() => _DataVisualizationPageState();
+  State<DataEditorPage> createState() => _DataEditorPageState();
 }
 
-class _DataVisualizationPageState extends State<DataVisualizationPage> {
+class _DataEditorPageState extends State<DataEditorPage> {
   String? searchQuery;
 
   void _searchCallback(String query) {
@@ -94,16 +98,16 @@ class _DataVisualizationPageState extends State<DataVisualizationPage> {
       create: (_) => SelectionProvider(),
       child: Scaffold(
         appBar: DataAppBar(searchCallback: _searchCallback),
-        body: _DataVisualizationContent(searchQuery: searchQuery),
+        body: _DataEditorContent(searchQuery: searchQuery),
       ),
     );
   }
 }
 
-class _DataVisualizationContent extends StatelessWidget {
+class _DataEditorContent extends StatelessWidget {
   final String? searchQuery;
 
-  const _DataVisualizationContent({required this.searchQuery});
+  const _DataEditorContent({required this.searchQuery});
 
   @override
   Widget build(BuildContext context) {

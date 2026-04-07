@@ -5,6 +5,7 @@ import 'package:outdoor_clothing_picker/core/database/items_provider.dart';
 import 'package:outdoor_clothing_picker/features/clother/clothing_repository.dart';
 import 'package:outdoor_clothing_picker/features/clother/weather_repository.dart';
 import 'package:outdoor_clothing_picker/features/clother/weather_service.dart';
+import 'package:outdoor_clothing_picker/features/data_editor/data_editor_repository.dart';
 import 'package:outdoor_clothing_picker/features/forecast_config/forecast_config_repository.dart';
 import 'package:outdoor_clothing_picker/router.dart';
 import 'package:provider/provider.dart';
@@ -27,6 +28,7 @@ void main() async {
         ChangeNotifierProvider(create: (_) => CategoryItemsProvider(db)),
         ChangeNotifierProvider(create: (_) => ClothingItemsProvider(db)),
         Provider(create: (_) => ForecastConfigRepository()),
+        Provider(create: (_) => DataEditorRepository()),
         ChangeNotifierProvider(create: (_) => WeatherRepository(WeatherService())),
         Provider(
           create: (context) => ClothingRepository(
